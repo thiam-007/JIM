@@ -173,7 +173,7 @@ const sessionLabel = computed(() => {
   if (!selectedJour.value || !selectedLieu.value) return ''
   const jour = jours.find(j => j.id === selectedJour.value)
   const lieu = lieux.find(l => l.id === selectedLieu.value)
-  const parts = [`${jour.label} (${jour.date})`, lieu.label]
+  const parts = [jour.value, lieu.value]
   if (selectedCreneau.value) parts.push(selectedCreneau.value)
   return parts.join(' · ')
 })

@@ -13,6 +13,7 @@ export const useAirtableStore = defineStore('airtable', {
     eventRegistrations: [],
     eventRecords: [],
     avisRecords: [],
+    suiviRecords: [],
     eventFetchError: ''
   }),
   getters: {
@@ -129,6 +130,14 @@ export const useAirtableStore = defineStore('airtable', {
         this.avisRecords = records.map((record) => record.fields || {})
       } catch (error) {
         console.warn('Erreur de chargement des avis :', error.message)
+      }
+    },
+    async loadSuivi() {
+      try {
+        const records = await this.fetchRecords('s')
+        this.suiviRecords = records.map((record) => record.fields || {})
+      } catch (error) {
+        console.warn('Erreur de chargement du suivi pôles :', error.message)
       }
     }
   }
