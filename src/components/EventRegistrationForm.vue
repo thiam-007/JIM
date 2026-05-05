@@ -155,18 +155,18 @@ const totalRegistrations = computed(() => airtable.totalRegistrations)
 const sessionCounts      = computed(() => airtable.sessionCounts)
 
 const jours = [
-  { id: 'jour1', label: 'Jour 1', date: '16 Mai 2026' },
-  { id: 'jour2', label: 'Jour 2', date: '17 Mai 2026' },
-  { id: 'jour3', label: 'Jour 3', date: '18 Mai 2026' },
+  { id: 'jour1', label: 'Jour 1', date: '16 Mai 2026', value: '16 Mai' },
+  { id: 'jour2', label: 'Jour 2', date: '17 Mai 2026', value: '17 Mai' },
+  { id: 'jour3', label: 'Jour 3', date: '18 Mai 2026', value: '18 Mai' },
 ]
 
 const lieux = [
-  { id: 'conf',      label: 'Salle de conférence',              icon: 'users'    },
-  { id: 'ccfg',     label: 'CCFG',                              icon: 'landmark' },
-  { id: 'spectacle', label: 'Salle des spectacles / conférence', icon: 'film'     },
+  { id: 'conf',      label: 'Salle de conférence',              icon: 'users',    value: 'Salle de conférence' },
+  { id: 'ccfg',     label: 'CCFG',                              icon: 'landmark', value: 'CCFG' },
+  { id: 'spectacle', label: 'Salle des spectacles / conférence', icon: 'film',    value: 'Salle de spectacle' },
 ]
 
-const creneaux = ['Matin', 'Après-midi', 'Soirée']
+const creneaux = ['Matin', 'Après-midi', 'Soir']
 
 // Libellé composé affiché en aperçu et envoyé à Airtable
 const sessionLabel = computed(() => {
@@ -219,8 +219,8 @@ async function submitForm() {
   try {
     await airtable.sendRecord('e', {
       Session:                      sessionLabel.value,
-      Jour:                         jours.find(j => j.id === selectedJour.value)?.label,
-      Lieu:                         lieux.find(l => l.id === selectedLieu.value)?.label,
+      Jour:                         jours.find(j => j.id === selectedJour.value)?.value,
+      Lieu:                         lieux.find(l => l.id === selectedLieu.value)?.value,
       Créneau:                      selectedCreneau.value || '',
       'Nom et Prénom':              name.value.trim(),
       Email:                        email.value.trim(),
