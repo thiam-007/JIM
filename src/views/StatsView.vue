@@ -3,40 +3,41 @@
 
     <!-- ─── Cartes générales ─── -->
     <div class="kpi-grid">
-      <div class="kpi-card" v-reveal="0">
-        <div class="kpi-icon" style="background:rgba(132,89,54,.1);color:var(--brun)">
+      <div class="kpi-card kpi-main" v-reveal="0">
+        <div class="kpi-icon" style="background:rgba(177,34,42,.1);color:var(--rouge)">
           <AppIcon name="users" :size="22" />
         </div>
         <div class="kpi-body">
-          <span class="kpi-val">{{ animatedTotal }}</span>
-          <span class="kpi-lbl">Participants inscrits</span>
+          <span class="kpi-val">{{ animatedGlobal }}</span>
+          <span class="kpi-lbl">Total participants (global)</span>
+          <span class="kpi-sub">Conférences + pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="60">
-        <div class="kpi-icon" style="background:rgba(249,178,51,.12);color:var(--or)">
-          <AppIcon name="calendar" :size="22" />
+        <div class="kpi-icon" style="background:rgba(132,89,54,.1);color:var(--brun)">
+          <AppIcon name="file-text" :size="22" />
         </div>
         <div class="kpi-body">
-          <span class="kpi-val">{{ sessionCount }}</span>
-          <span class="kpi-lbl">Sessions enregistrées</span>
+          <span class="kpi-val">{{ totalRegistrations }}</span>
+          <span class="kpi-lbl">Inscrits conférences</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="120">
+        <div class="kpi-icon" style="background:rgba(249,178,51,.12);color:var(--or)">
+          <AppIcon name="bar-chart-2" :size="22" />
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ totalSuiviPassés }}</span>
+          <span class="kpi-lbl">Passages aux pôles</span>
+        </div>
+      </div>
+      <div class="kpi-card" v-reveal="180">
         <div class="kpi-icon" style="background:rgba(76,175,80,.1);color:#2e7d32">
           <AppIcon name="star" :size="22" />
         </div>
         <div class="kpi-body">
           <span class="kpi-val">{{ totalAvis }}</span>
           <span class="kpi-lbl">Avis collectés</span>
-        </div>
-      </div>
-      <div class="kpi-card" v-reveal="180">
-        <div class="kpi-icon" style="background:rgba(177,34,42,.08);color:var(--rouge)">
-          <AppIcon name="bar-chart-2" :size="22" />
-        </div>
-        <div class="kpi-body">
-          <span class="kpi-val">{{ totalSuiviPassés }}</span>
-          <span class="kpi-lbl">Passages aux pôles</span>
         </div>
       </div>
     </div>
@@ -155,20 +156,25 @@ const averageRating = computed(() => {
 const totalSuiviPassés = computed(() =>
   airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
 )
+const totalGlobal = computed(() => totalRegistrations.value + totalSuiviPassés.value)
 
-// ─── Compteur animé ───
+// ─── Compteurs animés ───
 const animatedTotal = ref(0)
-watch(totalRegistrations, (newVal) => {
-  const start = animatedTotal.value
-  const end = newVal
+const animatedGlobal = ref(0)
+
+function animateCounter(refVal, newVal) {
+  const start = refVal.value
   const t0 = performance.now()
   function tick(now) {
     const p = Math.min((now - t0) / 700, 1)
-    animatedTotal.value = Math.round(start + (end - start) * (1 - Math.pow(1 - p, 3)))
+    refVal.value = Math.round(start + (newVal - start) * (1 - Math.pow(1 - p, 3)))
     if (p < 1) requestAnimationFrame(tick)
   }
   requestAnimationFrame(tick)
-}, { immediate: true })
+}
+
+watch(totalRegistrations, (v) => animateCounter(animatedTotal, v), { immediate: true })
+watch(totalGlobal, (v) => animateCounter(animatedGlobal, v), { immediate: true })
 
 // ─── Sessions ───
 const summaryEntries = computed(() => {
@@ -259,6 +265,7 @@ watch(
   transition: transform .22s ease, box-shadow .22s ease;
 }
 .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(132,89,54,.1); }
+.kpi-main { border-color: rgba(177,34,42,.2); background: rgba(177,34,42,.04); }
 
 .kpi-icon {
   width: 44px; height: 44px; border-radius: 12px;
@@ -268,6 +275,7 @@ watch(
 .kpi-body { display: flex; flex-direction: column; }
 .kpi-val { font-size: 1.6rem; font-weight: 900; color: var(--brun); line-height: 1; }
 .kpi-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #999; margin-top: 3px; }
+.kpi-sub { font-size: .65rem; color: #bbb; margin-top: 1px; }
 
 /* ─── Stat blocks ─── */
 .stat-block {
