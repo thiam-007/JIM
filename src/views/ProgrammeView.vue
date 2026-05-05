@@ -7,7 +7,6 @@
         <div class="fh-sub">Agenda des ateliers, interventions et événements publics</div>
       </div>
       <div class="fb">
-        <p>Voici le programme complet de la Journée Internationale des Musées. Vous pouvez enregistrer les participant·e·s par session et suivre le comptage des activités.</p>
         <div class="stats-summary">
           <div class="stat-card" v-reveal="0">
             <strong>Total inscriptions</strong>

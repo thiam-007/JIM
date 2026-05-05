@@ -9,7 +9,7 @@ export const useAirtableStore = defineStore('airtable', {
       v: 'tbl1y0Zf88ErEqifX',
       e: 'tblJ92j4syVfWqEsS'
     },
-    token: '',
+    token: localStorage.getItem('airtable_token') || '',
     eventRegistrations: [],
     eventRecords: [],
     avisRecords: [],
@@ -34,6 +34,11 @@ export const useAirtableStore = defineStore('airtable', {
   actions: {
     connect(token) {
       this.token = token.trim()
+      if (this.token) {
+        localStorage.setItem('airtable_token', this.token)
+      } else {
+        localStorage.removeItem('airtable_token')
+      }
     },
     async sendRecord(tableKey, fields) {
       if (!this.token) {

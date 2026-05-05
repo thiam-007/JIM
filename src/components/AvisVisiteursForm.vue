@@ -65,7 +65,7 @@
 
         <div class="sd"><div class="sl"></div><span>Rester en contact</span><div class="sl" style="background:linear-gradient(90deg,transparent,#2d6a4a)"></div></div>
 
-        <div class="fg" v-reveal="140">
+        <div class="fg">
           <div class="nl" :class="{ on: newsletter }" @click="toggleNewsletter">
             <div class="sw"></div>
             <span class="nl-lbl">
