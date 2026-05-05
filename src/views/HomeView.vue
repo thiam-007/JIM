@@ -1,18 +1,18 @@
 <template>
   <section class="home-intro">
 
-    <!-- ── Bannière hero ── -->
+    <!-- ── Hero banner : banner-mvg.jpg (fond brun + statue + texte MVG) ── -->
     <div class="hero-banner" :class="{ 'has-image': bannerLoaded }">
       <img
-        :src="'/images/banner.jpg'"
-        alt="Bannière JIM 2026"
+        :src="'/images/banner-mvg.jpg'"
+        alt="Bannière Musée Virtuel de Guinée"
         class="hero-banner-img"
         @load="bannerLoaded = true"
         @error="bannerLoaded = false"
       />
       <div class="hero-overlay">
         <div class="hero-content">
-          <div class="hero-date">16 – 18 mai 2026 · Conakry, Guinée</div>
+          <div class="hero-date">16 – 18 mai 2026 · Musée National de Guinée · Conakry</div>
           <h2 class="hero-title">Journée Internationale des Musées</h2>
           <p class="hero-theme">« Les musées unissent un monde divisé »</p>
           <div class="hero-partners">
@@ -33,7 +33,22 @@
         <div class="fh-sub">Musée Virtuel de Guinée · 16–18 mai 2026 · <em>Les musées unissent un monde divisé</em></div>
       </div>
       <div class="fb">
-        <p>Bienvenue dans l'outil événementiel JIM 2026. Cette version Vue.js permet de gérer plusieurs formulaires, maintenir une connexion Airtable et préparer l'ajout de nouveaux ateliers.</p>
+
+        <!-- ── Affiche officielle + intro ── -->
+        <div class="affiche-intro" v-reveal="0">
+          <div class="affiche-wrap">
+            <img
+              :src="'/images/affiche-jim-2026.jpg'"
+              alt="Affiche officielle JIM 2026"
+              class="affiche-img"
+              @error="($event.target as HTMLImageElement).style.display='none'"
+            />
+          </div>
+          <div class="affiche-text">
+            <p>Bienvenue dans l'outil de gestion de la Journée Internationale des Musées 2026, organisée par le Musée Virtuel de Guinée, Expertise France et les partenaires au Musée National de Guinée.</p>
+            <p>Enregistrez les participant·e·s à l'accueil, suivez les rotations des pôles d'activités et collectez les avis des visiteurs — tout en un seul endroit.</p>
+          </div>
+        </div>
 
         <div class="sd">
           <div class="sl"></div>
@@ -102,13 +117,13 @@
           </router-link>
         </div>
 
-        <!-- ── Side photo + texte d'intro ── -->
+        <!-- ── Chantier des collections (side-photo) + texte ── -->
         <div class="side-layout" v-reveal="0">
           <div class="side-photo-wrap">
             <img
               v-if="sideLoaded"
               :src="'/images/side-photo.jpg'"
-              alt="Musée Virtuel de Guinée"
+              alt="Chantier des collections — Musée National de Guinée"
               class="side-photo"
               @error="sideLoaded = false"
             />
@@ -118,9 +133,28 @@
             </div>
           </div>
           <div class="side-text">
-            <h3>Le Musée Virtuel de Guinée</h3>
-            <p>Espace de médiation, de recherche, de transmission et d'innovation, le Musée Virtuel de Guinée valorise le patrimoine culturel guinéen à travers des outils numériques accessibles à tous.</p>
+            <h3>Chantier des collections</h3>
+            <p>Identifier, documenter, organiser les collections du Musée National de Guinée. Le Musée Virtuel de Guinée accompagne ce chantier en numérisant les objets, en produisant des modèles 3D et en construisant les outils de médiation numérique.</p>
             <p>Pour cette édition 2026 de la JIM, le MVG coordonne les pôles d'activités, la programmation scientifique et les espaces de rencontre entre publics, chercheurs et communautés.</p>
+          </div>
+        </div>
+
+        <!-- ── Stand MVG : photo du stand en foire ── -->
+        <div class="sd" v-reveal="0">
+          <div class="sl"></div>
+          <span>Le MVG en action</span>
+          <div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div>
+        </div>
+
+        <div class="stand-photo-wrap" v-reveal="0">
+          <img
+            :src="'/images/stand-mvg.jpg'"
+            alt="Stand Musée Virtuel de Guinée"
+            class="stand-photo"
+            @error="($event.target as HTMLImageElement).parentElement!.style.display='none'"
+          />
+          <div class="stand-caption">
+            Le Musée Virtuel de Guinée · <em>Collecter, préserver, transmettre</em>
           </div>
         </div>
 
@@ -147,7 +181,7 @@ const sideLoaded = ref(true)
   border-radius: 24px;
   overflow: hidden;
   margin-bottom: 2rem;
-  background: linear-gradient(135deg, #5c3519 0%, #8f5b2c 40%, #f7bf39 100%);
+  background: linear-gradient(135deg, #3b1a08 0%, #6b3a18 50%, #f7bf39 100%);
   display: flex;
   align-items: flex-end;
 }
@@ -157,14 +191,14 @@ const sideLoaded = ref(true)
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center 30%;
   display: none;
 }
 .hero-banner.has-image .hero-banner-img { display: block; }
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(30, 15, 5, .75) 0%, rgba(30, 15, 5, .25) 55%, transparent 100%);
+  background: linear-gradient(to top, rgba(20, 8, 2, .82) 0%, rgba(20, 8, 2, .3) 55%, transparent 100%);
   display: flex;
   align-items: flex-end;
   padding: 2rem;
@@ -183,7 +217,7 @@ const sideLoaded = ref(true)
   font-weight: 900;
   line-height: 1.1;
   margin: 0 0 8px;
-  text-shadow: 0 2px 12px rgba(0,0,0,.4);
+  text-shadow: 0 2px 12px rgba(0,0,0,.5);
 }
 .hero-theme {
   font-size: .9rem;
@@ -201,7 +235,32 @@ const sideLoaded = ref(true)
 }
 .hero-partners .sep { opacity: .5; }
 
-/* ── Side layout ── */
+/* ── Affiche + intro ── */
+.affiche-intro {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-bottom: 2rem;
+}
+.affiche-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e8ddd0;
+  box-shadow: 0 8px 24px rgba(132,89,54,.15);
+}
+.affiche-img {
+  width: 100%;
+  display: block;
+}
+.affiche-text p {
+  font-size: .88rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 0.75rem;
+}
+
+/* ── Side layout (chantier des collections) ── */
 .side-layout {
   display: grid;
   grid-template-columns: 240px 1fr;
@@ -251,13 +310,41 @@ const sideLoaded = ref(true)
   margin-top: 0;
 }
 
+/* ── Stand photo ── */
+.stand-photo-wrap {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid #e8ddd0;
+  margin-bottom: 1rem;
+  position: relative;
+}
+.stand-photo {
+  width: 100%;
+  display: block;
+  max-height: 340px;
+  object-fit: cover;
+  object-position: center 40%;
+}
+.stand-caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem 1.2rem;
+  background: linear-gradient(to top, rgba(20,8,2,.75), transparent);
+  color: rgba(255,255,255,.9);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* ── Events grid ── */
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1.5rem;
   margin: 1.5rem 0;
 }
-
 .event-card {
   background: linear-gradient(135deg, #f8f3ed 0%, #fefcf9 100%);
   border: 1px solid #e8ddd0;
@@ -269,9 +356,7 @@ const sideLoaded = ref(true)
   position: relative;
   overflow: hidden;
   transition: all 0.32s cubic-bezier(.4, 0, .2, 1);
-  cursor: default;
 }
-
 .event-card::before {
   content: '';
   position: absolute;
@@ -281,124 +366,53 @@ const sideLoaded = ref(true)
   transition: opacity 0.3s ease;
   pointer-events: none;
 }
-
-.event-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 20px 44px rgba(132, 89, 54, 0.18);
-  border-color: var(--or);
-}
-
+.event-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 44px rgba(132, 89, 54, 0.18); border-color: var(--or); }
 .event-card:hover::before { opacity: 1; }
-
 .event-badge {
-  width: 32px;
-  height: 32px;
+  width: 32px; height: 32px;
   background: linear-gradient(135deg, var(--brun), var(--or));
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  margin-bottom: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; margin-bottom: 4px;
   transition: transform 0.3s ease;
 }
 .event-card:hover .event-badge { transform: rotate(8deg) scale(1.1); }
-
-.event-time {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--or);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.event-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--brun);
-}
-
-.event-desc {
-  font-size: 0.9rem;
-  color: #666;
-  line-height: 1.45;
-  flex: 1;
-}
-
+.event-time { font-size: 0.8rem; font-weight: 700; color: var(--or); text-transform: uppercase; letter-spacing: 0.5px; }
+.event-title { font-size: 1.05rem; font-weight: 700; color: var(--brun); }
+.event-desc { font-size: 0.9rem; color: #666; line-height: 1.45; flex: 1; }
 .event-link {
-  color: var(--or);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.88rem;
-  transition: all 0.25s ease;
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
+  color: var(--or); text-decoration: none; font-weight: 600;
+  font-size: 0.88rem; transition: all 0.25s ease; align-self: flex-start;
+  display: flex; align-items: center; gap: 6px; margin-top: 4px;
 }
+.event-link:hover { color: var(--rouge); gap: 10px; }
 
-.event-link:hover {
-  color: var(--rouge);
-  gap: 10px;
-}
-
-/* Navigation cards */
+/* ── Navigation cards ── */
 .nav-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
   margin-top: 1.5rem;
 }
-
 .nav-pcard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 1.5rem 1rem;
   background: linear-gradient(135deg, #f8f3ed 0%, #fefcf9 100%);
-  border: 2px solid #e8ddd0;
-  border-radius: 16px;
-  text-decoration: none;
-  color: var(--brun);
+  border: 2px solid #e8ddd0; border-radius: 16px;
+  text-decoration: none; color: var(--brun);
   transition: all 0.3s cubic-bezier(.4, 0, .2, 1);
-  gap: 0.75rem;
-  position: relative;
-  overflow: hidden;
+  gap: 0.75rem; position: relative; overflow: hidden;
 }
-
 .nav-pcard::after {
-  content: '';
-  position: absolute;
-  inset: 0;
+  content: ''; position: absolute; inset: 0;
   background: linear-gradient(135deg, rgba(132,89,54,.05), rgba(249,178,51,.08));
-  opacity: 0;
-  transition: opacity 0.3s;
+  opacity: 0; transition: opacity 0.3s;
 }
 .nav-pcard:hover::after { opacity: 1; }
-
-.nav-pcard:hover {
-  transform: translateY(-5px);
-  border-color: var(--or);
-  box-shadow: 0 12px 32px rgba(132, 89, 54, .16);
-}
-
-.nav-pcard-icon {
-  color: var(--or);
-  transition: transform 0.3s ease, color 0.3s ease;
-}
-.nav-pcard:hover .nav-pcard-icon {
-  color: var(--brun);
-  transform: scale(1.15);
-}
-
-.nav-pcard-name {
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: 0.3px;
-}
+.nav-pcard:hover { transform: translateY(-5px); border-color: var(--or); box-shadow: 0 12px 32px rgba(132, 89, 54, .16); }
+.nav-pcard-icon { color: var(--or); transition: transform 0.3s ease, color 0.3s ease; }
+.nav-pcard:hover .nav-pcard-icon { color: var(--brun); transform: scale(1.15); }
+.nav-pcard-name { font-size: 0.85rem; font-weight: 700; text-align: center; letter-spacing: 0.3px; }
 
 @media (max-width: 768px) {
   .events-grid { grid-template-columns: 1fr; }
@@ -407,5 +421,6 @@ const sideLoaded = ref(true)
   .hero-title { font-size: 1.2rem; }
   .side-layout { grid-template-columns: 1fr; }
   .side-photo-wrap { aspect-ratio: 16/7; }
+  .affiche-intro { grid-template-columns: 110px 1fr; gap: 1rem; }
 }
 </style>
