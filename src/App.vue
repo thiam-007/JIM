@@ -69,7 +69,25 @@
       </RouterView>
     </main>
 
-    <footer>Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em></footer>
+    <footer>
+      <div class="footer-partners">
+        <div class="footer-partners-label">Organisé avec le soutien de</div>
+        <div class="footer-logos">
+          <div v-for="p in partners" :key="p.id" class="footer-logo-item">
+            <img
+              :src="'/images/partenaires/' + p.file"
+              :alt="p.name"
+              class="footer-logo-img"
+              @error="$event.target.style.display='none'; $event.target.nextElementSibling.style.display='flex'"
+            />
+            <span class="footer-logo-fallback" style="display:none">{{ p.name }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="footer-baseline">
+        Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -83,6 +101,14 @@ const route = useRoute()
 const airtable = useAirtableStore()
 const tokenInput = ref(airtable.token)
 const logoLoaded = ref(true)
+
+const partners = [
+  { id: 1, name: 'Ambassade de France en Guinée',     file: 'ambassade-france.jpeg' },
+  { id: 2, name: 'Ministère de la Culture (MCA)',      file: 'ministere-culture.jpeg' },
+  { id: 3, name: 'Musée National de Guinée',           file: 'musee-national.jpeg'   },
+  { id: 4, name: 'Expertise France · Groupe AFD',      file: 'expertise-france.jpeg' },
+  { id: 5, name: 'Fonds franco-allemand / Prov. Research Fund', file: 'fonds-franco-allemand.jpeg' },
+]
 
 const connected = computed(() => airtable.isConnected)
 
@@ -262,13 +288,80 @@ header {
 /* ─── Main / Footer ─── */
 main { max-width: 1120px; margin: 28px auto 60px; padding: 0 20px; }
 footer {
-  text-align: center; padding: 26px 10px 12px;
-  color: var(--brun); font-size: .78rem; font-weight: 700;
-  letter-spacing: 1.4px; text-transform: uppercase;
-  border-top: 1px solid rgba(132, 89, 54, .12); margin-top: 20px;
+  border-top: 1px solid rgba(132, 89, 54, .12);
+  margin-top: 20px;
+  padding: 32px 10px 16px;
   animation: fadeInUp 0.8s ease-out 0.4s backwards;
 }
-footer em { color: var(--rouge); font-style: normal; }
+
+/* ─ Partenaires ─ */
+.footer-partners {
+  margin-bottom: 24px;
+}
+.footer-partners-label {
+  text-align: center;
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+.footer-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 28px;
+}
+.footer-logo-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.footer-logo-img {
+  height: 52px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  filter: grayscale(30%) opacity(0.85);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+.footer-logo-img:hover {
+  filter: grayscale(0%) opacity(1);
+  transform: scale(1.08);
+}
+.footer-logo-fallback {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  padding: 6px 12px;
+  border: 1px solid #e8ddd0;
+  border-radius: 8px;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─ Baseline ─ */
+.footer-baseline {
+  text-align: center;
+  color: var(--brun);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  padding-top: 20px;
+  border-top: 1px solid rgba(132, 89, 54, .07);
+}
+.footer-baseline em { color: var(--rouge); font-style: normal; }
+
+@media (max-width: 600px) {
+  .footer-logos { gap: 18px; }
+  .footer-logo-img { height: 38px; max-width: 90px; }
+}
 
 /* ─── Page transitions ─── */
 .page-enter-active { animation: pageEnter 0.38s cubic-bezier(.22, 1, .36, 1); }
