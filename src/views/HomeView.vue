@@ -1,5 +1,31 @@
 <template>
   <section class="home-intro">
+
+    <!-- ── Bannière hero ── -->
+    <div class="hero-banner" :class="{ 'has-image': bannerLoaded }">
+      <img
+        src="/images/banner.jpg"
+        alt="Bannière JIM 2026"
+        class="hero-banner-img"
+        @load="bannerLoaded = true"
+        @error="bannerLoaded = false"
+      />
+      <div class="hero-overlay">
+        <div class="hero-content">
+          <div class="hero-date">16 – 18 mai 2026 · Conakry, Guinée</div>
+          <h2 class="hero-title">Journée Internationale des Musées</h2>
+          <p class="hero-theme">« Les musées unissent un monde divisé »</p>
+          <div class="hero-partners">
+            <span>Musée Virtuel de Guinée</span>
+            <span class="sep">·</span>
+            <span>Expertise France</span>
+            <span class="sep">·</span>
+            <span>Prov-Gui · Repat-Gui</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-card">
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="landmark" :size="26" /></div>
@@ -75,17 +101,156 @@
             <div class="nav-pcard-name">Suivi par pôle</div>
           </router-link>
         </div>
+
+        <!-- ── Side photo + texte d'intro ── -->
+        <div class="side-layout" v-reveal="0">
+          <div class="side-photo-wrap">
+            <img
+              v-if="sideLoaded"
+              src="/images/side-photo.jpg"
+              alt="Musée Virtuel de Guinée"
+              class="side-photo"
+              @error="sideLoaded = false"
+            />
+            <div v-else class="side-photo-placeholder">
+              <AppIcon name="landmark" :size="48" />
+              <span>Photo à venir</span>
+            </div>
+          </div>
+          <div class="side-text">
+            <h3>Le Musée Virtuel de Guinée</h3>
+            <p>Espace de médiation, de recherche, de transmission et d'innovation, le Musée Virtuel de Guinée valorise le patrimoine culturel guinéen à travers des outils numériques accessibles à tous.</p>
+            <p>Pour cette édition 2026 de la JIM, le MVG coordonne les pôles d'activités, la programmation scientifique et les espaces de rencontre entre publics, chercheurs et communautés.</p>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
+
+const bannerLoaded = ref(false)
+const sideLoaded = ref(true)
 </script>
 
 <style scoped>
+/* ── Hero banner ── */
+.hero-banner {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, #5c3519 0%, #8f5b2c 40%, #f7bf39 100%);
+  display: flex;
+  align-items: flex-end;
+}
+.hero-banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: none;
+}
+.hero-banner.has-image .hero-banner-img { display: block; }
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(30, 15, 5, .75) 0%, rgba(30, 15, 5, .25) 55%, transparent 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 2rem;
+}
+.hero-content { color: #fff; }
+.hero-date {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: .85;
+  margin-bottom: 6px;
+}
+.hero-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0 0 8px;
+  text-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+.hero-theme {
+  font-size: .9rem;
+  font-style: italic;
+  opacity: .9;
+  margin: 0 0 10px;
+}
+.hero-partners {
+  font-size: .72rem;
+  opacity: .75;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+.hero-partners .sep { opacity: .5; }
+
+/* ── Side layout ── */
+.side-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e8ddd0;
+}
+.side-photo-wrap {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e8ddd0;
+  background: linear-gradient(135deg, #f0e4d4, #e8d5bc);
+}
+.side-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.side-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: #bba98a;
+  font-size: .78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.side-text h3 {
+  color: var(--brun);
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+.side-text p {
+  font-size: .88rem;
+  color: #555;
+  line-height: 1.6;
+  margin-top: 0;
+}
+
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -238,5 +403,9 @@ import AppIcon from '../components/AppIcon.vue'
 @media (max-width: 768px) {
   .events-grid { grid-template-columns: 1fr; }
   .nav-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-banner { height: 220px; }
+  .hero-title { font-size: 1.2rem; }
+  .side-layout { grid-template-columns: 1fr; }
+  .side-photo-wrap { aspect-ratio: 16/7; }
 }
 </style>

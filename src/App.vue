@@ -1,7 +1,16 @@
 <template>
   <div class="app-shell">
     <header>
-      <div class="logo-badge">MVG</div>
+      <div class="logo-badge">
+        <img
+          v-if="logoLoaded"
+          src="/images/logo.png"
+          alt="Logo Musée Virtuel de Guinée"
+          class="logo-img"
+          @error="logoLoaded = false"
+        />
+        <span v-else>MVG</span>
+      </div>
       <div class="logo-text">
         <h1>Musée Virtuel de Guinée</h1>
         <span>Journée Internationale des Musées · 16 – 18 Mai 2026</span>
@@ -73,6 +82,7 @@ import AppIcon from './components/AppIcon.vue'
 const route = useRoute()
 const airtable = useAirtableStore()
 const tokenInput = ref(airtable.token)
+const logoLoaded = ref(true)
 
 const connected = computed(() => airtable.isConnected)
 
@@ -107,8 +117,14 @@ html, body { min-height: 100%; }
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
-  background: radial-gradient(circle at top left, rgba(249, 178, 51, .12), transparent 24%),
-              linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #f0dcc6 100%);
+  background-color: #fef9f2;
+  background-image:
+    url('/images/background.jpg'),
+    radial-gradient(circle at top left, rgba(249, 178, 51, .12), transparent 24%),
+    linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #f0dcc6 100%);
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
   color: var(--noir);
 }
 button, input, textarea, select { font: inherit; }
@@ -138,7 +154,13 @@ header {
   color: var(--brun); letter-spacing: -1px;
   border: 3px solid rgba(255,255,255,.8);
   flex-shrink: 0;
+  overflow: hidden;
   animation: float 3s ease-in-out infinite;
+}
+.logo-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 .logo-text { flex: 1; }
 .logo-text h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.15; margin: 0; }
