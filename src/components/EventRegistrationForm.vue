@@ -111,7 +111,7 @@ const sessions = [
   { id: '9',  time: '20h00 – 22h00',      location: 'CCFG',                                    title: 'Cocktail',                                         audience: 'Sur invitation uniquement' },
   { id: '10', time: '8h30 – 10h00',       location: 'Salle des spectacles / salle de conférence', title: 'Session 1 « La voix aux communautés »',        audience: 'Invités du projet PROVGUI' },
   { id: '11', time: '10h00 – 10h30',      location: 'À préciser',                              title: 'Pause-café',                                       audience: 'Invités du projet PROVGUI' },
-  { id: '12', time: '10h30 – 12h30',      location: 'Salle des spectacles / salle de conférence', title: 'Temps d'échange',                              audience: 'Invités du projet PROVGUI' },
+  { id: '12', time: '10h30 – 12h30',      location: 'Salle des spectacles / salle de conférence', title: "Temps d'échange",                              audience: 'Invités du projet PROVGUI' },
   { id: '13', time: '12h30 – 13h30',      location: 'À préciser',                              title: 'Pause déjeuner',                                   audience: 'Invités du projet PROVGUI' },
   { id: '14', time: '13h30 – 15h00',      location: 'Salle des spectacles',                    title: 'Atelier participatif',                             audience: 'Invités du projet PROVGUI' },
   { id: '15', time: '15h00 – 16h00',      location: 'Salle des spectacle',                     title: 'Restitution en plénière',                          audience: 'Invités du projet PROVGUI' },

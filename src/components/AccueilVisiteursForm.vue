@@ -66,7 +66,7 @@
 
         <button class="bsub bsub-a" v-ripple :disabled="submitting" @click="submitForm">
           <AppIcon :name="submitting ? 'loader' : 'check'" :size="18" />
-          <span>{{ submitting ? 'Enregistrement…' : 'Enregistrer l'arrivée' }}</span>
+          <span>{{ submitting ? 'Enregistrement…' : "Enregistrer l'arrivée" }}</span>
         </button>
 
         <div class="emsg" :class="{ on: errorMessage }">

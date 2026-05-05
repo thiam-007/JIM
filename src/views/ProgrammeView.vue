@@ -97,7 +97,7 @@ const totalRegistrations = computed(() => airtable.totalRegistrations)
 const sessionCounts = computed(() => airtable.sessionCounts)
 
 const officialProgram = [
-  { time: '8h30', location: 'Salle de conférence', title: 'Accueil des participant·e·s', speakers: 'Équipe d'organisation', audience: 'Invités PROVGUI' },
+  { time: '8h30', location: 'Salle de conférence', title: 'Accueil des participant·e·s', speakers: "Équipe d'organisation", audience: 'Invités PROVGUI' },
   { time: '9h00 – 9h45', location: 'Salle de conférence', title: 'Présentation des projets <strong>PROV-GUI</strong> et <strong>REPAT-GUI</strong>', speakers: 'Amirou Conté · Ismaïlou Baldé · Marie‑Yvonne Curtis', audience: 'Invités PROVGUI' },
   { time: '9h45 – 10h45', location: 'Salle de conférence', title: 'Interventions des collaborateurs PROV‑GUI (France / Allemagne — dont distanciel)', speakers: 'Gaëlle Beaujean · Soizic Le Cornec · Didier Houénoudé · Barbara Plankensteiner', audience: 'Invités PROVGUI' },
   { time: '10h45 – 11h00', location: 'À préciser', title: 'Pause-café', speakers: '—', audience: 'Invités PROVGUI' },
@@ -111,9 +111,9 @@ const officialProgram = [
 const atelierProgram = [
   { time: '8h30 – 10h00', location: 'Salle des spectacles / conférence', title: 'Session 1 « La voix aux communautés »', objective: 'Présentations, attentes, mise en réseau', audience: 'Invités PROVGUI' },
   { time: '10h00 – 10h30', location: 'À préciser', title: 'Pause-café', objective: '—', audience: 'Invités PROVGUI' },
-  { time: '10h30 – 12h30', location: 'Salle des spectacles / conférence', title: 'Temps d'échange', objective: 'Retours sur PROV-GUI & REPAT-GUI, coopération musées / universités / communautés', audience: 'Invités PROVGUI' },
+  { time: '10h30 – 12h30', location: 'Salle des spectacles / conférence', title: "Temps d'échange", objective: 'Retours sur PROV-GUI & REPAT-GUI, coopération musées / universités / communautés', audience: 'Invités PROVGUI' },
   { time: '12h30 – 13h30', location: 'À préciser', title: 'Pause déjeuner', objective: '—', audience: 'Invités PROVGUI' },
-  { time: '13h30 – 15h00', location: 'Salle des spectacles', title: 'Atelier participatif (travail en groupes)', objective: 'Imaginer comment présenter les objets aujourd'hui', audience: 'Invités PROVGUI' },
+  { time: '13h30 – 15h00', location: 'Salle des spectacles', title: 'Atelier participatif (travail en groupes)', objective: "Imaginer comment présenter les objets aujourd'hui", audience: 'Invités PROVGUI' },
   { time: '15h00 – 16h00', location: 'Salle des spectacle', title: 'Restitution en plénière', objective: 'Partager les conclusions des groupes', audience: 'Invités PROVGUI' },
   { time: 'À partir de 16h00', location: 'Salle de spectacle', title: 'Conférence « Patrimoine & arts contemporains »', objective: 'Échange grand public — lien création contemporaine et patrimoine', audience: 'Tout public' },
   { time: '18h00', location: 'Espace extérieur', title: 'DJ & Concert (Samaya, Yudini, Med C, Sheba Queen, Espoirs de Coronthie)', objective: 'Soirée musicale et événement Tout public', audience: 'Tout public' }

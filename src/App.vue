@@ -32,7 +32,7 @@
         <AppIcon :name="connected ? 'check-circle' : 'key'" :size="22" />
       </span>
       <div style="flex:1">
-        <strong>{{ connected ? 'Connexion Airtable active — enregistrement prêt.' : 'Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement' }}</strong>
+        <strong>{{ connected ? 'Connexion Airtable active — enregistrement prêt.' : "Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement" }}</strong>
         <div class="api-token-row">
           <input
             type="password"
