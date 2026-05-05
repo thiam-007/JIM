@@ -57,20 +57,40 @@
 
         <div class="avis-section" v-if="airtable.avisRecords.length" v-reveal="0">
           <h3>Avis des visiteurs</h3>
+
+          <div class="pole-distribution" v-if="poleDistribution.length">
+            <div class="pole-dist-title">Pôle préféré</div>
+            <div class="pole-dist-list">
+              <div class="pole-dist-item" v-for="p in poleDistribution" :key="p.pole">
+                <div class="pole-dist-meta">
+                  <span class="pole-dist-name">{{ p.pole }}</span>
+                  <span class="pole-dist-count">{{ p.count }} visiteur{{ p.count > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="session-bar-bg">
+                  <div class="session-bar" :style="{ width: `${p.width}%` }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="avis-list">
             <div
               class="avis-item"
               v-for="(avis, index) in airtable.avisRecords.slice(0, 10)"
-              :key="avis.id"
+              :key="index"
               :style="{ animationDelay: `${index * 50}ms` }"
             >
+              <div class="avis-header">
+                <span class="avis-name">{{ avis['Nom et Prénom'] || 'Visiteur anonyme' }}</span>
+                <span class="avis-pole-badge" v-if="avis['Pôle préféré']">{{ avis['Pôle préféré'] }}</span>
+              </div>
               <div class="avis-rating">
-                <span v-for="n in 5" :key="n" class="avis-star" :class="{ lit: n <= (avis.Note || 0) }">
+                <span v-for="n in 5" :key="n" class="avis-star" :class="{ lit: n <= (avis['Note de satisfaction'] || 0) }">
                   <AppIcon name="star" :size="14" />
                 </span>
-                <span class="avis-score">{{ avis.Note || 'N/A' }}/5</span>
+                <span class="avis-score">{{ avis['Note de satisfaction'] || 'N/A' }}/5</span>
               </div>
-              <div class="avis-comment">{{ avis.Commentaire || 'Aucun commentaire' }}</div>
+              <div class="avis-comment" v-if="avis['Découverte']">{{ avis['Découverte'] }}</div>
               <div class="avis-date">{{ avis.Date || 'Date inconnue' }}</div>
             </div>
           </div>
@@ -107,8 +127,19 @@ const sessionCount = computed(() => Object.keys(airtable.sessionCounts).length)
 const sessionTitles = computed(() => Object.keys(airtable.sessionCounts).sort())
 const totalAvis = computed(() => airtable.avisRecords.length)
 const averageRating = computed(() => {
-  const ratings = airtable.avisRecords.map(r => parseFloat(r.Note || 0)).filter(r => r > 0)
+  const ratings = airtable.avisRecords.map(r => parseFloat(r['Note de satisfaction'] || 0)).filter(r => r > 0)
   return ratings.length ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0
+})
+
+const poleDistribution = computed(() => {
+  const counts = {}
+  airtable.avisRecords.forEach(r => {
+    const pole = r['Pôle préféré']
+    if (pole) counts[pole] = (counts[pole] || 0) + 1
+  })
+  const items = Object.entries(counts).map(([pole, count]) => ({ pole, count })).sort((a, b) => b.count - a.count)
+  const max = items[0]?.count || 1
+  return items.map(item => ({ ...item, width: (item.count / max) * 100 }))
 })
 
 // Animated counter
@@ -214,8 +245,22 @@ watch(
 }
 
 .avis-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e8ddd0; }
-.avis-section h3 { margin-bottom: 1rem; }
+.avis-section h3 { margin-bottom: 1.2rem; }
 .avis-list { margin-bottom: 1rem; }
+
+.pole-distribution {
+  background: rgba(255,255,255,.7);
+  border: 1px solid #e8ddd0;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.pole-dist-title { font-weight: 700; color: var(--brun); font-size: .85rem; margin-bottom: 0.8rem; text-transform: uppercase; letter-spacing: .04em; }
+.pole-dist-item { margin-bottom: 0.7rem; }
+.pole-dist-item:last-child { margin-bottom: 0; }
+.pole-dist-meta { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+.pole-dist-name { font-weight: 600; font-size: .88rem; color: var(--brun); }
+.pole-dist-count { font-size: .82rem; color: var(--or); }
 
 .avis-item {
   padding: 1rem 1.2rem;
@@ -228,6 +273,23 @@ watch(
 }
 .avis-item:hover { transform: translateX(4px); }
 
+.avis-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.avis-name { font-weight: 700; color: var(--brun); font-size: .9rem; }
+.avis-pole-badge {
+  font-size: .72rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--brun), var(--or));
+  color: white;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
 .avis-rating {
   display: flex;
   align-items: center;
@@ -237,7 +299,7 @@ watch(
 .avis-star { color: #ddd; transition: color 0.15s; }
 .avis-star.lit { color: var(--gold); }
 .avis-score { font-weight: 700; color: var(--or); font-size: .82rem; margin-left: 6px; }
-.avis-comment { font-size: .88rem; color: var(--noir); margin-bottom: 0.3rem; }
+.avis-comment { font-size: .88rem; color: var(--noir); margin-bottom: 0.3rem; line-height: 1.5; }
 .avis-date { font-size: .75rem; color: #999; }
 
 .more-hint { font-size: .8rem; color: #999; font-style: italic; margin-top: 0.5rem; }
