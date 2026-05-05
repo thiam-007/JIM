@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JIM 2026 — Musée Virtuel de Guinée</title>
+  <style>
+    :root {
+      --or:#845936;--rouge:#B1222A;--brun:#593716;--terre:#8C3B2A;
+      --gold:#F9B233;--blanc:#FFFFFF;--noir:#1a1008;--creme:#fdf6ed;
+      --shadow:0 8px 40px rgba(132,89,54,.18);--radius:14px;
+      --trans:all .26s cubic-bezier(.4,0,.2,1);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:Tahoma,'Segoe UI',sans-serif;background:var(--creme);color:var(--noir);min-height:100vh;}
+
+    header{background:var(--brun);background-image:repeating-linear-gradient(45deg,rgba(249,178,51,.06) 0,rgba(249,178,51,.06) 2px,transparent 2px,transparent 14px);color:var(--blanc);padding:18px 28px;display:flex;align-items:center;gap:16px;box-shadow:0 4px 24px rgba(89,55,22,.35);position:sticky;top:0;z-index:100;}
+    .logo-badge{width:52px;height:52px;background:var(--or);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:var(--blanc);letter-spacing:-1px;border:3px solid var(--gold);flex-shrink:0;}
+    .logo-text{flex:1;}
+    .logo-text h1{font-size:1.2rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;line-height:1.2;}
+    .logo-text span{font-size:.68rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;display:block;margin-top:3px;}
+    .jim-badge{background:var(--rouge);color:var(--blanc);padding:6px 14px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:2px solid rgba(255,255,255,.2);white-space:nowrap;}
+
+    .nav-tabs{background:var(--or);display:flex;overflow-x:auto;box-shadow:0 3px 16px rgba(89,55,22,.2);}
+    .nav-tab{flex:1;min-width:150px;padding:14px 18px;background:none;border:none;color:rgba(255,255,255,.75);cursor:pointer;font-family:Tahoma,sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;transition:var(--trans);border-bottom:3px solid transparent;display:flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;}
+    .nav-tab:hover{color:var(--blanc);background:rgba(255,255,255,.1);}
+    .nav-tab.active{color:var(--blanc);border-bottom-color:var(--blanc);background:rgba(255,255,255,.15);}
+
+    .api-banner{margin:20px 28px 0;padding:14px 20px;border-radius:var(--radius);display:flex;align-items:flex-start;gap:12px;font-size:.82rem;font-weight:600;}
+    .api-banner.config{background:#fff8e1;border:2px solid var(--gold);color:#7a5500;}
+    .api-banner.connected{background:#e8f5e9;border:2px solid #4caf50;color:#2e7d32;}
+    .api-icon{font-size:1.3rem;flex-shrink:0;margin-top:2px;}
+    .api-token-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;align-items:center;}
+    .api-token-input{flex:1;min-width:260px;padding:8px 12px;border:2px solid var(--gold);border-radius:8px;font-family:'Courier New',monospace;font-size:.8rem;background:var(--blanc);color:var(--brun);outline:none;}
+    .api-token-input:focus{border-color:var(--rouge);}
+    .btn-connect{background:var(--brun);color:var(--blanc);border:none;padding:9px 20px;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;transition:var(--trans);white-space:nowrap;}
+    .btn-connect:hover{background:var(--rouge);}
+
+    main{max-width:820px;margin:24px auto;padding:0 20px 60px;}
+    .form-panel{display:none;}
+    .form-panel.active{display:block;animation:slideIn .32s ease;}
+    @keyframes slideIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+    .form-card{background:var(--blanc);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+    .fh{padding:26px 30px 20px;position:relative;overflow:hidden;}
+    .fh::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(60deg,rgba(255,255,255,.06) 0,rgba(255,255,255,.06) 1px,transparent 1px,transparent 18px);}
+    .fh-a{background:linear-gradient(135deg,var(--brun),var(--or));}
+    .fh-s{background:linear-gradient(135deg,var(--rouge),var(--terre));}
+    .fh-v{background:linear-gradient(135deg,#1a3a2a,#2d6a4a);}
+    .fh-icon{font-size:2.2rem;margin-bottom:8px;position:relative;z-index:1;}
+    .fh-title{font-size:1.35rem;font-weight:900;color:var(--blanc);text-transform:uppercase;letter-spacing:1.5px;position:relative;z-index:1;}
+    .fh-sub{color:rgba(255,255,255,.78);font-size:.78rem;margin-top:5px;position:relative;z-index:1;}
+
+    .fb{padding:28px 30px;}
+    .fg{margin-bottom:20px;}
+    .fr{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    @media(max-width:580px){.fr{grid-template-columns:1fr}.fb{padding:18px}}
+
+    label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--brun);margin-bottom:6px;}
+    .req{color:var(--rouge);margin-left:3px;}
+    input[type=text],input[type=email],input[type=tel],input[type=time],input[type=number],select,textarea{width:100%;padding:12px 15px;border:2px solid #e8ddd0;border-radius:10px;font-family:Tahoma,sans-serif;font-size:.88rem;color:var(--noir);background:var(--creme);transition:var(--trans);outline:none;appearance:none;}
+    input:focus,select:focus,textarea:focus{border-color:var(--or);background:var(--blanc);box-shadow:0 0 0 4px rgba(132,89,54,.09);}
+    select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23845936' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+    textarea{resize:vertical;min-height:90px;}
+
+    .sd{display:flex;align-items:center;gap:10px;margin:24px 0 18px;}
+    .sd span{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--or);white-space:nowrap;}
+    .sl{flex:1;height:2px;background:linear-gradient(90deg,var(--or),transparent);border-radius:1px;}
+
+    .gs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .gb{padding:14px 10px;border:3px solid #e8ddd0;border-radius:12px;cursor:pointer;text-align:center;transition:var(--trans);font-weight:800;font-size:.88rem;text-transform:uppercase;background:var(--blanc);user-select:none;}
+    .gb:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1);}
+    .gb .dot{font-size:1.3rem;display:block;margin-bottom:4px;}
+    .gb.rouge{border-color:#dc3545;color:#dc3545;}.gb.jaune{border-color:#d4a017;color:#8a6600;}.gb.vert{border-color:#28a745;color:#28a745;}
+    .gb.rouge.sel{background:#dc3545;color:#fff;}.gb.jaune.sel{background:#d4a017;color:#fff;}.gb.vert.sel{background:#28a745;color:#fff;}
+
+    .rg{display:flex;flex-wrap:wrap;gap:9px;}
+    .rp{padding:9px 16px;border:2px solid #e8ddd0;border-radius:30px;cursor:pointer;transition:var(--trans);font-size:.82rem;font-weight:600;color:var(--brun);user-select:none;}
+    .rp:hover{border-color:var(--or);background:rgba(132,89,54,.05);}
+    .rp.sel{background:var(--or);border-color:var(--or);color:var(--blanc);}
+
+    .pc{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    @media(max-width:480px){.pc,.gs{grid-template-columns:1fr}}
+    .pcard{border:2px solid #e8ddd0;border-radius:var(--radius);padding:16px 12px;text-align:center;cursor:pointer;transition:var(--trans);position:relative;}
+    .pcard:hover{border-color:var(--or);transform:translateY(-2px);box-shadow:0 6px 18px rgba(132,89,54,.14);}
+    .pcard.sel{border-color:var(--rouge);background:rgba(177,34,42,.04);box-shadow:0 4px 16px rgba(177,34,42,.18);}
+    .pi{font-size:1.9rem;margin-bottom:7px;}
+    .pn{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--brun);}
+    .pcard.sel .pn{color:var(--rouge);}
+    .pck{position:absolute;top:7px;right:10px;font-size:.95rem;opacity:0;color:var(--rouge);transition:var(--trans);}
+    .pcard.sel .pck{opacity:1;}
+
+    /* ── NEWSLETTER TOGGLE ── */
+    .nl{display:flex;align-items:center;gap:14px;padding:15px 18px;background:linear-gradient(135deg,rgba(42,110,60,.06),rgba(76,175,80,.08));border-radius:12px;border:2px solid rgba(42,110,60,.15);cursor:pointer;transition:var(--trans);}
+    .nl:hover{border-color:#4caf50;}
+    .sw{width:46px;height:24px;background:#ccc;border-radius:12px;position:relative;transition:background .25s;flex-shrink:0;}
+    .sw::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform .25s;box-shadow:0 2px 4px rgba(0,0,0,.2);}
+    .nl.on .sw{background:#4caf50;}
+    .nl.on .sw::after{transform:translateX(22px);}
+    .nl-lbl{font-size:.85rem;color:#2e6b3a;font-weight:600;}
+
+    .stars{display:flex;gap:6px;}
+    .star{font-size:2rem;cursor:pointer;color:#ddd;transition:color .15s,transform .15s;}
+    .star:hover,.star.on{color:var(--gold);transform:scale(1.18);}
+    .star-hint{font-size:.78rem;color:#888;margin-top:5px;font-style:italic;}
+
+    .id-disp{background:var(--creme);border:2px solid #e8ddd0;border-radius:10px;padding:12px 15px;font-family:'Courier New',monospace;font-size:1rem;font-weight:700;color:var(--brun);letter-spacing:2px;min-height:44px;display:flex;align-items:center;}
+    .id-disp.filled{border-color:var(--or);background:rgba(132,89,54,.05);color:var(--rouge);}
+
+    .bsub{width:100%;padding:17px;color:var(--blanc);border:none;border-radius:12px;font-family:Tahoma,sans-serif;font-size:.95rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:var(--trans);margin-top:8px;box-shadow:0 6px 24px rgba(89,55,22,.28);}
+    .bsub:hover{transform:translateY(-2px);filter:brightness(1.08);}
+    .bsub:disabled{opacity:.65;cursor:not-allowed;pointer-events:none;}
+    .bsub-a{background:linear-gradient(135deg,var(--brun),var(--or));}
+    .bsub-s{background:linear-gradient(135deg,var(--rouge),var(--terre));}
+    .bsub-v{background:linear-gradient(135deg,#1a3a2a,#2d6a4a);}
+
+    .emsg{display:none;background:#ffeaea;border:2px solid var(--rouge);border-radius:10px;padding:12px 16px;color:var(--rouge);font-size:.83rem;font-weight:600;margin-top:12px;}
+    .emsg.on{display:block;}
+    .omsg{display:none;background:linear-gradient(135deg,#e8f5e9,#f1f8e9);border:2px solid #4caf50;border-radius:var(--radius);padding:28px;text-align:center;margin-top:18px;}
+    .omsg.on{display:block;animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
+    @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+    .oico{font-size:2.8rem;display:block;margin-bottom:8px;}
+    .omsg h3{color:#2e7d32;font-size:1rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+    .omsg p{color:#555;font-size:.84rem;}
+    .breset{margin-top:14px;padding:9px 22px;background:var(--brun);color:var(--blanc);border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;transition:var(--trans);}
+    .breset:hover{background:var(--rouge);}
+
+    footer{text-align:center;padding:22px;color:var(--or);font-size:.72rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border-top:2px solid rgba(132,89,54,.12);margin-top:16px;}
+    footer em{color:var(--rouge);font-style:normal;}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-badge">MVG</div>
+  <div class="logo-text">
+    <h1>Musée Virtuel de Guinée</h1>
+    <span>Journée Internationale des Musées · 16 – 18 Mai 2026</span>
+  </div>
+  <div class="jim-badge">JIM 2026</div>
+</header>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="switchTab('a')" id="tab-a">🏛️ Accueil Visiteurs</button>
+  <button class="nav-tab" onclick="switchTab('s')" id="tab-s">📊 Suivi par Pôle</button>
+  <button class="nav-tab" onclick="switchTab('v')" id="tab-v">⭐ Avis Visiteurs</button>
+</nav>
+
+<div class="api-banner config" id="api-banner">
+  <span class="api-icon">🔑</span>
+  <div style="flex:1">
+    <strong>Connexion Airtable — Entrez votre Personal Access Token pour activer l'enregistrement</strong>
+    <div class="api-token-row">
+      <input type="password" class="api-token-input" id="api-token" placeholder="patXXXXXXXXXXXXXX..."/>
+      <button class="btn-connect" onclick="connectAT()">🔗 Connecter</button>
+    </div>
+    <div style="font-size:.7rem;margin-top:5px;opacity:.8;">
+      🗂 Base : <strong>JIM 2026 — Musée Virtuel de Guinée</strong> (appqgfu3Ten3zehfb) ·
+      Token : airtable.com → Account → Developer hub → Personal access tokens
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- ═══════════════════════════════════ -->
+  <!--        ACCUEIL DES VISITEURS        -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="form-panel active" id="panel-a">
+    <div class="form-card">
+      <div class="fh fh-a">
+        <div class="fh-icon">🏛️</div>
+        <div class="fh-title">Accueil des Visiteurs</div>
+        <div class="fh-sub">Enregistrement à l'entrée · JIM 2026 · Musée National de Guinée</div>
+      </div>
+      <div class="fb">
+
+        <div class="fr">
+          <div class="fg">
+            <label>Heure d'arrivée <span class="req">*</span></label>
+            <input type="time" id="a-h"/>
+          </div>
+          <div class="fg">
+            <label>Nombre de personnes <span class="req">*</span></label>
+            <input type="number" id="a-n" min="1" max="100" placeholder="Ex : 12"/>
+          </div>
+        </div>
+
+        <div class="sd"><div class="sl"></div><span>Attribution du groupe</span><div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div></div>
+
+        <div class="fg">
+          <label>Groupe attribué <span class="req">*</span></label>
+          <div class="gs">
+            <div class="gb rouge" onclick="pickG('rouge')"><span class="dot">🔴</span>Groupe Rouge</div>
+            <div class="gb jaune" onclick="pickG('jaune')"><span class="dot">🟡</span>Groupe Jaune</div>
+            <div class="gb vert"  onclick="pickG('vert')"><span class="dot">🟢</span>Groupe Vert</div>
+          </div>
+          <input type="hidden" id="a-gr"/>
+        </div>
+
+        <div class="fg">
+          <label>Groupe ID <span class="req">*</span></label>
+          <div class="id-disp" id="a-id-d">—</div>
+          <input type="hidden" id="a-gid"/>
+          <div style="font-size:.7rem;color:#999;margin-top:4px">Généré automatiquement selon la couleur du groupe.</div>
+        </div>
+
+        <div class="sd"><div class="sl"></div><span>Profil du public</span><div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div></div>
+
+        <div class="fg">
+          <label>Profil du public <span class="req">*</span></label>
+          <div class="rg" id="a-pr-g">
+            <div class="rp" onclick="pickP(this,'a-pr-g','a-pr')">🎓 Étudiant(e)</div>
+            <div class="rp" onclick="pickP(this,'a-pr-g','a-pr')">🧒 Jeune public</div>
+            <div class="rp" onclick="pickP(this,'a-pr-g','a-pr')">💼 Professionnel(le)</div>
+            <div class="rp" onclick="pickP(this,'a-pr-g','a-pr')">👥 Grand public</div>
+            <div class="rp" onclick="pickP(this,'a-pr-g','a-pr')">✨ Autres</div>
+          </div>
+          <input type="hidden" id="a-pr"/>
+        </div>
+
+        <button class="bsub bsub-a" id="btn-a" onclick="sub('a')">
+          <span id="btxt-a">✓ Enregistrer l'arrivée</span>
+        </button>
+        <div class="emsg" id="em-a">⚠️ Veuillez remplir tous les champs obligatoires.</div>
+        <div class="omsg" id="om-a">
+          <span class="oico">✅</span>
+          <h3>Arrivée enregistrée !</h3>
+          <p>Le groupe a bien été accueilli et sauvegardé dans Airtable.</p>
+          <button class="breset" onclick="rst('a')">+ Nouveau groupe</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ -->
+  <!--           SUIVI PAR PÔLE            -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="form-panel" id="panel-s">
+    <div class="form-card">
+      <div class="fh fh-s">
+        <div class="fh-icon">📊</div>
+        <div class="fh-title">Suivi par Pôle</div>
+        <div class="fh-sub">Renseigné par le·la référent·e après chaque rotation de groupe</div>
+      </div>
+      <div class="fb">
+
+        <div class="fg">
+          <label>Pôle concerné <span class="req">*</span></label>
+          <div class="pc">
+            <div class="pcard" onclick="pickPole(this,'s-po','Pôle Photo')"><span class="pck">✓</span><div class="pi">📸</div><div class="pn">Pôle Photo</div></div>
+            <div class="pcard" onclick="pickPole(this,'s-po','Pôle 3D')"><span class="pck">✓</span><div class="pi">🧊</div><div class="pn">Pôle 3D</div></div>
+            <div class="pcard" onclick="pickPole(this,'s-po','Pôle Récit')"><span class="pck">✓</span><div class="pi">🗣️</div><div class="pn">Pôle Récit</div></div>
+          </div>
+          <input type="hidden" id="s-po"/>
+        </div>
+
+        <div class="fr">
+          <div class="fg"><label>Groupe ID <span class="req">*</span></label><input type="text" id="s-gi" placeholder="Ex : R001, J003, V002…"/></div>
+          <div class="fg">
+            <label>Groupe attribué <span class="req">*</span></label>
+            <select id="s-gr">
+              <option value="">— Sélectionner —</option>
+              <option value="Rouge">🔴 Groupe Rouge</option>
+              <option value="Jaune">🟡 Groupe Jaune</option>
+              <option value="Vert">🟢 Groupe Vert</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sd"><div class="sl"></div><span>Données de participation</span><div class="sl" style="background:linear-gradient(90deg,transparent,var(--rouge))"></div></div>
+
+        <div class="fr">
+          <div class="fg"><label>Participants passé(e)s <span class="req">*</span></label><input type="number" id="s-pa" min="0" placeholder="0"/></div>
+          <div class="fg"><label>Participants actif(ves) <span class="req">*</span></label><input type="number" id="s-ac" min="0" placeholder="0"/></div>
+        </div>
+        <div class="fg"><label>Contenus produits <span class="req">*</span></label><input type="number" id="s-co" min="0" placeholder="Nb de photos / modèles 3D / récits…"/></div>
+        <div class="fg"><label>Observations et commentaires</label><textarea id="s-ob" placeholder="Fluide · Attente · Problème technique · Forte participation…"></textarea></div>
+
+        <button class="bsub bsub-s" id="btn-s" onclick="sub('s')">
+          <span id="btxt-s">✓ Enregistrer le suivi</span>
+        </button>
+        <div class="emsg" id="em-s">⚠️ Veuillez remplir tous les champs obligatoires.</div>
+        <div class="omsg" id="om-s">
+          <span class="oico">✅</span>
+          <h3>Suivi enregistré !</h3>
+          <p>Les données du pôle ont bien été sauvegardées dans Airtable.</p>
+          <button class="breset" onclick="rst('s')">+ Nouveau suivi</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════ -->
+  <!--           AVIS VISITEURS            -->
+  <!-- ═══════════════════════════════════ -->
+  <div class="form-panel" id="panel-v">
+    <div class="form-card">
+      <div class="fh fh-v">
+        <div class="fh-icon">⭐</div>
+        <div class="fh-title">Avis Visiteurs</div>
+        <div class="fh-sub">Questionnaire de sortie · Partagez votre expérience JIM 2026</div>
+      </div>
+      <div class="fb">
+
+        <div class="fr">
+          <div class="fg"><label>Nom et Prénom <span class="req">*</span></label><input type="text" id="v-no" placeholder="Votre nom complet"/></div>
+          <div class="fg"><label>Email</label><input type="email" id="v-em" placeholder="votre@email.com"/></div>
+        </div>
+        <div class="fg"><label>Téléphone</label><input type="tel" id="v-te" placeholder="+224 6XX XXX XXX"/></div>
+
+        <div class="sd"><div class="sl"></div><span>Votre expérience</span><div class="sl" style="background:linear-gradient(90deg,transparent,#2d6a4a)"></div></div>
+
+        <div class="fg">
+          <label>Pôle préféré <span class="req">*</span></label>
+          <div class="pc">
+            <div class="pcard" onclick="pickPole(this,'v-po','Pôle Photo')"><span class="pck">✓</span><div class="pi">📸</div><div class="pn">Pôle Photo</div></div>
+            <div class="pcard" onclick="pickPole(this,'v-po','Pôle 3D')"><span class="pck">✓</span><div class="pi">🧊</div><div class="pn">Pôle 3D</div></div>
+            <div class="pcard" onclick="pickPole(this,'v-po','Pôle Récit')"><span class="pck">✓</span><div class="pi">🗣️</div><div class="pn">Pôle Récit</div></div>
+          </div>
+          <input type="hidden" id="v-po"/>
+        </div>
+
+        <div class="fg"><label>Qu'avez-vous découvert ?</label><textarea id="v-de" placeholder="Décrivez ce que vous avez appris ou découvert aujourd'hui…"></textarea></div>
+
+        <div class="fg">
+          <label>Note de satisfaction <span class="req">*</span></label>
+          <div class="stars">
+            <span class="star" onclick="rateStar(1)">★</span>
+            <span class="star" onclick="rateStar(2)">★</span>
+            <span class="star" onclick="rateStar(3)">★</span>
+            <span class="star" onclick="rateStar(4)">★</span>
+            <span class="star" onclick="rateStar(5)">★</span>
+          </div>
+          <div class="star-hint" id="sh"></div>
+          <input type="hidden" id="v-nt"/>
+        </div>
+
+        <!-- ✅ NEWSLETTER DÉPLACÉE ICI -->
+        <div class="sd"><div class="sl"></div><span>Rester en contact</span><div class="sl" style="background:linear-gradient(90deg,transparent,#2d6a4a)"></div></div>
+
+        <div class="fg">
+          <div class="nl" id="nl-t" onclick="togNL()">
+            <div class="sw" id="nl-s"></div>
+            <span class="nl-lbl">📧 Je souhaite recevoir la newsletter du Musée Virtuel de Guinée</span>
+          </div>
+          <input type="hidden" id="v-nl" value="Non"/>
+          <div style="font-size:.72rem;color:#888;margin-top:6px;">Votre email sera utilisé uniquement pour vous tenir informé·e des activités du MVG.</div>
+        </div>
+
+        <button class="bsub bsub-v" id="btn-v" onclick="sub('v')">
+          <span id="btxt-v">✓ Envoyer mon avis</span>
+        </button>
+        <div class="emsg" id="em-v">⚠️ Veuillez remplir tous les champs obligatoires.</div>
+        <div class="omsg" id="om-v">
+          <span class="oico">🙏</span>
+          <h3>Merci pour votre avis !</h3>
+          <p>Votre retour aide le Musée Virtuel de Guinée à améliorer ses activités.</p>
+          <button class="breset" onclick="rst('v')">+ Nouvel avis</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em></footer>
+
+<script>
+const AT = {
+  BASE: 'appqgfu3Ten3zehfb',
+  TBL: { a:'tbl5KA4B1qTiM9ktY', s:'tblHUb5Gq6Rr64Yly', v:'tbl1y0Zf88ErEqifX' },
+  token: ''
+};
+
+const cnt = {rouge:0,jaune:0,vert:0};
+const starHints = ['','😕 Décevant','😐 Passable','🙂 Bien','😊 Très bien','🤩 Excellent !'];
+const btnLabels = { a:"✓ Enregistrer l'arrivée", s:'✓ Enregistrer le suivi', v:'✓ Envoyer mon avis' };
+
+function connectAT() {
+  const t = document.getElementById('api-token').value.trim();
+  if (!t) return;
+  AT.token = t;
+  const b = document.getElementById('api-banner');
+  b.className = 'api-banner connected';
+  b.innerHTML = `<span class="api-icon">✅</span><strong>Connecté — Base "JIM 2026 — Musée Virtuel de Guinée" prête. Les données s'enregistrent en temps réel dans Airtable.</strong>`;
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.form-panel').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('panel-'+t).classList.add('active');
+}
+
+function pickG(c) {
+  document.querySelectorAll('.gb').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('.gb.'+c).classList.add('sel');
+  document.getElementById('a-gr').value = c.charAt(0).toUpperCase()+c.slice(1);
+  cnt[c]++;
+  const p={rouge:'R',jaune:'J',vert:'V'}[c];
+  const id = p+String(cnt[c]).padStart(3,'0');
+  document.getElementById('a-gid').value = id;
+  const d = document.getElementById('a-id-d');
+  d.textContent = id; d.classList.add('filled');
+}
+
+function pickP(el,grp,hid) {
+  document.querySelectorAll('#'+grp+' .rp').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  const raw = el.textContent.trim();
+  // Strip leading emoji character(s)
+  document.getElementById(hid).value = raw.replace(/^[^\w\s\u00C0-\u017E]+\s*/,'').trim();
+}
+
+function pickPole(el,hid,val) {
+  el.closest('.pc').querySelectorAll('.pcard').forEach(c=>c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById(hid).value = val;
+}
+
+function togNL() {
+  const t = document.getElementById('nl-t');
+  t.classList.toggle('on');
+  document.getElementById('v-nl').value = t.classList.contains('on') ? 'Oui' : 'Non';
+}
+
+function rateStar(n) {
+  document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));
+  document.getElementById('v-nt').value = n;
+  document.getElementById('sh').textContent = starHints[n]||'';
+}
+
+async function sendAT(tbl, fields) {
+  if (!AT.token) return {demo:true};
+  fields['Date'] = new Date().toISOString().split('T')[0];
+  const r = await fetch(`https://api.airtable.com/v0/${AT.BASE}/${tbl}`,{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+AT.token,'Content-Type':'application/json'},
+    body: JSON.stringify({fields})
+  });
+  if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e?.error?.message||`HTTP ${r.status}`); }
+  return r.json();
+}
+
+async function sub(t) {
+  const em = document.getElementById('em-'+t);
+  em.classList.remove('on');
+  em.textContent = '⚠️ Veuillez remplir tous les champs obligatoires.';
+
+  let fields = null;
+
+  if (t==='a') {
+    const h=document.getElementById('a-h').value,
+          n=document.getElementById('a-n').value,
+          g=document.getElementById('a-gr').value,
+          gi=document.getElementById('a-gid').value,
+          pr=document.getElementById('a-pr').value;
+    if (!h||!n||!g||!gi||!pr){em.classList.add('on');return;}
+    fields={
+      "Groupe ID": gi,
+      "Heure d'arrivée": h,
+      "Nombre de personnes": parseInt(n),
+      "Groupe attribué": g,
+      "Profil du public": pr
+    };
+  } else if (t==='s') {
+    const po=document.getElementById('s-po').value,
+          gi=document.getElementById('s-gi').value.trim(),
+          gr=document.getElementById('s-gr').value,
+          pa=document.getElementById('s-pa').value,
+          ac=document.getElementById('s-ac').value,
+          co=document.getElementById('s-co').value,
+          ob=document.getElementById('s-ob').value;
+    if (!po||!gi||!gr||pa===''||ac===''||co===''){em.classList.add('on');return;}
+    fields={
+      "Référence": `${po} · ${gi}`,
+      "Pôle concerné": po,
+      "Groupe ID": gi,
+      "Groupe attribué": gr,
+      "Participants passés": parseInt(pa),
+      "Participants actifs": parseInt(ac),
+      "Contenus produits": parseInt(co),
+      "Observations": ob
+    };
+  } else {
+    const no=document.getElementById('v-no').value.trim(),
+          ev=document.getElementById('v-em').value,
+          te=document.getElementById('v-te').value,
+          po=document.getElementById('v-po').value,
+          de=document.getElementById('v-de').value,
+          nt=document.getElementById('v-nt').value,
+          nl=document.getElementById('v-nl').value;
+    if (!no||!po||!nt){em.classList.add('on');return;}
+    fields={
+      "Nom et Prénom": no,
+      "Email": ev,
+      "Téléphone": te,
+      "Pôle préféré": po,
+      "Découverte": de,
+      "Note de satisfaction": parseInt(nt),
+      "Newsletter": nl
+    };
+  }
+
+  const btn=document.getElementById('btn-'+t),
+        txt=document.getElementById('btxt-'+t);
+  btn.disabled=true; txt.textContent='⏳ Enregistrement…';
+
+  try {
+    await sendAT(AT.TBL[t], fields);
+    btn.style.display='none';
+    document.getElementById('om-'+t).classList.add('on');
+  } catch(e) {
+    em.textContent='❌ Erreur Airtable : '+e.message;
+    em.classList.add('on');
+    btn.disabled=false;
+    txt.textContent=btnLabels[t];
+  }
+}
+
+function rst(t) {
+  document.getElementById('om-'+t).classList.remove('on');
+  const btn=document.getElementById('btn-'+t);
+  btn.style.display=''; btn.disabled=false;
+  document.getElementById('btxt-'+t).textContent=btnLabels[t];
+
+  if (t==='a') {
+    ['a-h','a-n'].forEach(id=>document.getElementById(id).value='');
+    ['a-gr','a-gid','a-pr'].forEach(id=>document.getElementById(id).value='');
+    const d=document.getElementById('a-id-d'); d.textContent='—'; d.classList.remove('filled');
+    document.querySelectorAll('.gb').forEach(b=>b.classList.remove('sel'));
+    document.querySelectorAll('#a-pr-g .rp').forEach(p=>p.classList.remove('sel'));
+  } else if (t==='s') {
+    ['s-gi','s-pa','s-ac','s-co','s-ob'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('s-gr').value='';
+    document.getElementById('s-po').value='';
+    document.querySelectorAll('#panel-s .pcard').forEach(c=>c.classList.remove('sel'));
+  } else {
+    ['v-no','v-em','v-te','v-de'].forEach(id=>document.getElementById(id).value='');
+    ['v-po','v-nt'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('v-nl').value='Non';
+    document.getElementById('nl-t').classList.remove('on');
+    document.getElementById('sh').textContent='';
+    document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+    document.querySelectorAll('#panel-v .pcard').forEach(c=>c.classList.remove('sel'));
+  }
+}
+
+window.addEventListener('load', () => {
+  const n=new Date();
+  document.getElementById('a-h').value=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+});
+</script>
+</body>
+</html>
