@@ -4,7 +4,7 @@
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="landmark" :size="26" /></div>
         <div class="fh-title">Portail JIM 2026</div>
-        <div class="fh-sub">Application dédiée au Musée Virtuel de Guinée · événements, pôles et retours visiteurs</div>
+        <div class="fh-sub">Musée Virtuel de Guinée · 16–18 mai 2026 · <em>Les musées unissent un monde divisé</em></div>
       </div>
       <div class="fb">
         <p>Bienvenue dans l'outil événementiel JIM 2026. Cette version Vue.js permet de gérer plusieurs formulaires, maintenir une connexion Airtable et préparer l'ajout de nouveaux ateliers.</p>
@@ -20,9 +20,9 @@
             <div class="event-badge">
               <AppIcon name="clock" :size="14" />
             </div>
-            <div class="event-time">8h30 – 12h30 &amp; 13h30 – 18h00</div>
-            <div class="event-title">Programme officiel</div>
-            <div class="event-desc">Conférences, interventions et table ronde sur la provenance et les restitutions</div>
+            <div class="event-time">Samedi 16 mai</div>
+            <div class="event-title">Journée scientifique</div>
+            <div class="event-desc">Présentation Prov-Gui &amp; Repat-Gui, pôles d'activités Musée Virtuel, projection du film <em>Dahomey</em> au CCFG</div>
             <router-link to="/programme" class="event-link">
               Voir détails <AppIcon name="trending-up" :size="14" />
             </router-link>
@@ -31,9 +31,9 @@
             <div class="event-badge">
               <AppIcon name="users" :size="14" />
             </div>
-            <div class="event-time">8h30 – 12h30 &amp; 13h30 – 16h00</div>
-            <div class="event-title">Sessions participatives</div>
-            <div class="event-desc">Ateliers, échanges en groupes et restitution en plénière</div>
+            <div class="event-time">Dimanche 17 mai</div>
+            <div class="event-title">Ateliers communautaires</div>
+            <div class="event-desc">Échanges Prov-Gui avec les communautés, conférence-débat patrimoine &amp; art contemporain, curation artistique</div>
             <router-link to="/programme" class="event-link">
               Voir détails <AppIcon name="trending-up" :size="14" />
             </router-link>
@@ -42,9 +42,9 @@
             <div class="event-badge">
               <AppIcon name="music" :size="14" />
             </div>
-            <div class="event-time">18h00 – 22h00</div>
-            <div class="event-title">Événement du soir</div>
-            <div class="event-desc">Projection film Dahomey, conférence-débat, concert et cocktail</div>
+            <div class="event-time">Lundi 18 mai — JIM</div>
+            <div class="event-title">Journée officielle</div>
+            <div class="event-desc">Atelier IA &amp; patrimoine, cérémonie officielle, conférence RepatGui, vernissage</div>
             <router-link to="/programme" class="event-link">
               Voir détails <AppIcon name="trending-up" :size="14" />
             </router-link>
