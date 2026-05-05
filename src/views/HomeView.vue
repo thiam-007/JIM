@@ -238,8 +238,8 @@ const sideLoaded = ref(true)
 /* ── Affiche + intro ── */
 .affiche-intro {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 260px 1fr;
+  gap: 2rem;
   align-items: start;
   margin-bottom: 2rem;
 }
@@ -263,8 +263,8 @@ const sideLoaded = ref(true)
 /* ── Side layout (chantier des collections) ── */
 .side-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 1.5rem;
+  grid-template-columns: 360px 1fr;
+  gap: 2rem;
   align-items: start;
   margin-top: 2rem;
   padding-top: 1.5rem;
@@ -421,6 +421,6 @@ const sideLoaded = ref(true)
   .hero-title { font-size: 1.2rem; }
   .side-layout { grid-template-columns: 1fr; }
   .side-photo-wrap { aspect-ratio: 16/7; }
-  .affiche-intro { grid-template-columns: 110px 1fr; gap: 1rem; }
+  .affiche-intro { grid-template-columns: 160px 1fr; gap: 1rem; }
 }
 </style>
