@@ -7,7 +7,7 @@ export const useAirtableStore = defineStore('airtable', {
       a: 'tbl5KA4B1qTiM9ktY',
       s: 'tblHUb5Gq6Rr64Yly',
       v: 'tbl1y0Zf88ErEqifX',
-      e: 'tblEventRegistrations' // Remplacer par l'ID réel de la table inscription événement
+      e: 'tblJ92j4syVfWqEsS'
     },
     token: '',
     eventRegistrations: [],
@@ -104,7 +104,7 @@ export const useAirtableStore = defineStore('airtable', {
       }
     },
     async fetchAvis() {
-      return this.fetchRecords('a')
+      return this.fetchRecords('v')
     },
     setAvisRecords(records) {
       this.avisRecords = records
