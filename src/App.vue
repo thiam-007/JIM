@@ -16,6 +16,9 @@
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Programme' }" to="/programme">
         <AppIcon name="calendar" :size="16" /> Programme
       </RouterLink>
+      <RouterLink class="nav-tab" :class="{ active: route.name === 'Inscriptions' }" to="/inscriptions">
+        <AppIcon name="file-text" :size="16" /> Inscriptions
+      </RouterLink>
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Stats' }" to="/stats">
         <AppIcon name="trending-up" :size="16" /> Statistiques
       </RouterLink>
@@ -27,12 +30,19 @@
       </RouterLink>
     </nav>
 
-    <div :class="['api-banner', connected ? 'connected' : 'config']">
-      <span class="api-icon">
-        <AppIcon :name="connected ? 'check-circle' : 'key'" :size="22" />
-      </span>
+    <div v-if="connected" class="api-banner connected">
+      <span class="api-icon"><AppIcon name="check-circle" :size="22" /></span>
+      <div style="flex:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <strong>Connexion Airtable active — enregistrement prêt.</strong>
+        <button class="btn-disconnect" @click="disconnectAT">
+          <AppIcon name="log-out" :size="14" /> Déconnecter
+        </button>
+      </div>
+    </div>
+    <div v-else class="api-banner config">
+      <span class="api-icon"><AppIcon name="key" :size="22" /></span>
       <div style="flex:1">
-        <strong>{{ connected ? 'Connexion Airtable active — enregistrement prêt.' : "Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement" }}</strong>
+        <strong>Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement</strong>
         <div class="api-token-row">
           <input
             type="password"
@@ -41,13 +51,8 @@
             placeholder="patXXXXXXXXXXXXXX..."
           />
           <button class="btn-connect" v-ripple @click="connectAT">
-            <AppIcon name="link" :size="15" />
-            {{ connected ? 'Mettre à jour' : 'Connecter' }}
+            <AppIcon name="link" :size="15" /> Connecter
           </button>
-        </div>
-        <div style="font-size:.7rem;margin-top:5px;opacity:.8;display:flex;align-items:center;gap:6px;">
-          <AppIcon name="folder" :size="12" />
-          Base : <strong>JIM 2026 — Musée Virtuel de Guinée</strong> (appqgfu3Ten3zehfb)
         </div>
         <div v-if="connectError" style="margin-top:8px;padding:10px 14px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:12px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
           <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
@@ -91,6 +96,11 @@ async function connectAT() {
     connectError.value = error.message
     airtable.connect('')
   }
+}
+
+function disconnectAT() {
+  airtable.connect('')
+  tokenInput.value = ''
 }
 </script>
 
@@ -243,6 +253,15 @@ header {
   position: relative; overflow: hidden;
 }
 .btn-connect:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.btn-disconnect {
+  background: transparent; color: #2e7d32;
+  border: 1.5px solid rgba(46,125,50,.35);
+  padding: 8px 16px; border-radius: 999px;
+  font-size: .78rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: var(--trans);
+}
+.btn-disconnect:hover { background: rgba(46,125,50,.08); }
 
 /* ─── Main / Footer ─── */
 main { max-width: 1120px; margin: 28px auto 60px; padding: 0 20px; }

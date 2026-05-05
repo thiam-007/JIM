@@ -7,8 +7,6 @@
         <div class="fh-sub">Suivi des inscriptions et des participant·e·s par session</div>
       </div>
       <div class="fb">
-        <p>Analysez les inscriptions enregistrées pour les activités et ateliers du programme. Les données sont reprises depuis Airtable si vous êtes connecté·e, et complétées par les enregistrements saisis localement.</p>
-
         <div class="stats-summary">
           <div class="stat-card" v-reveal="0">
             <strong>Total inscriptions</strong>
@@ -65,13 +63,14 @@
               :style="{ animationDelay: `${index * 50}ms` }"
             >
               <div class="avis-rating">
-                <span v-for="n in 5" :key="n" class="avis-star" :class="{ lit: n <= (avis.Note || 0) }">
+                <span v-for="n in 5" :key="n" class="avis-star" :class="{ lit: n <= (avis['Note de satisfaction'] || 0) }">
                   <AppIcon name="star" :size="14" />
                 </span>
-                <span class="avis-score">{{ avis.Note || 'N/A' }}/5</span>
+                <span class="avis-score">{{ avis['Note de satisfaction'] || 'N/A' }}/5</span>
               </div>
-              <div class="avis-comment">{{ avis.Commentaire || 'Aucun commentaire' }}</div>
-              <div class="avis-date">{{ avis.Date || 'Date inconnue' }}</div>
+              <div class="avis-name">{{ avis['Nom et Prénom'] || 'Anonyme' }}</div>
+              <div class="avis-comment" v-if="avis['Découverte']">{{ avis['Découverte'] }}</div>
+              <div class="avis-date">{{ avis.Date || '' }}</div>
             </div>
           </div>
           <p v-if="airtable.avisRecords.length > 10" class="more-hint">
@@ -84,11 +83,6 @@
           <p>Aucun enregistrement trouvé pour le moment. Enregistrez d'abord des participant·e·s via la page Programme ou connectez-vous à Airtable.</p>
         </div>
 
-        <div class="info-block" :class="{ warning: !airtable.isConnected }" v-reveal="0">
-          <AppIcon :name="airtable.isConnected ? 'check-circle' : 'alert-triangle'" :size="16" />
-          <p v-if="airtable.isConnected">Les données Airtable sont chargées et utilisées pour générer ces statistiques.</p>
-          <p v-else>Pour charger les données historisées, connectez-vous à Airtable avec votre Personal Access Token.</p>
-        </div>
       </div>
     </div>
   </section>
@@ -107,7 +101,7 @@ const sessionCount = computed(() => Object.keys(airtable.sessionCounts).length)
 const sessionTitles = computed(() => Object.keys(airtable.sessionCounts).sort())
 const totalAvis = computed(() => airtable.avisRecords.length)
 const averageRating = computed(() => {
-  const ratings = airtable.avisRecords.map(r => parseFloat(r.Note || 0)).filter(r => r > 0)
+  const ratings = airtable.avisRecords.map(r => parseFloat(r['Note de satisfaction'] || 0)).filter(r => r > 0)
   return ratings.length ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0
 })
 
@@ -237,6 +231,7 @@ watch(
 .avis-star { color: #ddd; transition: color 0.15s; }
 .avis-star.lit { color: var(--gold); }
 .avis-score { font-weight: 700; color: var(--or); font-size: .82rem; margin-left: 6px; }
+.avis-name { font-size: .82rem; font-weight: 700; color: var(--brun); margin-bottom: 0.2rem; }
 .avis-comment { font-size: .88rem; color: var(--noir); margin-bottom: 0.3rem; }
 .avis-date { font-size: .75rem; color: #999; }
 
