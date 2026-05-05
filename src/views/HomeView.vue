@@ -4,7 +4,7 @@
     <!-- ── Bannière hero ── -->
     <div class="hero-banner" :class="{ 'has-image': bannerLoaded }">
       <img
-        src="/images/banner.jpg"
+        :src="'/images/banner.jpg'"
         alt="Bannière JIM 2026"
         class="hero-banner-img"
         @load="bannerLoaded = true"
@@ -107,7 +107,7 @@
           <div class="side-photo-wrap">
             <img
               v-if="sideLoaded"
-              src="/images/side-photo.jpg"
+              :src="'/images/side-photo.jpg'"
               alt="Musée Virtuel de Guinée"
               class="side-photo"
               @error="sideLoaded = false"

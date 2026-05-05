@@ -4,7 +4,7 @@
       <div class="logo-badge">
         <img
           v-if="logoLoaded"
-          src="/images/logo.png"
+          :src="'/images/logo.png'"
           alt="Logo Musée Virtuel de Guinée"
           class="logo-img"
           @error="logoLoaded = false"
