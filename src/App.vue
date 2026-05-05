@@ -80,7 +80,7 @@ async function connectAT() {
   if (!tokenInput.value.trim()) return
   airtable.connect(tokenInput.value)
   try {
-    await airtable.loadEventRegistrations()
+    await airtable.loadAll()
   } catch (error) {
     console.warn('Impossible de charger les données Airtable :', error.message)
   }
