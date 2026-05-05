@@ -40,17 +40,26 @@ export const useAirtableStore = defineStore('airtable', {
         throw new Error('Token Airtable manquant')
       }
       fields.Date = new Date().toISOString().split('T')[0]
+      // Supprimer les valeurs vides pour éviter les erreurs sur les champs singleSelect
+      const cleanFields = Object.fromEntries(
+        Object.entries(fields).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+      )
       const response = await fetch(`https://api.airtable.com/v0/${this.base}/${this.tbl[tableKey]}`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${this.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ fields })
+        body: JSON.stringify({ fields: cleanFields })
       })
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))
-        throw new Error(payload?.error?.message || `HTTP ${response.status}`)
+        const type = payload?.error?.type || ''
+        const msg = payload?.error?.message || `HTTP ${response.status}`
+        if (type === 'INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND') {
+          throw new Error('Permissions insuffisantes — vérifiez que le token a les scopes data.records:read ET data.records:write, et qu\'il a accès à cette base.')
+        }
+        throw new Error(msg)
       }
       return response.json()
     },
