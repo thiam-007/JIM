@@ -65,7 +65,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
 import { useAirtableStore } from './store/airtable'
 import AppIcon from './components/AppIcon.vue'
@@ -81,10 +81,22 @@ async function connectAT() {
   airtable.connect(tokenInput.value)
   try {
     await airtable.loadEventRegistrations()
+    await airtable.loadAvis()
   } catch (error) {
     console.warn('Impossible de charger les données Airtable :', error.message)
   }
 }
+
+onMounted(async () => {
+  if (airtable.isConnected) {
+    try {
+      await airtable.loadEventRegistrations()
+      await airtable.loadAvis()
+    } catch (error) {
+      console.warn('Chargement Airtable au démarrage :', error.message)
+    }
+  }
+})
 </script>
 
 <style>
