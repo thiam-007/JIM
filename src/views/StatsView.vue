@@ -1,90 +1,139 @@
 <template>
   <section class="stats-page">
-    <div class="form-card">
-      <div class="fh fh-a">
-        <div class="fh-icon"><AppIcon name="trending-up" :size="26" /></div>
-        <div class="fh-title">Statistiques JIM 2026</div>
-        <div class="fh-sub">Suivi des inscriptions et des participant·e·s par session</div>
+
+    <!-- ─── Cartes générales ─── -->
+    <div class="kpi-grid">
+      <div class="kpi-card" v-reveal="0">
+        <div class="kpi-icon" style="background:rgba(132,89,54,.1);color:var(--brun)">
+          <AppIcon name="users" :size="22" />
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ animatedTotal }}</span>
+          <span class="kpi-lbl">Participants inscrits</span>
+        </div>
       </div>
-      <div class="fb">
-        <div class="stats-summary">
-          <div class="stat-card" v-reveal="0">
-            <strong>Total inscriptions</strong>
-            <span>{{ animatedTotal }}</span>
-          </div>
-          <div class="stat-card" v-reveal="100">
-            <strong>Sessions actives</strong>
-            <span>{{ sessionCount }}</span>
-          </div>
-          <div class="stat-card" v-reveal="200">
-            <strong>Avis reçus</strong>
-            <span>{{ totalAvis }}</span>
-          </div>
-          <div class="stat-card" v-reveal="300">
-            <strong>Note moyenne</strong>
-            <span>{{ averageRating.toFixed(1) }}<small>/5</small></span>
-          </div>
+      <div class="kpi-card" v-reveal="60">
+        <div class="kpi-icon" style="background:rgba(249,178,51,.12);color:var(--or)">
+          <AppIcon name="calendar" :size="22" />
         </div>
-
-        <div class="filter-row" v-reveal="0">
-          <label>Filtrer par session</label>
-          <select v-model="selectedSession">
-            <option value="">Toutes les sessions</option>
-            <option v-for="session in sessionTitles" :key="session" :value="session">{{ session }}</option>
-          </select>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ sessionCount }}</span>
+          <span class="kpi-lbl">Sessions enregistrées</span>
         </div>
-
-        <div class="session-list" v-if="summaryEntries.length" v-reveal="50">
-          <div
-            class="session-item"
-            v-for="(entry, index) in summaryEntries"
-            :key="entry.session"
-            :style="{ animationDelay: `${index * 60}ms` }"
-          >
-            <div class="session-meta">
-              <div class="session-name">{{ entry.session }}</div>
-              <div class="session-count">
-                <strong>{{ entry.count }}</strong> participant·e·s
-              </div>
-            </div>
-            <div class="session-bar-bg">
-              <div class="session-bar" :style="{ width: `${entry.width}%` }"></div>
-            </div>
-          </div>
+      </div>
+      <div class="kpi-card" v-reveal="120">
+        <div class="kpi-icon" style="background:rgba(76,175,80,.1);color:#2e7d32">
+          <AppIcon name="star" :size="22" />
         </div>
-
-        <div class="avis-section" v-if="airtable.avisRecords.length" v-reveal="0">
-          <h3>Avis des visiteurs</h3>
-          <div class="avis-list">
-            <div
-              class="avis-item"
-              v-for="(avis, index) in airtable.avisRecords.slice(0, 10)"
-              :key="avis.id"
-              :style="{ animationDelay: `${index * 50}ms` }"
-            >
-              <div class="avis-rating">
-                <span v-for="n in 5" :key="n" class="avis-star" :class="{ lit: n <= (avis['Note de satisfaction'] || 0) }">
-                  <AppIcon name="star" :size="14" />
-                </span>
-                <span class="avis-score">{{ avis['Note de satisfaction'] || 'N/A' }}/5</span>
-              </div>
-              <div class="avis-name">{{ avis['Nom et Prénom'] || 'Anonyme' }}</div>
-              <div class="avis-comment" v-if="avis['Découverte']">{{ avis['Découverte'] }}</div>
-              <div class="avis-date">{{ avis.Date || '' }}</div>
-            </div>
-          </div>
-          <p v-if="airtable.avisRecords.length > 10" class="more-hint">
-            + {{ airtable.avisRecords.length - 10 }} autres avis
-          </p>
+        <div class="kpi-body">
+          <span class="kpi-val">{{ totalAvis }}</span>
+          <span class="kpi-lbl">Avis collectés</span>
         </div>
-
-        <div class="empty-state" v-else-if="!summaryEntries.length && !airtable.avisRecords.length" v-reveal="0">
-          <AppIcon name="bar-chart" :size="40" />
-          <p>Aucun enregistrement trouvé pour le moment. Enregistrez d'abord des participant·e·s via la page Programme ou connectez-vous à Airtable.</p>
+      </div>
+      <div class="kpi-card" v-reveal="180">
+        <div class="kpi-icon" style="background:rgba(177,34,42,.08);color:var(--rouge)">
+          <AppIcon name="bar-chart-2" :size="22" />
         </div>
-
+        <div class="kpi-body">
+          <span class="kpi-val">{{ totalSuiviPassés }}</span>
+          <span class="kpi-lbl">Passages aux pôles</span>
+        </div>
       </div>
     </div>
+
+    <!-- ─── Sessions & ateliers ─── -->
+    <div class="stat-block" v-reveal="0">
+      <div class="stat-block-header">
+        <AppIcon name="file-text" :size="18" />
+        <h2>Sessions &amp; ateliers</h2>
+        <span class="badge">{{ totalRegistrations }} participants</span>
+      </div>
+      <div v-if="summaryEntries.length">
+        <div
+          class="bar-row"
+          v-for="(entry, i) in summaryEntries"
+          :key="entry.session"
+          :style="{ animationDelay: `${i * 50}ms` }"
+        >
+          <div class="bar-label">{{ entry.session }}</div>
+          <div class="bar-track">
+            <div class="bar-fill" :style="{ width: `${entry.width}%` }"></div>
+          </div>
+          <div class="bar-count">{{ entry.count }}</div>
+        </div>
+      </div>
+      <div class="empty-inline" v-else>
+        <AppIcon name="inbox" :size="28" /> Aucune inscription enregistrée
+      </div>
+    </div>
+
+    <!-- ─── Activités des pôles ─── -->
+    <div class="stat-block" v-reveal="0">
+      <div class="stat-block-header">
+        <AppIcon name="layers" :size="18" />
+        <h2>Activités des pôles</h2>
+      </div>
+      <div class="poles-grid" v-if="Object.keys(poleStats).length">
+        <div class="pole-card" v-for="(stats, pole) in poleStats" :key="pole">
+          <div class="pole-name">
+            <AppIcon :name="poleIcon(pole)" :size="18" />
+            {{ pole }}
+          </div>
+          <div class="pole-kpis">
+            <div class="pole-kpi">
+              <span class="pk-val">{{ stats.passés }}</span>
+              <span class="pk-lbl">Passés</span>
+            </div>
+            <div class="pole-kpi">
+              <span class="pk-val">{{ stats.actifs }}</span>
+              <span class="pk-lbl">Actifs</span>
+            </div>
+            <div class="pole-kpi">
+              <span class="pk-val">{{ stats.contenus }}</span>
+              <span class="pk-lbl">Contenus</span>
+            </div>
+          </div>
+          <div class="pole-sessions">{{ stats.sessions }} rotation{{ stats.sessions > 1 ? 's' : '' }}</div>
+        </div>
+      </div>
+      <div class="empty-inline" v-else>
+        <AppIcon name="inbox" :size="28" /> Aucune activité pôle enregistrée
+      </div>
+    </div>
+
+    <!-- ─── Note des visiteurs (style Play Store) ─── -->
+    <div class="stat-block" v-reveal="0">
+      <div class="stat-block-header">
+        <AppIcon name="star" :size="18" />
+        <h2>Satisfaction visiteurs</h2>
+        <span class="badge">{{ totalAvis }} avis</span>
+      </div>
+      <div class="rating-widget" v-if="totalAvis > 0">
+        <div class="rating-big">
+          <span class="rating-number">{{ averageRating.toFixed(1) }}</span>
+          <div class="rating-stars-big">
+            <span v-for="n in 5" :key="n" class="rs" :class="starClass(n, averageRating)">
+              <AppIcon name="star" :size="28" />
+            </span>
+          </div>
+          <span class="rating-total">{{ totalAvis }} avis</span>
+        </div>
+        <div class="rating-bars">
+          <div class="rbar-row" v-for="row in ratingDistribution" :key="row.star">
+            <span class="rbar-lbl">{{ row.star }}</span>
+            <AppIcon name="star" :size="12" style="color:var(--gold);flex-shrink:0" />
+            <div class="rbar-track">
+              <div class="rbar-fill" :style="{ width: `${row.pct}%` }"></div>
+            </div>
+            <span class="rbar-count">{{ row.count }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="empty-inline" v-else>
+        <AppIcon name="inbox" :size="28" /> Aucun avis collecté
+      </div>
+    </div>
+
   </section>
 </template>
 
@@ -94,56 +143,94 @@ import { useAirtableStore } from '../store/airtable'
 import AppIcon from '../components/AppIcon.vue'
 
 const airtable = useAirtableStore()
-const selectedSession = ref('')
 
+// ─── KPI généraux ───
 const totalRegistrations = computed(() => airtable.totalRegistrations)
 const sessionCount = computed(() => Object.keys(airtable.sessionCounts).length)
-const sessionTitles = computed(() => Object.keys(airtable.sessionCounts).sort())
 const totalAvis = computed(() => airtable.avisRecords.length)
 const averageRating = computed(() => {
   const ratings = airtable.avisRecords.map(r => parseFloat(r['Note de satisfaction'] || 0)).filter(r => r > 0)
-  return ratings.length ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length : 0
+  return ratings.length ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 0
 })
+const totalSuiviPassés = computed(() =>
+  airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
+)
 
-// Animated counter
+// ─── Compteur animé ───
 const animatedTotal = ref(0)
 watch(totalRegistrations, (newVal) => {
   const start = animatedTotal.value
   const end = newVal
-  const duration = 700
-  const startTime = performance.now()
-  function update(now) {
-    const progress = Math.min((now - startTime) / duration, 1)
-    const eased = 1 - Math.pow(1 - progress, 3)
-    animatedTotal.value = Math.round(start + (end - start) * eased)
-    if (progress < 1) requestAnimationFrame(update)
+  const t0 = performance.now()
+  function tick(now) {
+    const p = Math.min((now - t0) / 700, 1)
+    animatedTotal.value = Math.round(start + (end - start) * (1 - Math.pow(1 - p, 3)))
+    if (p < 1) requestAnimationFrame(tick)
   }
-  requestAnimationFrame(update)
+  requestAnimationFrame(tick)
 }, { immediate: true })
 
+// ─── Sessions ───
 const summaryEntries = computed(() => {
   const items = Object.entries(airtable.sessionCounts)
     .map(([session, count]) => ({ session, count }))
     .sort((a, b) => b.count - a.count)
-
-  const filtered = selectedSession.value
-    ? items.filter(item => item.session === selectedSession.value)
-    : items
-
-  const maxCount = filtered.reduce((max, item) => Math.max(max, item.count), 0) || 1
-  return filtered.map(item => ({ ...item, width: (item.count / maxCount) * 100 }))
+  const max = items.reduce((m, i) => Math.max(m, i.count), 0) || 1
+  return items.map(i => ({ ...i, width: (i.count / max) * 100 }))
 })
 
+// ─── Pôles ───
+const poleStats = computed(() => {
+  const poles = {}
+  for (const r of airtable.suiviRecords) {
+    const pole = r['Pôle concerné'] || 'Autre'
+    if (!poles[pole]) poles[pole] = { passés: 0, actifs: 0, contenus: 0, sessions: 0 }
+    poles[pole].passés  += r['Participants passés'] || 0
+    poles[pole].actifs  += r['Participants actifs'] || 0
+    poles[pole].contenus += r['Contenus produits'] || 0
+    poles[pole].sessions += 1
+  }
+  return poles
+})
+
+function poleIcon(pole) {
+  if (pole.includes('Photo')) return 'camera'
+  if (pole.includes('3D'))    return 'box'
+  if (pole.includes('Récit')) return 'message-circle'
+  return 'layers'
+}
+
+// ─── Distribution des notes (Play Store) ───
+const ratingDistribution = computed(() => {
+  const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  for (const r of airtable.avisRecords) {
+    const n = Math.round(r['Note de satisfaction'] || 0)
+    if (n >= 1 && n <= 5) dist[n]++
+  }
+  const total = airtable.avisRecords.length || 1
+  return [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: dist[star],
+    pct: Math.round(dist[star] / total * 100)
+  }))
+})
+
+function starClass(n, avg) {
+  if (n <= Math.floor(avg)) return 'full'
+  if (n === Math.ceil(avg) && avg % 1 >= 0.3) return 'half'
+  return ''
+}
+
+// ─── Chargement au connect ───
 watch(
   () => airtable.isConnected,
   async (connected) => {
     if (connected) {
-      try {
-        await airtable.loadEventRegistrations()
-        await airtable.loadAvis()
-      } catch (error) {
-        console.warn('Impossible de charger les statistiques Airtable :', error.message)
-      }
+      await Promise.allSettled([
+        airtable.loadEventRegistrations(),
+        airtable.loadAvis(),
+        airtable.loadSuivi()
+      ])
     }
   },
   { immediate: true }
@@ -151,128 +238,206 @@ watch(
 </script>
 
 <style scoped>
-.stats-summary {
+/* ─── KPI cards ─── */
+.kpi-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
 }
+@media (min-width: 640px) { .kpi-grid { grid-template-columns: repeat(4, 1fr); } }
 
-.stat-card span small {
-  font-size: 1rem;
-  opacity: 0.6;
-}
-
-.filter-row { margin-bottom: 1.5rem; }
-.filter-row label { display: block; margin-bottom: 0.5rem; }
-
-.session-list { margin-bottom: 2rem; }
-
-.session-item {
-  margin-bottom: 1rem;
-  padding: 1rem 1.2rem;
-  background: rgba(255,255,255,.9);
-  border-radius: 14px;
-  border: 1px solid #e8ddd0;
-  animation: fadeInUp 0.45s ease-out backwards;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-.session-item:hover {
-  transform: translateX(4px);
-  box-shadow: 0 6px 18px rgba(132,89,54,.1);
-}
-
-.session-meta {
+.kpi-card {
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(132,89,54,.12);
+  border-radius: 18px;
+  padding: 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.6rem;
+  gap: 12px;
+  box-shadow: 0 4px 14px rgba(132,89,54,.06);
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(132,89,54,.1); }
+
+.kpi-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-body { display: flex; flex-direction: column; }
+.kpi-val { font-size: 1.6rem; font-weight: 900; color: var(--brun); line-height: 1; }
+.kpi-lbl { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #999; margin-top: 3px; }
+
+/* ─── Stat blocks ─── */
+.stat-block {
+  background: rgba(255,255,255,.92);
+  border: 1px solid rgba(132,89,54,.12);
+  border-radius: 20px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 14px rgba(132,89,54,.06);
 }
 
-.session-name { font-weight: 600; color: var(--brun); font-size: .9rem; }
-.session-count { color: var(--or); font-size: .85rem; }
-.session-count strong { font-weight: 900; }
+.stat-block-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: var(--brun);
+}
+.stat-block-header h2 {
+  font-size: .95rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0;
+  flex: 1;
+}
+.badge {
+  background: rgba(132,89,54,.1);
+  color: var(--brun);
+  font-size: .7rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
 
-.session-bar-bg {
+/* ─── Barres sessions ─── */
+.bar-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  animation: fadeUp .4s ease-out backwards;
+}
+.bar-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--brun);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bar-track {
+  width: 120px;
   height: 8px;
   background: rgba(132,89,54,.1);
   border-radius: 4px;
   overflow: hidden;
 }
-
-.session-bar {
+.bar-fill {
   height: 100%;
   background: linear-gradient(90deg, var(--brun), var(--or));
   border-radius: 4px;
-  transition: width 0.8s cubic-bezier(.22, 1, .36, 1);
+  transition: width .8s cubic-bezier(.22,1,.36,1);
+}
+.bar-count {
+  font-size: .82rem;
+  font-weight: 900;
+  color: var(--or);
+  min-width: 28px;
+  text-align: right;
 }
 
-.avis-section { margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e8ddd0; }
-.avis-section h3 { margin-bottom: 1rem; }
-.avis-list { margin-bottom: 1rem; }
-
-.avis-item {
-  padding: 1rem 1.2rem;
-  background: rgba(255,255,255,.9);
-  border-radius: 12px;
-  border: 1px solid #e8ddd0;
-  margin-bottom: 0.6rem;
-  animation: fadeInUp 0.45s ease-out backwards;
-  transition: transform 0.2s ease;
+/* ─── Pôles ─── */
+.poles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
 }
-.avis-item:hover { transform: translateX(4px); }
-
-.avis-rating {
+.pole-card {
+  background: rgba(132,89,54,.04);
+  border: 1px solid rgba(132,89,54,.14);
+  border-radius: 16px;
+  padding: 16px;
+}
+.pole-name {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 0.4rem;
+  gap: 7px;
+  font-size: .82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--brun);
+  margin-bottom: 12px;
 }
-.avis-star { color: #ddd; transition: color 0.15s; }
-.avis-star.lit { color: var(--gold); }
-.avis-score { font-weight: 700; color: var(--or); font-size: .82rem; margin-left: 6px; }
-.avis-name { font-size: .82rem; font-weight: 700; color: var(--brun); margin-bottom: 0.2rem; }
-.avis-comment { font-size: .88rem; color: var(--noir); margin-bottom: 0.3rem; }
-.avis-date { font-size: .75rem; color: #999; }
+.pole-kpis {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.pole-kpi { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.pk-val { font-size: 1.3rem; font-weight: 900; color: var(--rouge); line-height: 1; }
+.pk-lbl { font-size: .65rem; text-transform: uppercase; color: #999; margin-top: 2px; }
+.pole-sessions { font-size: .72rem; color: #bbb; text-align: right; }
 
-.more-hint { font-size: .8rem; color: #999; font-style: italic; margin-top: 0.5rem; }
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 2rem;
-  color: #bbb;
+/* ─── Rating Play Store ─── */
+.rating-widget {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rating-big {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 6px;
+  min-width: 90px;
 }
-.empty-state p { color: #999; max-width: 360px; line-height: 1.6; }
+.rating-number {
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--brun);
+  line-height: 1;
+}
+.rating-stars-big {
+  display: flex;
+  gap: 3px;
+}
+.rs { color: #e0d4c4; transition: color .15s; }
+.rs.full { color: var(--gold); }
+.rs.half { color: var(--gold); opacity: .55; }
+.rating-total { font-size: .75rem; color: #999; }
 
-.info-block {
-  margin-top: 1.5rem;
-  padding: 1rem 1.2rem;
-  border-radius: 12px;
-  background: #edf7ee;
-  border: 1px solid rgba(76,175,80,.25);
+.rating-bars { flex: 1; min-width: 160px; }
+.rbar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.rbar-lbl { font-size: .78rem; font-weight: 700; color: var(--brun); width: 12px; text-align: right; }
+.rbar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(132,89,54,.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.rbar-fill {
+  height: 100%;
+  background: var(--gold);
+  border-radius: 4px;
+  transition: width .8s cubic-bezier(.22,1,.36,1);
+}
+.rbar-count { font-size: .72rem; color: #999; width: 20px; text-align: right; }
+
+/* ─── Empty ─── */
+.empty-inline {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #bbb;
   font-size: .88rem;
-  color: #2e7d32;
-}
-.info-block p { margin: 0; }
-.info-block.warning {
-  background: #fffaf0;
-  border-color: rgba(249,178,51,.35);
-  color: #7a5500;
+  padding: 12px 0;
 }
 
-@media (min-width: 768px) {
-  .stats-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-}
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 </style>
