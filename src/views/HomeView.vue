@@ -193,8 +193,14 @@ const sideLoaded = ref(true)
   object-fit: cover;
   object-position: center 30%;
   display: none;
+  animation: hero-zoom 12s ease-in-out infinite alternate;
 }
 .hero-banner.has-image .hero-banner-img { display: block; }
+
+@keyframes hero-zoom {
+  from { transform: scale(1);    }
+  to   { transform: scale(1.06); }
+}
 .hero-overlay {
   position: absolute;
   inset: 0;
@@ -238,7 +244,7 @@ const sideLoaded = ref(true)
 /* ── Affiche + intro ── */
 .affiche-intro {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 340px 1fr;
   gap: 2rem;
   align-items: start;
   margin-bottom: 2rem;
@@ -248,10 +254,29 @@ const sideLoaded = ref(true)
   overflow: hidden;
   border: 1px solid #e8ddd0;
   box-shadow: 0 8px 24px rgba(132,89,54,.15);
+  animation: affiche-float 5s ease-in-out infinite;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  cursor: pointer;
+}
+.affiche-wrap:hover {
+  transform: rotate(1.5deg) scale(1.03) !important;
+  box-shadow: 0 24px 48px rgba(132,89,54,.28);
+  animation-play-state: paused;
 }
 .affiche-img {
   width: 100%;
   display: block;
+  animation: img-fadein 0.8s ease-out both;
+}
+
+@keyframes affiche-float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  30%       { transform: translateY(-8px) rotate(-0.5deg); }
+  70%       { transform: translateY(-4px) rotate(0.5deg); }
+}
+@keyframes img-fadein {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
 }
 .affiche-text p {
   font-size: .88rem;
@@ -263,7 +288,7 @@ const sideLoaded = ref(true)
 /* ── Side layout (chantier des collections) ── */
 .side-layout {
   display: grid;
-  grid-template-columns: 360px 1fr;
+  grid-template-columns: 460px 1fr;
   gap: 2rem;
   align-items: start;
   margin-top: 2rem;
@@ -277,12 +302,22 @@ const sideLoaded = ref(true)
   overflow: hidden;
   border: 1px solid #e8ddd0;
   background: linear-gradient(135deg, #f0e4d4, #e8d5bc);
+  box-shadow: 0 12px 32px rgba(132,89,54,.15);
+  transition: box-shadow 0.4s ease;
+}
+.side-photo-wrap:hover {
+  box-shadow: 0 24px 52px rgba(132,89,54,.25);
 }
 .side-photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
+  animation: img-fadein 0.8s ease-out both;
+  transition: transform 0.7s cubic-bezier(.25, .46, .45, .94);
+}
+.side-photo-wrap:hover .side-photo {
+  transform: scale(1.06);
 }
 .side-photo-placeholder {
   width: 100%;
@@ -317,13 +352,20 @@ const sideLoaded = ref(true)
   border: 1px solid #e8ddd0;
   margin-bottom: 1rem;
   position: relative;
+  box-shadow: 0 12px 36px rgba(132,89,54,.15);
 }
 .stand-photo {
   width: 100%;
   display: block;
-  max-height: 340px;
+  max-height: 380px;
   object-fit: cover;
   object-position: center 40%;
+  animation: ken-burns 18s ease-in-out infinite alternate, img-fadein 1s ease-out both;
+}
+
+@keyframes ken-burns {
+  from { transform: scale(1)    translateX(0);     }
+  to   { transform: scale(1.08) translateX(-1.5%); }
 }
 .stand-caption {
   position: absolute;
