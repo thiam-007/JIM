@@ -4,7 +4,7 @@
       <div class="logo-badge">
         <img
           v-if="logoLoaded"
-          :src="'/images/logo.png'"
+          :src="'/images/logo.jpeg'"
           alt="Logo Musée Virtuel de Guinée"
           class="logo-img"
           @error="logoLoaded = false"
@@ -119,7 +119,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
   background-color: #fef9f2;
   background-image:
-    url('/images/background.jpg'),
+    url('/images/background.jpeg'),
     radial-gradient(circle at top left, rgba(249, 178, 51, .12), transparent 24%),
     linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #f0dcc6 100%);
   background-size: cover;

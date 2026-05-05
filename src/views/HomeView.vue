@@ -4,7 +4,7 @@
     <!-- ── Hero banner : banner-mvg.jpg (fond brun + statue + texte MVG) ── -->
     <div class="hero-banner" :class="{ 'has-image': bannerLoaded }">
       <img
-        :src="'/images/banner-mvg.jpg'"
+        :src="'/images/banner-mvg.jpeg'"
         alt="Bannière Musée Virtuel de Guinée"
         class="hero-banner-img"
         @load="bannerLoaded = true"
@@ -38,7 +38,7 @@
         <div class="affiche-intro" v-reveal="0">
           <div class="affiche-wrap">
             <img
-              :src="'/images/affiche-jim-2026.jpg'"
+              :src="'/images/affiche-jim-2026.jpeg'"
               alt="Affiche officielle JIM 2026"
               class="affiche-img"
               @error="$event.target.style.display='none'"
@@ -122,7 +122,7 @@
           <div class="side-photo-wrap">
             <img
               v-if="sideLoaded"
-              :src="'/images/side-photo.jpg'"
+              :src="'/images/side-photo.jpeg'"
               alt="Chantier des collections — Musée National de Guinée"
               class="side-photo"
               @error="sideLoaded = false"
@@ -148,7 +148,7 @@
 
         <div class="stand-photo-wrap" v-reveal="0">
           <img
-            :src="'/images/stand-mvg.jpg'"
+            :src="'/images/stand-mvg.jpeg'"
             alt="Stand Musée Virtuel de Guinée"
             class="stand-photo"
             @error="$event.target.parentElement.style.display='none'"
