@@ -12,6 +12,7 @@ export const useAirtableStore = defineStore('airtable', {
     token: '',
     eventRegistrations: [],
     eventRecords: [],
+    avisRecords: [],
     eventFetchError: ''
   }),
   getters: {
@@ -100,6 +101,20 @@ export const useAirtableStore = defineStore('airtable', {
       } catch (error) {
         this.eventFetchError = error.message || 'Erreur de chargement Airtable'
         throw error
+      }
+    },
+    async fetchAvis() {
+      return this.fetchRecords('a')
+    },
+    setAvisRecords(records) {
+      this.avisRecords = records
+    },
+    async loadAvis() {
+      try {
+        const records = await this.fetchAvis()
+        this.avisRecords = records.map((record) => record.fields || {})
+      } catch (error) {
+        console.warn('Erreur de chargement des avis :', error.message)
       }
     }
   }

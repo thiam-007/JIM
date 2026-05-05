@@ -15,7 +15,6 @@
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Stats' }" to="/stats">📈 Statistiques</RouterLink>
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Accueil' }" to="/accueil">🏛️ Accueil Visiteurs</RouterLink>
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Suivi' }" to="/suivi">📊 Suivi par Pôle</RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Avis' }" to="/avis">⭐ Avis Visiteurs</RouterLink>
     </nav>
 
     <div :class="['api-banner', connected ? 'connected' : 'config']">
@@ -616,5 +615,250 @@ h3 {
 }
 .schedule-table tbody tr:hover {
   background: rgba(249, 178, 51, .08);
+}
+
+/* ============ ANIMATIONS & EFFECTS ============ */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 178, 51, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(249, 178, 51, 0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Page transitions */
+.form-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+header {
+  animation: fadeInDown 0.5s ease-out;
+}
+
+footer {
+  animation: fadeInUp 0.8s ease-out 0.4s backwards;
+}
+
+.nav-tabs {
+  animation: fadeInScale 0.6s ease-out 0.2s backwards;
+}
+
+.api-banner {
+  animation: slideInLeft 0.6s ease-out 0.3s backwards;
+}
+
+/* List item stagger animations */
+.session-counts li {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.session-counts li:nth-child(1) { animation-delay: 0.1s; }
+.session-counts li:nth-child(2) { animation-delay: 0.2s; }
+.session-counts li:nth-child(3) { animation-delay: 0.3s; }
+.session-counts li:nth-child(4) { animation-delay: 0.4s; }
+.session-counts li:nth-child(5) { animation-delay: 0.5s; }
+
+/* Card animations */
+.pcard {
+  animation: fadeInScale 0.5s ease-out backwards;
+  will-change: transform;
+}
+
+.pcard:nth-child(1) { animation-delay: 0.1s; }
+.pcard:nth-child(2) { animation-delay: 0.2s; }
+.pcard:nth-child(3) { animation-delay: 0.3s; }
+
+.pcard:hover {
+  animation: none;
+}
+
+/* Button effects */
+.btn-connect {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-connect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 2s infinite;
+  opacity: 0;
+}
+
+.btn-connect:hover::before {
+  opacity: 1;
+}
+
+/* Input focus glow */
+input:focus, select:focus, textarea:focus {
+  animation: glow 1s ease-out;
+}
+
+/* Table row animations */
+.schedule-table tbody tr {
+  animation: fadeInUp 0.5s ease-out backwards;
+}
+
+.schedule-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.schedule-table tbody tr:nth-child(2) { animation-delay: 0.1s; }
+.schedule-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.schedule-table tbody tr:nth-child(4) { animation-delay: 0.2s; }
+.schedule-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+.schedule-table tbody tr:nth-child(6) { animation-delay: 0.3s; }
+.schedule-table tbody tr:nth-child(7) { animation-delay: 0.35s; }
+.schedule-table tbody tr:nth-child(8) { animation-delay: 0.4s; }
+.schedule-table tbody tr:nth-child(n+9) { animation-delay: 0.45s; }
+
+/* Stat cards animations */
+.stat-card {
+  animation: fadeInScale 0.5s ease-out backwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* Active nav tab animation */
+.nav-tab.active {
+  animation: none;
+}
+
+/* Smooth transitions for all interactive elements */
+button, input, select, textarea, a {
+  transition: var(--trans);
+}
+
+/* Loading state */
+.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Hover lift effect */
+.pcard:hover,
+.stat-card:hover,
+.gb:hover,
+.rp:hover {
+  transform: translateY(-2px);
+}
+
+/* Float animation for badges */
+.logo-badge {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Rotation animation */
+.api-icon {
+  animation: fadeInScale 0.6s ease-out 0.5s backwards;
+}
+
+/* Enhanced responsive animations */
+@media (max-width: 768px) {
+  .form-card {
+    animation: fadeInUp 0.4s ease-out;
+  }
+  
+  .pcard {
+    animation: fadeInScale 0.4s ease-out backwards;
+  }
+  
+  .pcard:nth-child(1) { animation-delay: 0.05s; }
+  .pcard:nth-child(2) { animation-delay: 0.1s; }
+  .pcard:nth-child(3) { animation-delay: 0.15s; }
 }
 </style>
