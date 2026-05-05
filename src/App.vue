@@ -49,6 +49,10 @@
           <AppIcon name="folder" :size="12" />
           Base : <strong>JIM 2026 — Musée Virtuel de Guinée</strong> (appqgfu3Ten3zehfb)
         </div>
+        <div v-if="connectError" style="margin-top:8px;padding:10px 14px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:12px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
+          <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
+          <span>{{ connectError }}</span>
+        </div>
       </div>
     </div>
 
@@ -75,14 +79,17 @@ const airtable = useAirtableStore()
 const tokenInput = ref(airtable.token)
 
 const connected = computed(() => airtable.isConnected)
+const connectError = ref('')
 
 async function connectAT() {
   if (!tokenInput.value.trim()) return
+  connectError.value = ''
   airtable.connect(tokenInput.value)
   try {
     await airtable.loadEventRegistrations()
   } catch (error) {
-    console.warn('Impossible de charger les données Airtable :', error.message)
+    connectError.value = error.message
+    airtable.connect('')
   }
 }
 </script>
