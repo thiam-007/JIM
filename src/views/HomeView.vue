@@ -41,7 +41,7 @@
               :src="'/images/affiche-jim-2026.jpg'"
               alt="Affiche officielle JIM 2026"
               class="affiche-img"
-              @error="($event.target as HTMLImageElement).style.display='none'"
+              @error="$event.target.style.display='none'"
             />
           </div>
           <div class="affiche-text">
@@ -151,7 +151,7 @@
             :src="'/images/stand-mvg.jpg'"
             alt="Stand Musée Virtuel de Guinée"
             class="stand-photo"
-            @error="($event.target as HTMLImageElement).parentElement!.style.display='none'"
+            @error="$event.target.parentElement.style.display='none'"
           />
           <div class="stand-caption">
             Le Musée Virtuel de Guinée · <em>Collecter, préserver, transmettre</em>
