@@ -10,6 +10,7 @@ export const useAirtableStore = defineStore('airtable', {
       e: 'tblJ92j4syVfWqEsS'
     },
     token: localStorage.getItem('jim_at_token') || '',
+    connectionError: '',
     eventRegistrations: [],
     eventRecords: [],
     avisRecords: [],
@@ -34,7 +35,30 @@ export const useAirtableStore = defineStore('airtable', {
   actions: {
     connect(token) {
       this.token = token.trim()
+      this.connectionError = ''
       localStorage.setItem('jim_at_token', this.token)
+    },
+    async testConnection() {
+      this.connectionError = ''
+      const response = await fetch(`https://api.airtable.com/v0/meta/bases/${this.base}/tables`, {
+        headers: { Authorization: `Bearer ${this.token}` }
+      })
+      if (response.status === 401) {
+        this.connectionError = 'Token invalide ou révoqué. Vérifiez votre Personal Access Token.'
+        this.token = ''
+        localStorage.removeItem('jim_at_token')
+        throw new Error(this.connectionError)
+      }
+      if (response.status === 403) {
+        this.connectionError = 'Permissions insuffisantes. Ajoutez les scopes : data.records:read, data.records:write, schema.bases:read.'
+        this.token = ''
+        localStorage.removeItem('jim_at_token')
+        throw new Error(this.connectionError)
+      }
+      if (!response.ok) {
+        this.connectionError = `Erreur inattendue (HTTP ${response.status}). Réessayez.`
+        throw new Error(this.connectionError)
+      }
     },
     async sendRecord(tableKey, fields) {
       if (!this.token) {

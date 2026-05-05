@@ -45,6 +45,10 @@
             {{ connected ? 'Mettre à jour' : 'Connecter' }}
           </button>
         </div>
+        <div v-if="airtable.connectionError" style="margin-top:8px;padding:8px 12px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:10px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
+          <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
+          {{ airtable.connectionError }}
+        </div>
         <div style="font-size:.7rem;margin-top:5px;opacity:.8;display:flex;align-items:center;gap:6px;">
           <AppIcon name="folder" :size="12" />
           Base : <strong>JIM 2026 — Musée Virtuel de Guinée</strong> (appqgfu3Ten3zehfb)
@@ -80,10 +84,11 @@ async function connectAT() {
   if (!tokenInput.value.trim()) return
   airtable.connect(tokenInput.value)
   try {
+    await airtable.testConnection()
     await airtable.loadEventRegistrations()
     await airtable.loadAvis()
   } catch (error) {
-    console.warn('Impossible de charger les données Airtable :', error.message)
+    console.warn('Connexion Airtable :', error.message)
   }
 }
 
