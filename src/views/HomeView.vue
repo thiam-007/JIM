@@ -288,7 +288,7 @@ const sideLoaded = ref(true)
 /* ── Side layout (chantier des collections) ── */
 .side-layout {
   display: grid;
-  grid-template-columns: 460px 1fr;
+  grid-template-columns: 320px 1fr;
   gap: 2rem;
   align-items: start;
   margin-top: 2rem;
@@ -297,7 +297,7 @@ const sideLoaded = ref(true)
 }
 .side-photo-wrap {
   width: 100%;
-  aspect-ratio: 3/4;
+  aspect-ratio: 4/5;
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid #e8ddd0;
