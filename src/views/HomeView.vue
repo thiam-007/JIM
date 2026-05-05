@@ -1,5 +1,17 @@
 <template>
   <section class="home-intro">
+
+    <!-- ─── Hero banner ─── -->
+    <div class="hero-banner" v-reveal="0">
+      <img src="/images/banner-mvg.jpeg" alt="Musée Virtuel de Guinée" class="hero-img" />
+      <div class="hero-overlay">
+        <div class="hero-text">
+          <div class="hero-title">JIM 2026</div>
+          <div class="hero-sub">Journée Internationale des Musées · 16 – 18 Mai 2026</div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-card">
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="landmark" :size="26" /></div>
@@ -7,7 +19,6 @@
         <div class="fh-sub">Application dédiée au Musée Virtuel de Guinée · événements, pôles et retours visiteurs</div>
       </div>
       <div class="fb">
-        <p>Bienvenue dans l'outil événementiel JIM 2026. Cette version Vue.js permet de gérer plusieurs formulaires, maintenir une connexion Airtable et préparer l'ajout de nouveaux ateliers.</p>
 
         <div class="sd">
           <div class="sl"></div>
@@ -75,6 +86,28 @@
             <div class="nav-pcard-name">Suivi par pôle</div>
           </router-link>
         </div>
+
+        <!-- ─── Galerie photos ─── -->
+        <div class="sd" v-reveal="0">
+          <div class="sl"></div>
+          <span>En images</span>
+          <div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div>
+        </div>
+
+        <div class="photo-gallery" v-reveal="80">
+          <div class="photo-main">
+            <img src="/images/affiche-jim-2026.jpeg" alt="Affiche JIM 2026" />
+          </div>
+          <div class="photo-stack">
+            <div class="photo-side">
+              <img src="/images/stand-mvg.jpeg" alt="Stand Musée Virtuel de Guinée" />
+            </div>
+            <div class="photo-side">
+              <img src="/images/side-photo.jpeg" alt="Chantier des collections" />
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
@@ -235,8 +268,74 @@ import AppIcon from '../components/AppIcon.vue'
   letter-spacing: 0.3px;
 }
 
+/* ─── Hero banner ─── */
+.hero-banner {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  height: 200px;
+  box-shadow: 0 12px 36px rgba(89,55,22,.18);
+}
+.hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(89,55,22,.75) 0%, rgba(89,55,22,.2) 60%, transparent 100%);
+  display: flex;
+  align-items: flex-end;
+  padding: 24px 28px;
+}
+.hero-title {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.hero-sub {
+  font-size: .75rem;
+  color: rgba(255,255,255,.85);
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+
+/* ─── Galerie ─── */
+.photo-gallery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.photo-main img,
+.photo-side img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 14px;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+.photo-main { height: 260px; }
+.photo-main img:hover { transform: scale(1.02); box-shadow: 0 12px 32px rgba(89,55,22,.2); }
+.photo-stack { display: flex; flex-direction: column; gap: 12px; }
+.photo-side { height: 122px; overflow: hidden; border-radius: 14px; }
+.photo-side img:hover { transform: scale(1.04); }
+
 @media (max-width: 768px) {
   .events-grid { grid-template-columns: 1fr; }
   .nav-grid { grid-template-columns: repeat(2, 1fr); }
+  .photo-gallery { grid-template-columns: 1fr; }
+  .photo-main { height: 200px; }
+  .photo-stack { flex-direction: row; }
+  .photo-side { height: 120px; flex: 1; }
 }
 </style>

@@ -1,7 +1,9 @@
 <template>
   <div class="app-shell">
     <header>
-      <div class="logo-badge">MVG</div>
+      <div class="logo-badge">
+        <img src="/images/logo.jpeg" alt="MVG" style="width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;" />
+      </div>
       <div class="logo-text">
         <h1>Musée Virtuel de Guinée</h1>
         <span>Journée Internationale des Musées · 16 – 18 Mai 2026</span>
