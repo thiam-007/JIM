@@ -40,23 +40,21 @@ export const useAirtableStore = defineStore('airtable', {
     },
     async testConnection() {
       this.connectionError = ''
-      const response = await fetch(`https://api.airtable.com/v0/meta/bases/${this.base}/tables`, {
+      const url = `https://api.airtable.com/v0/${this.base}/${this.tbl.a}?maxRecords=1`
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${this.token}` }
       })
-      if (response.status === 401) {
-        this.connectionError = 'Token invalide ou révoqué. Vérifiez votre Personal Access Token.'
-        this.token = ''
-        localStorage.removeItem('jim_at_token')
-        throw new Error(this.connectionError)
-      }
-      if (response.status === 403) {
-        this.connectionError = 'Permissions insuffisantes. Ajoutez les scopes : data.records:read, data.records:write, schema.bases:read.'
-        this.token = ''
-        localStorage.removeItem('jim_at_token')
-        throw new Error(this.connectionError)
-      }
       if (!response.ok) {
-        this.connectionError = `Erreur inattendue (HTTP ${response.status}). Réessayez.`
+        const payload = await response.json().catch(() => ({}))
+        if (response.status === 401) {
+          this.connectionError = 'Token invalide ou révoqué. Générez un nouveau token sur airtable.com/create/tokens.'
+        } else if (response.status === 403) {
+          this.connectionError = 'Accès refusé. Vérifiez que le token a les scopes data.records:read + data.records:write et qu\'il couvre la base JIM 2026.'
+        } else {
+          this.connectionError = payload?.error?.message || `Erreur HTTP ${response.status}`
+        }
+        this.token = ''
+        localStorage.removeItem('jim_at_token')
         throw new Error(this.connectionError)
       }
     },

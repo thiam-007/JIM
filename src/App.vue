@@ -40,9 +40,9 @@
             v-model="tokenInput"
             placeholder="patXXXXXXXXXXXXXX..."
           />
-          <button class="btn-connect" v-ripple @click="connectAT">
-            <AppIcon name="link" :size="15" />
-            {{ connected ? 'Mettre à jour' : 'Connecter' }}
+          <button class="btn-connect" v-ripple @click="connectAT" :disabled="connecting">
+            <AppIcon :name="connecting ? 'loader' : 'link'" :size="15" :style="connecting ? 'animation:spin 1s linear infinite' : ''" />
+            {{ connecting ? 'Vérification…' : connected ? 'Mettre à jour' : 'Connecter' }}
           </button>
         </div>
         <div v-if="airtable.connectionError" style="margin-top:8px;padding:8px 12px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:10px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
@@ -80,15 +80,19 @@ const tokenInput = ref(airtable.token)
 
 const connected = computed(() => airtable.isConnected)
 
+const connecting = ref(false)
+
 async function connectAT() {
-  if (!tokenInput.value.trim()) return
+  if (!tokenInput.value.trim() || connecting.value) return
+  connecting.value = true
   airtable.connect(tokenInput.value)
   try {
     await airtable.testConnection()
-    await airtable.loadEventRegistrations()
-    await airtable.loadAvis()
+    await Promise.allSettled([airtable.loadEventRegistrations(), airtable.loadAvis()])
   } catch (error) {
-    console.warn('Connexion Airtable :', error.message)
+    tokenInput.value = ''
+  } finally {
+    connecting.value = false
   }
 }
 
@@ -568,6 +572,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 @keyframes slideInLeft { from { opacity: 0; transform: translateX(-32px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* ─── Shimmer on btn-connect ─── */
 .btn-connect::before {
