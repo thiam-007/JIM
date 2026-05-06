@@ -627,8 +627,9 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 .stand-mvg-img {
   width: 100%;
-  height: 320px;
+  height: 420px;
   object-fit: cover;
+  object-position: center top;
   display: block;
 }
 .stand-mvg-caption {
