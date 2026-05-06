@@ -12,6 +12,42 @@
       </div>
     </div>
 
+    <!-- ─── Compte à rebours ─── -->
+    <div class="countdown-banner" v-reveal="0">
+      <template v-if="!eventStarted">
+        <div class="countdown-label">
+          <AppIcon name="clock" :size="16" /> Début de l'événement dans
+        </div>
+        <div class="countdown-units">
+          <div class="countdown-unit">
+            <span class="cu-num">{{ countdown.days }}</span>
+            <span class="cu-label">Jours</span>
+          </div>
+          <div class="countdown-sep">:</div>
+          <div class="countdown-unit">
+            <span class="cu-num">{{ countdown.hours }}</span>
+            <span class="cu-label">Heures</span>
+          </div>
+          <div class="countdown-sep">:</div>
+          <div class="countdown-unit">
+            <span class="cu-num">{{ countdown.minutes }}</span>
+            <span class="cu-label">Min</span>
+          </div>
+          <div class="countdown-sep">:</div>
+          <div class="countdown-unit">
+            <span class="cu-num">{{ countdown.seconds }}</span>
+            <span class="cu-label">Sec</span>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div class="event-live">
+          <AppIcon name="zap" :size="20" />
+          L'événement est en cours · Bienvenue à la JIM 2026 !
+        </div>
+      </template>
+    </div>
+
     <div class="form-card">
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="landmark" :size="26" /></div>
@@ -102,11 +138,92 @@
 </template>
 
 <script setup>
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
+
+const EVENT_DATE = new Date('2026-05-16T08:30:00')
+const EVENT_END  = new Date('2026-05-18T23:59:59')
+
+const countdown    = reactive({ days: '00', hours: '00', minutes: '00', seconds: '00' })
+const eventStarted = ref(false)
+let timer = null
+
+function pad(n) { return String(n).padStart(2, '0') }
+
+function tick() {
+  const now  = new Date()
+  if (now >= EVENT_DATE && now <= EVENT_END) { eventStarted.value = true; return }
+  if (now > EVENT_END)  { eventStarted.value = true; return }
+  const diff = EVENT_DATE - now
+  countdown.days    = pad(Math.floor(diff / 86400000))
+  countdown.hours   = pad(Math.floor((diff % 86400000) / 3600000))
+  countdown.minutes = pad(Math.floor((diff % 3600000)  / 60000))
+  countdown.seconds = pad(Math.floor((diff % 60000)    / 1000))
+}
+
+onMounted(() => { tick(); timer = setInterval(tick, 1000) })
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>
+/* ─── Compte à rebours ─── */
+.countdown-banner {
+  background: linear-gradient(135deg, #5c3519, #8f5b2c);
+  border-radius: 20px;
+  padding: 20px 28px;
+  margin-bottom: 20px;
+  text-align: center;
+  box-shadow: 0 10px 32px rgba(89,55,22,.22);
+  position: relative;
+  overflow: hidden;
+}
+.countdown-banner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(60deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 18px);
+}
+.countdown-label {
+  font-size: .72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: rgba(255,255,255,.75);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 14px; position: relative;
+}
+.countdown-units {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; position: relative;
+}
+.countdown-unit {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 14px; padding: 10px 18px; min-width: 72px;
+}
+.cu-num {
+  font-size: 2rem; font-weight: 900; color: #fff;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.cu-label {
+  font-size: .62rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  color: rgba(255,255,255,.65); margin-top: 4px;
+}
+.countdown-sep {
+  font-size: 1.8rem; font-weight: 900;
+  color: rgba(255,255,255,.5); margin-bottom: 16px;
+}
+.event-live {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 1rem; font-weight: 800; color: #fff;
+  text-transform: uppercase; letter-spacing: 1.5px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@media (max-width: 480px) {
+  .countdown-unit { min-width: 56px; padding: 8px 12px; }
+  .cu-num { font-size: 1.5rem; }
+}
+
 .events-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
