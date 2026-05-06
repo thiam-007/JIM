@@ -88,23 +88,22 @@
       <div class="partenaires-title">Nos Partenaires</div>
       <div class="partenaires-track-wrapper">
         <div class="partenaires-track">
-          <!-- Logos à ajouter — dupliquer chaque img dans les deux blocs .partenaires-loop -->
           <div class="partenaires-loop">
-            <div class="partenaire-slot">Logo 1</div>
-            <div class="partenaire-slot">Logo 2</div>
-            <div class="partenaire-slot">Logo 3</div>
-            <div class="partenaire-slot">Logo 4</div>
-            <div class="partenaire-slot">Logo 5</div>
-            <div class="partenaire-slot">Logo 6</div>
+            <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+            <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+            <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
+            <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
+            <img src="/images/partenaires/musee-national-guinee.png" alt="Musée National de Guinée" />
+            <img src="/images/partenaires/mcta.png" alt="MCTA" />
           </div>
           <!-- Duplicata pour boucle infinie -->
           <div class="partenaires-loop" aria-hidden="true">
-            <div class="partenaire-slot">Logo 1</div>
-            <div class="partenaire-slot">Logo 2</div>
-            <div class="partenaire-slot">Logo 3</div>
-            <div class="partenaire-slot">Logo 4</div>
-            <div class="partenaire-slot">Logo 5</div>
-            <div class="partenaire-slot">Logo 6</div>
+            <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+            <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+            <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
+            <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
+            <img src="/images/partenaires/musee-national-guinee.png" alt="Musée National de Guinée" />
+            <img src="/images/partenaires/mcta.png" alt="MCTA" />
           </div>
         </div>
       </div>
