@@ -102,6 +102,40 @@
       </div>
     </div>
 
+    <!-- ─── Export CSV ─── -->
+    <div class="stat-block export-block" v-reveal="0">
+      <div class="stat-block-header">
+        <AppIcon name="download" :size="18" />
+        <h2>Exporter les données</h2>
+      </div>
+      <div class="export-grid">
+        <button class="export-btn" @click="exportCSV('inscriptions')">
+          <AppIcon name="file-text" :size="18" />
+          <div>
+            <div class="eb-title">Inscriptions</div>
+            <div class="eb-sub">{{ totalRegistrations }} enregistrements</div>
+          </div>
+          <AppIcon name="download" :size="16" class="eb-dl" />
+        </button>
+        <button class="export-btn" @click="exportCSV('suivi')">
+          <AppIcon name="bar-chart" :size="18" />
+          <div>
+            <div class="eb-title">Suivi pôles</div>
+            <div class="eb-sub">{{ airtable.suiviRecords.length }} enregistrements</div>
+          </div>
+          <AppIcon name="download" :size="16" class="eb-dl" />
+        </button>
+        <button class="export-btn" @click="exportCSV('avis')">
+          <AppIcon name="star" :size="18" />
+          <div>
+            <div class="eb-title">Avis visiteurs</div>
+            <div class="eb-sub">{{ totalAvis }} enregistrements</div>
+          </div>
+          <AppIcon name="download" :size="16" class="eb-dl" />
+        </button>
+      </div>
+    </div>
+
     <!-- ─── Note des visiteurs (style Play Store) ─── -->
     <div class="stat-block" v-reveal="0">
       <div class="stat-block-header">
@@ -225,6 +259,34 @@ function starClass(n, avg) {
   if (n <= Math.floor(avg)) return 'full'
   if (n === Math.ceil(avg) && avg % 1 >= 0.3) return 'half'
   return ''
+}
+
+// ─── Export CSV ───
+function toCSV(rows) {
+  if (!rows.length) return ''
+  const headers = Object.keys(rows[0])
+  const escape  = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+  return [headers.map(escape).join(','), ...rows.map(r => headers.map(k => escape(r[k])).join(','))].join('\n')
+}
+
+function downloadCSV(content, filename) {
+  const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8;' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportCSV(type) {
+  const date = new Date().toISOString().split('T')[0]
+  if (type === 'inscriptions') {
+    const rows = airtable.eventRecords.map(r => r.fields || r)
+    downloadCSV(toCSV(rows.length ? rows : airtable.eventRegistrations), `inscriptions-jim2026-${date}.csv`)
+  } else if (type === 'suivi') {
+    downloadCSV(toCSV(airtable.suiviRecords), `suivi-poles-jim2026-${date}.csv`)
+  } else if (type === 'avis') {
+    downloadCSV(toCSV(airtable.avisRecords), `avis-visiteurs-jim2026-${date}.csv`)
+  }
 }
 
 async function loadAll() {
@@ -447,4 +509,27 @@ watch(() => airtable.isConnected, (connected) => { if (connected) loadAll() })
   from { opacity: 0; transform: translateY(10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Export ─── */
+.export-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+.export-btn {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px;
+  background: rgba(255,255,255,.95);
+  border: 2px solid #e8ddd0; border-radius: 16px;
+  cursor: pointer; transition: all .25s ease;
+  text-align: left; color: var(--brun);
+}
+.export-btn:hover {
+  border-color: var(--or);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(132,89,54,.12);
+}
+.eb-title { font-size: .88rem; font-weight: 700; }
+.eb-sub   { font-size: .74rem; color: #999; margin-top: 2px; }
+.eb-dl    { margin-left: auto; color: var(--or); flex-shrink: 0; }
 </style>
