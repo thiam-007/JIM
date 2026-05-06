@@ -30,6 +30,9 @@
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Suivi' }" to="/suivi">
         <AppIcon name="bar-chart" :size="16" /> Suivi par Pôle
       </RouterLink>
+      <RouterLink class="nav-tab" :class="{ active: route.name === 'Rotations' }" to="/rotations">
+        <AppIcon name="refresh-cw" :size="16" /> Rotations
+      </RouterLink>
     </nav>
 
     <!-- Bannière masquée si le token vient de l'environnement (Vercel) -->
