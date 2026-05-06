@@ -77,6 +77,15 @@
       <div class="stand-mvg-caption">Le Musée Virtuel de Guinée · 72H du Livre</div>
     </div>
 
+    <!-- ─── Partenaires ─── -->
+    <div class="partenaires-section">
+      <div class="partenaires-title">Nos Partenaires</div>
+      <div class="partenaires-logos">
+        <!-- Les logos partenaires seront ajoutés ici -->
+        <div class="partenaire-placeholder">Logos à venir</div>
+      </div>
+    </div>
+
     <footer>Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em></footer>
   </div>
 </template>
@@ -172,7 +181,8 @@ header {
 }
 .logo-badge img {
   width: 56px; height: 56px;
-  object-fit: contain;
+  object-fit: cover;
+  border-radius: 8px;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
 }
@@ -617,9 +627,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 .stand-mvg-img {
   width: 100%;
-  height: 280px;
-  object-fit: cover;
-  object-position: center 30%;
+  height: auto;
   display: block;
 }
 .stand-mvg-caption {
@@ -632,6 +640,52 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   letter-spacing: 1.5px;
   text-transform: uppercase;
   padding: 28px 22px 14px;
+}
+
+/* ─── Partenaires ─── */
+.partenaires-section {
+  margin-top: 32px;
+  padding: 28px 24px;
+  background: rgba(255,255,255,.88);
+  border-radius: 20px;
+  border: 1px solid rgba(132,89,54,.12);
+  box-shadow: 0 8px 24px rgba(89,55,22,.08);
+  text-align: center;
+}
+.partenaires-title {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--brun);
+  margin-bottom: 20px;
+  opacity: .7;
+}
+.partenaires-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+.partenaires-logos img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+  filter: grayscale(30%);
+  opacity: .85;
+  transition: all .25s ease;
+}
+.partenaires-logos img:hover {
+  filter: grayscale(0%);
+  opacity: 1;
+  transform: scale(1.05);
+}
+.partenaire-placeholder {
+  font-size: .78rem;
+  color: rgba(132,89,54,.4);
+  font-style: italic;
+  padding: 12px;
 }
 
 /* ─── Responsive ─── */

@@ -172,18 +172,18 @@ import AppIcon from '../components/AppIcon.vue'
 /* ─── Hero banner ─── */
 .hero-banner {
   position: relative; border-radius: 20px; overflow: hidden;
-  margin-bottom: 20px; height: 320px;
+  margin-bottom: 20px;
   box-shadow: 0 12px 36px rgba(89,55,22,.18);
 }
 .hero-img {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center 20%;
+  width: 100%; height: auto;
   display: block;
 }
 .hero-overlay {
   position: absolute; inset: 0;
   background: linear-gradient(to right, rgba(89,55,22,.75) 0%, rgba(89,55,22,.2) 60%, transparent 100%);
   display: flex; align-items: flex-end; padding: 32px 36px;
+  pointer-events: none;
 }
 .hero-title {
   font-size: 2.2rem; font-weight: 900; color: #fff;
