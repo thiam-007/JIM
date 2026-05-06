@@ -31,6 +31,9 @@ export default defineConfig({
             options: { cacheName: 'airtable-api', networkTimeoutSeconds: 10 }
           }
         ]
+      },
+      devOptions: {
+        enabled: true
       }
     })
   ]
