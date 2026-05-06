@@ -7,26 +7,6 @@
         <div class="fh-sub">Agenda des ateliers, interventions et événements publics</div>
       </div>
       <div class="fb">
-        <div class="stats-summary">
-          <div class="stat-card" v-reveal="0">
-            <strong>Total inscriptions</strong>
-            <span>{{ totalRegistrations }}</span>
-          </div>
-          <div class="stat-card" v-reveal="100">
-            <strong>Sessions enregistrées</strong>
-            <span>{{ Object.keys(sessionCounts).length }}</span>
-          </div>
-        </div>
-
-        <div class="session-counts" v-if="totalRegistrations > 0">
-          <h3>Comptage par session</h3>
-          <ul>
-            <li v-for="(count, sessionTitle) in sessionCounts" :key="sessionTitle">
-              <strong>{{ count }}</strong> participant·e·s enregistré·e·s pour <em>{{ sessionTitle }}</em>
-            </li>
-          </ul>
-        </div>
-
         <div class="schedule-section" v-reveal="0">
           <h3>Programme officiel</h3>
           <div class="schedule-table">
@@ -86,14 +66,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useAirtableStore } from '../store/airtable'
 import EventRegistrationForm from '../components/EventRegistrationForm.vue'
 import AppIcon from '../components/AppIcon.vue'
-
-const airtable = useAirtableStore()
-const totalRegistrations = computed(() => airtable.totalRegistrations)
-const sessionCounts = computed(() => airtable.sessionCounts)
 
 const officialProgram = [
   { time: '8h30', location: 'Salle de conférence', title: 'Accueil des participant·e·s', speakers: "Équipe d'organisation", audience: 'Invités PROVGUI' },

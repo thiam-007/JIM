@@ -56,7 +56,13 @@
         </div>
         <div class="fg" v-reveal="120">
           <label>Observations et commentaires</label>
-          <textarea placeholder="Fluide · Attente · Problème technique · Forte participation…" v-model="notes"></textarea>
+          <div class="obs-grid">
+            <label class="obs-item" v-for="obs in observationOptions" :key="obs">
+              <input type="checkbox" :value="obs" v-model="notes" />
+              <span class="obs-check"><AppIcon name="check" :size="12" /></span>
+              <span class="obs-label">{{ obs }}</span>
+            </label>
+          </div>
         </div>
 
         <button class="bsub bsub-s" v-ripple :disabled="submitting" @click="submitForm">
@@ -92,7 +98,18 @@ const groupColor = ref('')
 const passed = ref('')
 const active = ref('')
 const content = ref('')
-const notes = ref('')
+const notes = ref([])
+
+const observationOptions = [
+  'Fluide',
+  'Forte participation',
+  'Attente',
+  'Peu de participants',
+  'Problème technique',
+  'Matériel défaillant',
+  'Questions fréquentes',
+  'Enthousiasme élevé',
+]
 const errorMessage = ref('')
 const submitted = ref(false)
 const submitting = ref(false)
@@ -108,7 +125,7 @@ function resetForm() {
   passed.value = ''
   active.value = ''
   content.value = ''
-  notes.value = ''
+  notes.value = []
   errorMessage.value = ''
   submitted.value = false
   submitting.value = false
@@ -130,7 +147,7 @@ async function submitForm() {
       'Participants passés': parseInt(passed.value, 10),
       'Participants actifs': parseInt(active.value, 10),
       'Contenus produits': parseInt(content.value, 10),
-      Observations: notes.value.trim()
+      Observations: notes.value.join(', ')
     })
     submitted.value = true
   } catch (error) {
@@ -140,3 +157,49 @@ async function submitForm() {
   }
 }
 </script>
+
+<style scoped>
+.obs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+@media (max-width: 580px) { .obs-grid { grid-template-columns: 1fr; } }
+
+.obs-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 2px solid #e8ddd0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all .25s ease;
+  background: rgba(255,255,255,.95);
+  user-select: none;
+}
+.obs-item:hover { border-color: var(--or); background: rgba(249,178,51,.06); }
+.obs-item input[type=checkbox] { display: none; }
+.obs-check {
+  width: 20px; height: 20px;
+  border: 2px solid #d0c4b4;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: transparent;
+  transition: all .2s ease;
+}
+.obs-item:has(input:checked) { border-color: var(--rouge); background: rgba(177,34,42,.06); }
+.obs-item:has(input:checked) .obs-check {
+  background: var(--rouge);
+  border-color: var(--rouge);
+  color: #fff;
+}
+.obs-label {
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--brun);
+  line-height: 1.2;
+}
+.obs-item:has(input:checked) .obs-label { color: var(--rouge); }
+</style>
