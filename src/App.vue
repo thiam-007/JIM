@@ -80,9 +80,27 @@
     <!-- ─── Partenaires ─── -->
     <div class="partenaires-section">
       <div class="partenaires-title">Nos Partenaires</div>
-      <div class="partenaires-logos">
-        <!-- Les logos partenaires seront ajoutés ici -->
-        <div class="partenaire-placeholder">Logos à venir</div>
+      <div class="partenaires-track-wrapper">
+        <div class="partenaires-track">
+          <!-- Logos à ajouter — dupliquer chaque img dans les deux blocs .partenaires-loop -->
+          <div class="partenaires-loop">
+            <div class="partenaire-slot">Logo 1</div>
+            <div class="partenaire-slot">Logo 2</div>
+            <div class="partenaire-slot">Logo 3</div>
+            <div class="partenaire-slot">Logo 4</div>
+            <div class="partenaire-slot">Logo 5</div>
+            <div class="partenaire-slot">Logo 6</div>
+          </div>
+          <!-- Duplicata pour boucle infinie -->
+          <div class="partenaires-loop" aria-hidden="true">
+            <div class="partenaire-slot">Logo 1</div>
+            <div class="partenaire-slot">Logo 2</div>
+            <div class="partenaire-slot">Logo 3</div>
+            <div class="partenaire-slot">Logo 4</div>
+            <div class="partenaire-slot">Logo 5</div>
+            <div class="partenaire-slot">Logo 6</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -624,13 +642,15 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 36px rgba(89,55,22,.16);
+  background: linear-gradient(135deg, #5c3519, #8f5b2c);
 }
 .stand-mvg-img {
   width: 100%;
-  height: 420px;
-  object-fit: cover;
-  object-position: center top;
+  height: auto;
+  max-height: 65vh;
+  object-fit: contain;
   display: block;
+  margin: 0 auto;
 }
 .stand-mvg-caption {
   position: absolute;
@@ -647,12 +667,12 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 /* ─── Partenaires ─── */
 .partenaires-section {
   margin-top: 32px;
-  padding: 28px 24px;
+  padding: 24px 0 20px;
   background: rgba(255,255,255,.88);
   border-radius: 20px;
   border: 1px solid rgba(132,89,54,.12);
   box-shadow: 0 8px 24px rgba(89,55,22,.08);
-  text-align: center;
+  overflow: hidden;
 }
 .partenaires-title {
   font-size: .72rem;
@@ -662,32 +682,53 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   color: var(--brun);
   margin-bottom: 20px;
   opacity: .7;
+  text-align: center;
 }
-.partenaires-logos {
+.partenaires-track-wrapper {
+  overflow: hidden;
+  /* masques de fondu sur les bords */
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.partenaires-track {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
+  width: max-content;
+  animation: scroll-logos 28s linear infinite;
 }
-.partenaires-logos img {
-  height: 48px;
+.partenaires-track:hover { animation-play-state: paused; }
+@keyframes scroll-logos {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.partenaires-loop {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 0 24px;
+}
+.partenaires-loop img {
+  height: 52px;
   width: auto;
   object-fit: contain;
-  filter: grayscale(30%);
-  opacity: .85;
+  filter: grayscale(20%);
+  opacity: .8;
   transition: all .25s ease;
+  flex-shrink: 0;
 }
-.partenaires-logos img:hover {
-  filter: grayscale(0%);
-  opacity: 1;
-  transform: scale(1.05);
-}
-.partenaire-placeholder {
-  font-size: .78rem;
-  color: rgba(132,89,54,.4);
-  font-style: italic;
-  padding: 12px;
+.partenaires-loop img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.06); }
+.partenaire-slot {
+  height: 52px;
+  min-width: 120px;
+  border: 2px dashed rgba(132,89,54,.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 600;
+  color: rgba(132,89,54,.35);
+  letter-spacing: .5px;
+  flex-shrink: 0;
 }
 
 /* ─── Responsive ─── */
