@@ -218,9 +218,9 @@ import AppIcon from '../components/AppIcon.vue'
   margin-top: 6px;
 }
 .jim-cta:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 10px 24px rgba(89,55,22,.22); }
-.jim-photo { width: 220px; flex-shrink: 0; }
+.jim-photo { width: 320px; flex-shrink: 0; }
 .jim-photo img {
-  width: 100%; height: 300px; object-fit: cover;
+  width: 100%; height: auto; object-fit: contain;
   border-radius: 18px; display: block;
   box-shadow: 0 12px 32px rgba(89,55,22,.18);
 }
