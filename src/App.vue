@@ -93,8 +93,8 @@
             <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
             <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
             <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
-            <img src="/images/partenaires/musee-national-guinee.png" alt="Musée National de Guinée" />
-            <img src="/images/partenaires/mcta.png" alt="MCTA" />
+            <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+            <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
           </div>
           <!-- Duplicata pour boucle infinie -->
           <div class="partenaires-loop" aria-hidden="true">
@@ -102,8 +102,8 @@
             <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
             <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
             <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
-            <img src="/images/partenaires/musee-national-guinee.png" alt="Musée National de Guinée" />
-            <img src="/images/partenaires/mcta.png" alt="MCTA" />
+            <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+            <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
           </div>
         </div>
       </div>
