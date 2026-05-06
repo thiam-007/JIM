@@ -627,7 +627,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 .stand-mvg-img {
   width: 100%;
-  height: 420px;
+  height: 520px;
   object-fit: cover;
   object-position: center top;
   display: block;
