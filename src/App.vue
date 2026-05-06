@@ -184,7 +184,9 @@ button, input, textarea, select { font: inherit; }
 
 /* ─── Header ─── */
 header {
-  background: linear-gradient(135deg, #5c3519 0%, #8f5b2c 40%, #f7bf39 100%);
+  background:
+    linear-gradient(135deg, rgba(92,53,25,.82) 0%, rgba(143,91,44,.78) 40%, rgba(247,191,57,.72) 100%),
+    url('/images/motif-removebg-preview.png') center/auto 100% repeat-x;
   color: var(--blanc);
   padding: 22px 24px;
   display: flex;
