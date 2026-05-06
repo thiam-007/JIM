@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 
+const ENV_TOKEN = import.meta.env.VITE_AIRTABLE_TOKEN || ''
+
 export const useAirtableStore = defineStore('airtable', {
   state: () => ({
     base: 'appqgfu3Ten3zehfb',
@@ -9,7 +11,8 @@ export const useAirtableStore = defineStore('airtable', {
       v: 'tbl1y0Zf88ErEqifX',
       e: 'tblJ92j4syVfWqEsS'
     },
-    token: localStorage.getItem('airtable_token') || '',
+    token: ENV_TOKEN || localStorage.getItem('airtable_token') || '',
+    isEnvToken: !!ENV_TOKEN,
     eventRegistrations: [],
     eventRecords: [],
     avisRecords: [],

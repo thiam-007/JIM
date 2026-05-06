@@ -5,8 +5,10 @@ import StatsView from '../views/StatsView.vue'
 import AccueilView from '../views/AccueilView.vue'
 import SuiviView from '../views/SuiviView.vue'
 import InscriptionsView from '../views/InscriptionsView.vue'
+import LoginView from '../views/LoginView.vue'
 
 const routes = [
+  { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
   { path: '/', name: 'Home', component: HomeView },
   { path: '/programme', name: 'Programme', component: ProgrammeView },
   { path: '/inscriptions', name: 'Inscriptions', component: InscriptionsView },
@@ -18,6 +20,13 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+router.beforeEach((to) => {
+  const isAuth = sessionStorage.getItem('jim_auth') === '1'
+  if (!to.meta.public && !isAuth) {
+    return { name: 'Login' }
+  }
 })
 
 export default router

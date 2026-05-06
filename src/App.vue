@@ -32,36 +32,39 @@
       </RouterLink>
     </nav>
 
-    <div v-if="connected" class="api-banner connected">
-      <span class="api-icon"><AppIcon name="check-circle" :size="22" /></span>
-      <div style="flex:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <strong>Connexion Airtable active — enregistrement prêt.</strong>
-        <button class="btn-disconnect" @click="disconnectAT">
-          <AppIcon name="log-out" :size="14" /> Déconnecter
-        </button>
-      </div>
-    </div>
-    <div v-else class="api-banner config">
-      <span class="api-icon"><AppIcon name="key" :size="22" /></span>
-      <div style="flex:1">
-        <strong>Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement</strong>
-        <div class="api-token-row">
-          <input
-            type="password"
-            class="api-token-input"
-            v-model="tokenInput"
-            placeholder="patXXXXXXXXXXXXXX..."
-          />
-          <button class="btn-connect" v-ripple @click="connectAT">
-            <AppIcon name="link" :size="15" /> Connecter
+    <!-- Bannière masquée si le token vient de l'environnement (Vercel) -->
+    <template v-if="!envToken">
+      <div v-if="connected" class="api-banner connected">
+        <span class="api-icon"><AppIcon name="check-circle" :size="22" /></span>
+        <div style="flex:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <strong>Connexion Airtable active — enregistrement prêt.</strong>
+          <button class="btn-disconnect" @click="disconnectAT">
+            <AppIcon name="log-out" :size="14" /> Déconnecter
           </button>
         </div>
-        <div v-if="connectError" style="margin-top:8px;padding:10px 14px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:12px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
-          <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
-          <span>{{ connectError }}</span>
+      </div>
+      <div v-else class="api-banner config">
+        <span class="api-icon"><AppIcon name="key" :size="22" /></span>
+        <div style="flex:1">
+          <strong>Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement</strong>
+          <div class="api-token-row">
+            <input
+              type="password"
+              class="api-token-input"
+              v-model="tokenInput"
+              placeholder="patXXXXXXXXXXXXXX..."
+            />
+            <button class="btn-connect" v-ripple @click="connectAT">
+              <AppIcon name="link" :size="15" /> Connecter
+            </button>
+          </div>
+          <div v-if="connectError" style="margin-top:8px;padding:10px 14px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:12px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
+            <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
+            <span>{{ connectError }}</span>
+          </div>
         </div>
       </div>
-    </div>
+    </template>
 
     <main>
       <RouterView v-slot="{ Component }">
@@ -129,6 +132,7 @@ onMounted(async () => {
 })
 
 const connected = computed(() => airtable.isConnected)
+const envToken  = computed(() => airtable.isEnvToken)
 const connectError = ref('')
 
 async function connectAT() {
