@@ -182,7 +182,7 @@ header {
 .logo-badge img {
   width: 56px; height: 56px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 50%;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
 }
