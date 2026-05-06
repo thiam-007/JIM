@@ -2,7 +2,7 @@
   <div class="app-shell">
     <header>
       <div class="logo-badge">
-        <img src="/images/logo.jpeg" alt="MVG" style="width:44px;height:44px;object-fit:contain;border-radius:50%;display:block;" />
+        <img src="/images/logo.jpeg" alt="MVG" />
       </div>
       <div class="logo-text">
         <h1>Musée Virtuel de Guinée</h1>
@@ -71,12 +71,18 @@
       </RouterView>
     </main>
 
+    <!-- ─── Stand MVG ─── -->
+    <div class="stand-mvg-section">
+      <img src="/images/stand-mvg.jpeg" alt="Le Musée Virtuel de Guinée au 72H du livre" class="stand-mvg-img" />
+      <div class="stand-mvg-caption">Le Musée Virtuel de Guinée · 72H du Livre</div>
+    </div>
+
     <footer>Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em></footer>
   </div>
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
 import { useAirtableStore } from './store/airtable'
 import AppIcon from './components/AppIcon.vue'
@@ -84,6 +90,16 @@ import AppIcon from './components/AppIcon.vue'
 const route = useRoute()
 const airtable = useAirtableStore()
 const tokenInput = ref(airtable.token)
+
+onMounted(async () => {
+  if (airtable.isConnected) {
+    await Promise.allSettled([
+      airtable.loadEventRegistrations(),
+      airtable.loadAvis(),
+      airtable.loadSuivi()
+    ])
+  }
+})
 
 const connected = computed(() => airtable.isConnected)
 const connectError = ref('')
@@ -150,14 +166,15 @@ header {
 }
 .logo-badge {
   width: 60px; height: 60px;
-  background: var(--gold);
-  border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 22px; font-weight: 900;
-  color: var(--brun); letter-spacing: -1px;
-  border: 3px solid rgba(255,255,255,.8);
   flex-shrink: 0;
   animation: float 3s ease-in-out infinite;
+}
+.logo-badge img {
+  width: 56px; height: 56px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
 }
 .logo-text { flex: 1; }
 .logo-text h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.15; margin: 0; }
@@ -589,6 +606,33 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 .btn-connect:hover::before { opacity: 1; }
 @keyframes shimmer { 0% { background-position: -1000px 0; transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+/* ─── Stand MVG ─── */
+.stand-mvg-section {
+  position: relative;
+  margin-top: 40px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 12px 36px rgba(89,55,22,.16);
+}
+.stand-mvg-img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+.stand-mvg-caption {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(89,55,22,.85) 0%, transparent 100%);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 28px 22px 14px;
+}
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {

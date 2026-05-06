@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useAirtableStore } from '../store/airtable'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -227,20 +227,19 @@ function starClass(n, avg) {
   return ''
 }
 
-// ─── Chargement au connect ───
-watch(
-  () => airtable.isConnected,
-  async (connected) => {
-    if (connected) {
-      await Promise.allSettled([
-        airtable.loadEventRegistrations(),
-        airtable.loadAvis(),
-        airtable.loadSuivi()
-      ])
-    }
-  },
-  { immediate: true }
-)
+async function loadAll() {
+  if (airtable.isConnected) {
+    await Promise.allSettled([
+      airtable.loadEventRegistrations(),
+      airtable.loadAvis(),
+      airtable.loadSuivi()
+    ])
+  }
+}
+
+onMounted(loadAll)
+
+watch(() => airtable.isConnected, (connected) => { if (connected) loadAll() })
 </script>
 
 <style scoped>
