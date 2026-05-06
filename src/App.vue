@@ -72,13 +72,13 @@
     </main>
 
     <!-- ─── Stand MVG ─── -->
-    <div class="stand-mvg-section">
+    <div class="stand-mvg-section" v-reveal="0">
       <img src="/images/stand-mvg.jpeg" alt="Le Musée Virtuel de Guinée au 72H du livre" class="stand-mvg-img" />
       <div class="stand-mvg-caption">Le Musée Virtuel de Guinée · 72H du Livre</div>
     </div>
 
     <!-- ─── Partenaires ─── -->
-    <div class="partenaires-section">
+    <div class="partenaires-section" v-reveal="0">
       <div class="partenaires-title">Nos Partenaires</div>
       <div class="partenaires-track-wrapper">
         <div class="partenaires-track">
@@ -190,6 +190,19 @@ header {
   z-index: 100;
   border-bottom: 1px solid rgba(255,255,255,.16);
   animation: fadeInDown 0.5s ease-out;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  animation: headerShimmer 4s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+@keyframes headerShimmer {
+  0%   { left: -60%; }
+  60%, 100% { left: 120%; }
 }
 .logo-badge {
   width: 60px; height: 60px;
@@ -203,6 +216,11 @@ header {
   border-radius: 50%;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+  animation: logoGlow 3.5s ease-in-out infinite;
+}
+@keyframes logoGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249,178,51,0); }
+  50%       { box-shadow: 0 0 0 7px rgba(249,178,51,.3); }
 }
 .logo-text { flex: 1; }
 .logo-text h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.15; margin: 0; }
@@ -642,11 +660,27 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 36px rgba(89,55,22,.16);
+  transition: transform .55s cubic-bezier(.22,1,.36,1), opacity .55s ease, box-shadow .55s ease;
+}
+.stand-mvg-section.will-reveal {
+  opacity: 0;
+  transform: scale(0.96) translateY(24px);
+}
+.stand-mvg-section.revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.stand-mvg-section:hover {
+  box-shadow: 0 24px 56px rgba(89,55,22,.26);
 }
 .stand-mvg-img {
   width: 100%;
   height: auto;
   display: block;
+  transition: transform .6s ease;
+}
+.stand-mvg-section:hover .stand-mvg-img {
+  transform: scale(1.015);
 }
 .stand-mvg-caption {
   position: absolute;
@@ -661,6 +695,8 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 
 /* ─── Partenaires ─── */
+.partenaires-section.will-reveal { opacity: 0; transform: translateY(24px); }
+.partenaires-section.revealed    { opacity: 1; transform: translateY(0); transition: opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1); }
 .partenaires-section {
   margin-top: 32px;
   padding: 24px 0 20px;
