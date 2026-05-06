@@ -64,8 +64,8 @@
           <div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div>
         </div>
 
-        <div class="jim-section" v-reveal="80">
-          <div class="jim-text">
+        <div class="jim-section">
+          <div class="jim-text anim-from-left" v-reveal="60">
             <h2 class="jim-heading">Journée Internationale des Musées</h2>
             <p class="jim-para">Le Musée Virtuel de Guinée célèbre la JIM 2026 autour du thème <strong>« Les musées unissent un monde divisé »</strong>. Trois jours de conférences, d'ateliers participatifs, de rencontres et de culture ouverts à tous les publics.</p>
             <p class="jim-para">Du 16 au 18 mai 2026, le MVG réunit chercheurs, artistes, communautés et visiteurs pour explorer la provenance, les restitutions et le rôle du patrimoine dans le monde contemporain.</p>
@@ -73,7 +73,7 @@
               <AppIcon name="calendar" :size="16" /> Voir le programme complet
             </router-link>
           </div>
-          <div class="jim-photo">
+          <div class="jim-photo anim-from-right" v-reveal="120">
             <img src="/images/affiche-jim-2026.jpeg" alt="Affiche JIM 2026" />
           </div>
         </div>
@@ -85,11 +85,11 @@
           <div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div>
         </div>
 
-        <div class="chantier-section" v-reveal="80">
-          <div class="chantier-photo">
+        <div class="chantier-section">
+          <div class="chantier-photo anim-from-left" v-reveal="60">
             <img src="/images/side-photo.jpeg" alt="Chantier des collections — expérience immersive" />
           </div>
-          <div class="chantier-text">
+          <div class="chantier-text anim-from-right" v-reveal="120">
             <h2 class="chantier-heading">Une expérience immersive au cœur du patrimoine</h2>
             <p class="chantier-para">Le chantier des collections du Musée Virtuel de Guinée invite le public à découvrir les coulisses de la numérisation du patrimoine guinéen. Casques de réalité virtuelle, modèles 3D et récits oraux se conjuguent pour offrir une plongée inédite dans l'histoire des objets.</p>
             <p class="chantier-para">Cette initiative pionnière en Afrique de l'Ouest ouvre la voie à une muséologie participative et accessible, connectant passé et futur à travers la technologie.</p>
@@ -178,6 +178,14 @@ import AppIcon from '../components/AppIcon.vue'
 .hero-img {
   width: 100%; height: auto;
   display: block;
+  transform-origin: center;
+}
+.hero-banner.revealed .hero-img {
+  animation: heroZoom 1.4s cubic-bezier(.22, 1, .36, 1) forwards;
+}
+@keyframes heroZoom {
+  from { transform: scale(1.07); }
+  to   { transform: scale(1); }
 }
 .hero-overlay {
   position: absolute; inset: 0;
@@ -189,9 +197,25 @@ import AppIcon from '../components/AppIcon.vue'
   font-size: 2.2rem; font-weight: 900; color: #fff;
   letter-spacing: 3px; text-transform: uppercase; line-height: 1;
 }
+.hero-banner.revealed .hero-title {
+  animation: heroTextUp .7s cubic-bezier(.22, 1, .36, 1) .35s both;
+}
+.hero-banner.revealed .hero-sub {
+  animation: heroTextUp .7s cubic-bezier(.22, 1, .36, 1) .55s both;
+}
+@keyframes heroTextUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .hero-sub {
   font-size: .8rem; color: rgba(255,255,255,.85); margin-top: 6px; letter-spacing: 1px;
 }
+
+/* ─── Directional reveals ─── */
+.anim-from-left.will-reveal  { opacity: 0; transform: translateX(-44px); }
+.anim-from-left.revealed     { opacity: 1; transform: translateX(0); transition: opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1); }
+.anim-from-right.will-reveal { opacity: 0; transform: translateX(44px); }
+.anim-from-right.revealed    { opacity: 1; transform: translateX(0); transition: opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1); }
 
 /* ─── JIM section ─── */
 .jim-section {
@@ -218,11 +242,16 @@ import AppIcon from '../components/AppIcon.vue'
   margin-top: 6px;
 }
 .jim-cta:hover { transform: translateY(-2px); filter: brightness(1.06); box-shadow: 0 10px 24px rgba(89,55,22,.22); }
-.jim-photo { width: 220px; flex-shrink: 0; }
+.jim-photo { width: 320px; flex-shrink: 0; }
 .jim-photo img {
-  width: 100%; height: 300px; object-fit: cover;
+  width: 100%; height: auto; object-fit: contain;
   border-radius: 18px; display: block;
   box-shadow: 0 12px 32px rgba(89,55,22,.18);
+  transition: transform .45s ease, box-shadow .45s ease;
+}
+.jim-photo:hover img {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 28px 56px rgba(89,55,22,.28);
 }
 
 /* ─── Chantier section ─── */
@@ -238,6 +267,11 @@ import AppIcon from '../components/AppIcon.vue'
   width: 100%; height: 320px; object-fit: cover;
   border-radius: 18px; display: block;
   box-shadow: 0 12px 32px rgba(89,55,22,.18);
+  transition: transform .45s ease, box-shadow .45s ease;
+}
+.chantier-photo:hover img {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 28px 56px rgba(89,55,22,.28);
 }
 .chantier-heading {
   font-size: 1.15rem; font-weight: 900; color: var(--brun);

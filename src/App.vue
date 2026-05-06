@@ -72,17 +72,35 @@
     </main>
 
     <!-- ─── Stand MVG ─── -->
-    <div class="stand-mvg-section">
+    <div class="stand-mvg-section" v-reveal="0">
       <img src="/images/stand-mvg.jpeg" alt="Le Musée Virtuel de Guinée au 72H du livre" class="stand-mvg-img" />
       <div class="stand-mvg-caption">Le Musée Virtuel de Guinée · 72H du Livre</div>
     </div>
 
     <!-- ─── Partenaires ─── -->
-    <div class="partenaires-section">
+    <div class="partenaires-section" v-reveal="0">
       <div class="partenaires-title">Nos Partenaires</div>
-      <div class="partenaires-logos">
-        <!-- Les logos partenaires seront ajoutés ici -->
-        <div class="partenaire-placeholder">Logos à venir</div>
+      <div class="partenaires-track-wrapper">
+        <div class="partenaires-track">
+          <!-- Logos à ajouter — dupliquer chaque img dans les deux blocs .partenaires-loop -->
+          <div class="partenaires-loop">
+            <div class="partenaire-slot">Logo 1</div>
+            <div class="partenaire-slot">Logo 2</div>
+            <div class="partenaire-slot">Logo 3</div>
+            <div class="partenaire-slot">Logo 4</div>
+            <div class="partenaire-slot">Logo 5</div>
+            <div class="partenaire-slot">Logo 6</div>
+          </div>
+          <!-- Duplicata pour boucle infinie -->
+          <div class="partenaires-loop" aria-hidden="true">
+            <div class="partenaire-slot">Logo 1</div>
+            <div class="partenaire-slot">Logo 2</div>
+            <div class="partenaire-slot">Logo 3</div>
+            <div class="partenaire-slot">Logo 4</div>
+            <div class="partenaire-slot">Logo 5</div>
+            <div class="partenaire-slot">Logo 6</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -172,6 +190,19 @@ header {
   z-index: 100;
   border-bottom: 1px solid rgba(255,255,255,.16);
   animation: fadeInDown 0.5s ease-out;
+  overflow: hidden;
+}
+header::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.12), transparent);
+  animation: headerShimmer 4s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+@keyframes headerShimmer {
+  0%   { left: -60%; }
+  60%, 100% { left: 120%; }
 }
 .logo-badge {
   width: 60px; height: 60px;
@@ -185,6 +216,11 @@ header {
   border-radius: 50%;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
+  animation: logoGlow 3.5s ease-in-out infinite;
+}
+@keyframes logoGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249,178,51,0); }
+  50%       { box-shadow: 0 0 0 7px rgba(249,178,51,.3); }
 }
 .logo-text { flex: 1; }
 .logo-text h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.15; margin: 0; }
@@ -624,11 +660,27 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 36px rgba(89,55,22,.16);
+  transition: transform .55s cubic-bezier(.22,1,.36,1), opacity .55s ease, box-shadow .55s ease;
+}
+.stand-mvg-section.will-reveal {
+  opacity: 0;
+  transform: scale(0.96) translateY(24px);
+}
+.stand-mvg-section.revealed {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.stand-mvg-section:hover {
+  box-shadow: 0 24px 56px rgba(89,55,22,.26);
 }
 .stand-mvg-img {
   width: 100%;
   height: auto;
   display: block;
+  transition: transform .6s ease;
+}
+.stand-mvg-section:hover .stand-mvg-img {
+  transform: scale(1.015);
 }
 .stand-mvg-caption {
   position: absolute;
@@ -643,14 +695,16 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 
 /* ─── Partenaires ─── */
+.partenaires-section.will-reveal { opacity: 0; transform: translateY(24px); }
+.partenaires-section.revealed    { opacity: 1; transform: translateY(0); transition: opacity .6s ease, transform .6s cubic-bezier(.22,1,.36,1); }
 .partenaires-section {
   margin-top: 32px;
-  padding: 28px 24px;
+  padding: 24px 0 20px;
   background: rgba(255,255,255,.88);
   border-radius: 20px;
   border: 1px solid rgba(132,89,54,.12);
   box-shadow: 0 8px 24px rgba(89,55,22,.08);
-  text-align: center;
+  overflow: hidden;
 }
 .partenaires-title {
   font-size: .72rem;
@@ -660,32 +714,53 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   color: var(--brun);
   margin-bottom: 20px;
   opacity: .7;
+  text-align: center;
 }
-.partenaires-logos {
+.partenaires-track-wrapper {
+  overflow: hidden;
+  /* masques de fondu sur les bords */
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+.partenaires-track {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
+  width: max-content;
+  animation: scroll-logos 28s linear infinite;
 }
-.partenaires-logos img {
-  height: 48px;
+.partenaires-track:hover { animation-play-state: paused; }
+@keyframes scroll-logos {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.partenaires-loop {
+  display: flex;
+  align-items: center;
+  gap: 48px;
+  padding: 0 24px;
+}
+.partenaires-loop img {
+  height: 72px;
   width: auto;
   object-fit: contain;
-  filter: grayscale(30%);
-  opacity: .85;
+  filter: grayscale(20%);
+  opacity: .8;
   transition: all .25s ease;
+  flex-shrink: 0;
 }
-.partenaires-logos img:hover {
-  filter: grayscale(0%);
-  opacity: 1;
-  transform: scale(1.05);
-}
-.partenaire-placeholder {
-  font-size: .78rem;
-  color: rgba(132,89,54,.4);
-  font-style: italic;
-  padding: 12px;
+.partenaires-loop img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.06); }
+.partenaire-slot {
+  height: 72px;
+  min-width: 140px;
+  border: 2px dashed rgba(132,89,54,.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 600;
+  color: rgba(132,89,54,.35);
+  letter-spacing: .5px;
+  flex-shrink: 0;
 }
 
 /* ─── Responsive ─── */
