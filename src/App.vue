@@ -642,15 +642,11 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 12px 36px rgba(89,55,22,.16);
-  background: linear-gradient(135deg, #5c3519, #8f5b2c);
 }
 .stand-mvg-img {
   width: 100%;
-  height: 420px;
-  object-fit: cover;
-  object-position: center top;
+  height: auto;
   display: block;
-  margin: 0 auto;
 }
 .stand-mvg-caption {
   position: absolute;
@@ -707,7 +703,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   padding: 0 24px;
 }
 .partenaires-loop img {
-  height: 52px;
+  height: 72px;
   width: auto;
   object-fit: contain;
   filter: grayscale(20%);
@@ -717,8 +713,8 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 .partenaires-loop img:hover { filter: grayscale(0%); opacity: 1; transform: scale(1.06); }
 .partenaire-slot {
-  height: 52px;
-  min-width: 120px;
+  height: 72px;
+  min-width: 140px;
   border: 2px dashed rgba(132,89,54,.2);
   border-radius: 10px;
   display: flex;
