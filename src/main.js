@@ -7,6 +7,15 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 
+app.config.errorHandler = (err, _instance, info) => {
+  console.error(`[JIM] Erreur Vue (${info}) :`, err)
+}
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[JIM] Promesse rejetée non gérée :', event.reason)
+  event.preventDefault()
+})
+
 // Scroll-reveal: elements animate in when they enter the viewport
 const revealObserver = new IntersectionObserver(
   (entries) => {

@@ -17,7 +17,8 @@ export const useAirtableStore = defineStore('airtable', {
     eventRecords: [],
     avisRecords: [],
     suiviRecords: [],
-    eventFetchError: ''
+    eventFetchError: '',
+    _submitting: false
   }),
   getters: {
     allEventEntries: (state) => [...state.eventRegistrations, ...state.eventRecords],
@@ -45,55 +46,75 @@ export const useAirtableStore = defineStore('airtable', {
       }
     },
     async sendRecord(tableKey, fields) {
-      if (!this.token) {
-        throw new Error('Token Airtable manquant')
-      }
-      fields.Date = new Date().toISOString().split('T')[0]
-      // Supprimer les valeurs vides pour éviter les erreurs sur les champs singleSelect
-      const cleanFields = Object.fromEntries(
-        Object.entries(fields).filter(([, v]) => v !== '' && v !== null && v !== undefined)
-      )
-      const response = await fetch(`https://api.airtable.com/v0/${this.base}/${this.tbl[tableKey]}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ fields: cleanFields })
-      })
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}))
-        const type = payload?.error?.type || ''
-        const msg = payload?.error?.message || `HTTP ${response.status}`
-        if (type === 'INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND') {
-          throw new Error('Permissions insuffisantes — vérifiez que le token a les scopes data.records:read ET data.records:write, et qu\'il a accès à cette base.')
+      if (!this.token) throw new Error('Token Airtable manquant')
+      if (this._submitting) throw new Error('Envoi déjà en cours, veuillez patienter')
+      this._submitting = true
+
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+
+      try {
+        fields.Date = new Date().toISOString().split('T')[0]
+        const cleanFields = Object.fromEntries(
+          Object.entries(fields).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+        )
+        const response = await fetch(`https://api.airtable.com/v0/${this.base}/${this.tbl[tableKey]}`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ fields: cleanFields }),
+          signal: controller.signal
+        })
+        if (!response.ok) {
+          const payload = await response.json().catch(() => ({}))
+          const type = payload?.error?.type || ''
+          const msg = payload?.error?.message || `HTTP ${response.status}`
+          if (type === 'INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND') {
+            throw new Error('Permissions insuffisantes — vérifiez que le token a les scopes data.records:read ET data.records:write, et qu\'il a accès à cette base.')
+          }
+          throw new Error(msg)
         }
-        throw new Error(msg)
+        return response.json()
+      } catch (err) {
+        if (err.name === 'AbortError') throw new Error('Délai dépassé — vérifiez votre connexion et réessayez.')
+        throw err
+      } finally {
+        clearTimeout(timeout)
+        this._submitting = false
       }
-      return response.json()
     },
     addEventRegistration(registration) {
       this.eventRegistrations.push(registration)
     },
     async fetchRecords(tableKey, params = {}) {
-      if (!this.token) {
-        throw new Error('Token Airtable manquant')
-      }
+      if (!this.token) throw new Error('Token Airtable manquant')
       const query = new URLSearchParams(params).toString()
       const records = []
       let offset = ''
       do {
-        const url = `https://api.airtable.com/v0/${this.base}/${this.tbl[tableKey]}${query ? `?${query}` : ''}${offset ? `&offset=${offset}` : ''}`
-        const response = await fetch(url, {
-          headers: { Authorization: `Bearer ${this.token}` }
-        })
-        if (!response.ok) {
-          const payload = await response.json().catch(() => ({}))
-          throw new Error(payload?.error?.message || `HTTP ${response.status}`)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 15000)
+        try {
+          const url = `https://api.airtable.com/v0/${this.base}/${this.tbl[tableKey]}${query ? `?${query}` : ''}${offset ? `&offset=${offset}` : ''}`
+          const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${this.token}` },
+            signal: controller.signal
+          })
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}))
+            throw new Error(payload?.error?.message || `HTTP ${response.status}`)
+          }
+          const payload = await response.json()
+          records.push(...payload.records)
+          offset = payload.offset || ''
+        } catch (err) {
+          if (err.name === 'AbortError') throw new Error('Délai dépassé — vérifiez votre connexion et réessayez.')
+          throw err
+        } finally {
+          clearTimeout(timeout)
         }
-        const payload = await response.json()
-        records.push(...payload.records)
-        offset = payload.offset || ''
       } while (offset)
       return records
     },
