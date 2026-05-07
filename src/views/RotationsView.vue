@@ -92,7 +92,7 @@
         </div>
 
         <div class="rotation-timeline" v-if="allRotations.length" v-reveal="140">
-          <div class="rt-item" v-for="(r, i) in allRotations.slice().reverse()" :key="i">
+          <div class="rt-item" v-for="(r, i) in visibleRotations" :key="i">
             <div class="rt-time">{{ r.time }}</div>
             <div class="rt-dot" :class="r.group"></div>
             <div class="rt-info">
@@ -101,6 +101,9 @@
               <span class="rt-group" :class="r.group">{{ groupLabel(r.group) }}</span>
             </div>
           </div>
+          <button v-if="allRotations.length > PAGE_SIZE" class="rt-toggle" @click="showAll = !showAll">
+            {{ showAll ? 'Réduire' : `Voir les ${allRotations.length - PAGE_SIZE} précédentes` }}
+          </button>
         </div>
 
         <div class="empty-rot" v-else v-reveal="140">
@@ -117,18 +120,53 @@
 import { ref, reactive, computed } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
 
+const STORAGE_KEY = 'jim_rotations_v1'
+const PAGE_SIZE = 5
+
 const poles = [
   { key: 'photo', label: 'Pôle Photo',  icon: 'camera',         color: 'linear-gradient(135deg,#b1222a,#8c3b2a)' },
   { key: '3d',    label: 'Pôle 3D',     icon: 'box',            color: 'linear-gradient(135deg,#593716,#845936)' },
   { key: 'recit', label: 'Pôle Récit',  icon: 'message-circle', color: 'linear-gradient(135deg,#1a3a2a,#2d6a4a)' },
 ]
 
+function todayKey() {
+  return new Date().toLocaleDateString('fr-FR')
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (data.date !== todayKey()) return null
+    return data
+  } catch { return null }
+}
+
+const saved = loadState()
+
 // état courant de chaque pôle
-const current = reactive({ photo: '', '3d': '', recit: '' })
+const current = reactive(saved?.current ?? { photo: '', '3d': '', recit: '' })
 // historique par pôle
-const history = reactive({ photo: [], '3d': [], recit: [] })
+const history = reactive(saved?.history ?? { photo: [], '3d': [], recit: [] })
 // toutes les rotations dans l'ordre
-const allRotations = ref([])
+const allRotations = ref(saved?.allRotations ?? [])
+
+const showAll = ref(false)
+
+const visibleRotations = computed(() => {
+  const reversed = allRotations.value.slice().reverse()
+  return showAll.value ? reversed : reversed.slice(0, PAGE_SIZE)
+})
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    date: todayKey(),
+    current: { ...current },
+    history: { photo: [...history.photo], '3d': [...history['3d']], recit: [...history.recit] },
+    allRotations: allRotations.value,
+  }))
+}
 
 const groupOrder = ['rouge', 'jaune', 'vert', 'libre', '']
 
@@ -157,6 +195,7 @@ function applyRotation(poleKey, group) {
   const entry = { pole: poleKey, group, time: now() }
   history[poleKey].push(entry)
   allRotations.value.push(entry)
+  saveState()
 }
 
 const newRotation = reactive({ pole: '', group: '' })
@@ -234,4 +273,12 @@ function registerRotation() {
 
 .empty-rot { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px; color: #ccc; text-align: center; }
 .empty-rot p { margin: 0; font-size: .88rem; }
+
+.rt-toggle {
+  align-self: center; margin-top: 4px;
+  background: none; border: 1px solid #e8ddd0; border-radius: 999px;
+  padding: 6px 18px; font-size: .75rem; font-weight: 700; color: var(--brun);
+  cursor: pointer; transition: all .2s ease;
+}
+.rt-toggle:hover { background: rgba(132,89,54,.08); border-color: var(--brun); }
 </style>
