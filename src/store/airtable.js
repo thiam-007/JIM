@@ -2,6 +2,16 @@ import { defineStore } from 'pinia'
 
 const ENV_TOKEN = import.meta.env.VITE_AIRTABLE_TOKEN || ''
 
+function lsGet(key) {
+  try { return localStorage.getItem(key) || '' } catch { return '' }
+}
+function lsSet(key, value) {
+  try {
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch { /* localStorage indisponible (navigation privée Safari) */ }
+}
+
 export const useAirtableStore = defineStore('airtable', {
   state: () => ({
     base: 'appqgfu3Ten3zehfb',
@@ -11,7 +21,7 @@ export const useAirtableStore = defineStore('airtable', {
       v: 'tbl1y0Zf88ErEqifX',
       e: 'tblJ92j4syVfWqEsS'
     },
-    token: ENV_TOKEN || localStorage.getItem('airtable_token') || '',
+    token: ENV_TOKEN || lsGet('airtable_token'),
     isEnvToken: !!ENV_TOKEN,
     eventRegistrations: [],
     eventRecords: [],
@@ -39,11 +49,7 @@ export const useAirtableStore = defineStore('airtable', {
   actions: {
     connect(token) {
       this.token = token.trim()
-      if (this.token) {
-        localStorage.setItem('airtable_token', this.token)
-      } else {
-        localStorage.removeItem('airtable_token')
-      }
+      lsSet('airtable_token', this.token)
     },
     async sendRecord(tableKey, fields) {
       if (!this.token) throw new Error('Token Airtable manquant')
@@ -71,6 +77,13 @@ export const useAirtableStore = defineStore('airtable', {
           const payload = await response.json().catch(() => ({}))
           const type = payload?.error?.type || ''
           const msg = payload?.error?.message || `HTTP ${response.status}`
+          if (response.status === 401) {
+            this.connect('')
+            throw new Error('Token expiré ou invalide — la connexion a été réinitialisée. Veuillez saisir un nouveau token.')
+          }
+          if (response.status === 429) {
+            throw new Error('Trop de requêtes envoyées — attendez quelques secondes puis réessayez.')
+          }
           if (type === 'INVALID_PERMISSIONS_OR_MODEL_NOT_FOUND') {
             throw new Error('Permissions insuffisantes — vérifiez que le token a les scopes data.records:read ET data.records:write, et qu\'il a accès à cette base.')
           }
@@ -104,6 +117,13 @@ export const useAirtableStore = defineStore('airtable', {
           })
           if (!response.ok) {
             const payload = await response.json().catch(() => ({}))
+            if (response.status === 401) {
+              this.connect('')
+              throw new Error('Token expiré ou invalide — la connexion a été réinitialisée. Veuillez saisir un nouveau token.')
+            }
+            if (response.status === 429) {
+              throw new Error('Trop de requêtes envoyées — attendez quelques secondes puis réessayez.')
+            }
             throw new Error(payload?.error?.message || `HTTP ${response.status}`)
           }
           const payload = await response.json()
