@@ -17,6 +17,7 @@ export const useAirtableStore = defineStore('airtable', {
     eventRecords: [],
     avisRecords: [],
     suiviRecords: [],
+    accueilRecords: [],
     eventFetchError: ''
   }),
   getters: {
@@ -142,6 +143,25 @@ export const useAirtableStore = defineStore('airtable', {
       } catch (error) {
         console.warn('Erreur de chargement du suivi pôles :', error.message)
       }
+    },
+    async loadAccueil() {
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const records = await this.fetchRecords('a', {
+          filterByFormula: `{Date}='${today}'`
+        })
+        this.accueilRecords = records.map((r) => ({
+          groupeId: r.fields?.['Groupe ID'] || '',
+          groupe: r.fields?.['Groupe attribué'] || '',
+          personnes: r.fields?.['Nombre de personnes'] || 0,
+          heure: r.fields?.["Heure d'arrivée"] || '',
+        })).filter(r => r.groupeId)
+      } catch (error) {
+        console.warn('Erreur de chargement accueil :', error.message)
+      }
+    },
+    addAccueilRecord(record) {
+      this.accueilRecords.push(record)
     }
   }
 })

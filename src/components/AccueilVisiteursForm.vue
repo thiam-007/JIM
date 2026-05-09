@@ -143,17 +143,53 @@ async function submitForm() {
       'Groupe attribué': selectedGroup.value,
       'Profil du public': selectedProfile.value
     })
+    // Ajouter immédiatement au store pour que SuiviPôle voie le nouveau groupe
+    airtable.addAccueilRecord({
+      groupeId: groupId.value,
+      groupe: selectedGroup.value,
+      personnes: parseInt(peopleCount.value, 10),
+      heure: arrivalTime.value,
+    })
+    // Sauvegarder les compteurs pour persistance entre sessions
+    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert }))
     submitted.value = true
   } catch (error) {
     errorMessage.value = `Erreur Airtable : ${error.message}`
+    // Annuler l'incrément si l'envoi a échoué
+    groupCounters[selectedGroup.value.toLowerCase()] -= 1
+    groupId.value = ''
   } finally {
     submitting.value = false
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   const now = new Date()
   arrivalTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
+  // Initialiser les compteurs depuis Airtable pour garantir l'unicité des IDs
+  try {
+    const records = await airtable.fetchRecords('a')
+    records.forEach(r => {
+      const id = r.fields?.['Groupe ID'] || ''
+      const match = id.match(/^([RJV])(\d+)$/)
+      if (match) {
+        const num = parseInt(match[2], 10)
+        if (match[1] === 'R' && num > groupCounters.rouge) groupCounters.rouge = num
+        if (match[1] === 'J' && num > groupCounters.jaune) groupCounters.jaune = num
+        if (match[1] === 'V' && num > groupCounters.vert)  groupCounters.vert  = num
+      }
+    })
+    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert }))
+  } catch {
+    // Fallback : localStorage si Airtable inaccessible
+    try {
+      const saved = JSON.parse(localStorage.getItem('jim_counters') || '{}')
+      if (saved.rouge > 0) groupCounters.rouge = saved.rouge
+      if (saved.jaune > 0) groupCounters.jaune = saved.jaune
+      if (saved.vert  > 0) groupCounters.vert  = saved.vert
+    } catch { /* ignore */ }
+  }
 })
 </script>
 
