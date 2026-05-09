@@ -18,6 +18,8 @@ export const useAirtableStore = defineStore('airtable', {
     avisRecords: [],
     suiviRecords: [],
     accueilRecords: [],
+    rotationStatus: { photo: null, '3d': null, recit: null },
+    rotationHistory: [],
     eventFetchError: ''
   }),
   getters: {
@@ -139,10 +141,69 @@ export const useAirtableStore = defineStore('airtable', {
     async loadSuivi() {
       try {
         const records = await this.fetchRecords('s')
-        this.suiviRecords = records.map((record) => record.fields || {})
+        this.suiviRecords = records
+          .map((record) => record.fields || {})
+          .filter(f => f.Observations !== '__IN__')
       } catch (error) {
         console.warn('Erreur de chargement du suivi pôles :', error.message)
       }
+    },
+    async loadRotationStatus() {
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const records = await this.fetchRecords('s', {
+          filterByFormula: `{Date}='${today}'`
+        })
+        const sorted = [...records].sort((a, b) =>
+          new Date(b.createdTime) - new Date(a.createdTime)
+        )
+        const keyMap = { 'Pôle Photo': 'photo', 'Pôle 3D': '3d', 'Pôle Récit': 'recit' }
+        const seen = new Set()
+        const status = { photo: null, '3d': null, recit: null }
+        const history = []
+        for (const r of sorted) {
+          const poleKey = keyMap[r.fields?.['Pôle concerné']]
+          if (!poleKey) continue
+          const isCheckin = (r.fields?.Observations || '') === '__IN__'
+          if (!isCheckin) {
+            history.push({
+              pole: r.fields?.['Pôle concerné'],
+              poleKey,
+              groupeId: r.fields?.['Groupe ID'] || '',
+              groupe: r.fields?.['Groupe attribué'] || '',
+              createdTime: r.createdTime,
+            })
+          }
+          if (!seen.has(poleKey)) {
+            seen.add(poleKey)
+            status[poleKey] = isCheckin
+              ? { groupeId: r.fields?.['Groupe ID'] || '', groupe: r.fields?.['Groupe attribué'] || '' }
+              : null
+          }
+        }
+        this.rotationStatus = status
+        this.rotationHistory = history
+      } catch (e) {
+        console.warn('Erreur rotation status :', e.message)
+      }
+    },
+    async checkInPole(poleLabel, groupId, groupColor) {
+      const keyMap = { 'Pôle Photo': 'photo', 'Pôle 3D': '3d', 'Pôle Récit': 'recit' }
+      await this.sendRecord('s', {
+        Référence: `${poleLabel} · ${groupId} · CHECK-IN`,
+        'Pôle concerné': poleLabel,
+        'Groupe ID': groupId,
+        'Groupe attribué': groupColor,
+        'Participants passés': 0,
+        'Participants actifs': 0,
+        'Contenus produits': 0,
+        Observations: '__IN__'
+      })
+      const poleKey = keyMap[poleLabel]
+      if (poleKey) this.rotationStatus[poleKey] = { groupeId: groupId, groupe: groupColor }
+    },
+    freePole(poleKey) {
+      if (poleKey in this.rotationStatus) this.rotationStatus[poleKey] = null
     },
     async loadAccueil() {
       try {

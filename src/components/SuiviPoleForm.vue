@@ -145,9 +145,10 @@ const content = ref('')
 const notes = ref([])
 const loadingGroups = ref(false)
 const lastSync = ref(null)
-const passedGroupIds = ref(new Set()) // IDs déjà enregistrés pour ce pôle aujourd'hui
+const passedGroupIds = ref(new Set())
 let pollTimer = null
-const POLL_INTERVAL = 30_000 // 30 secondes
+const POLL_INTERVAL = 30_000
+const poleKeyMap = { 'Pôle Photo': 'photo', 'Pôle 3D': '3d', 'Pôle Récit': 'recit' }
 
 const observationOptions = [
   'Fluide',
@@ -172,19 +173,24 @@ function pickPole(value) {
   pole.value = value
 }
 
-function selectGroup(g) {
+async function selectGroup(g) {
   selectedGroupData.value = g
   groupId.value = g.groupeId
   groupColor.value = g.groupe
+  // Marquer le pôle comme occupé dans les Rotations
+  if (pole.value) {
+    try { await airtable.checkInPole(pole.value, g.groupeId, g.groupe) } catch { /* ignore */ }
+  }
 }
 
 function deselectGroup() {
+  // Libérer le pôle dans les Rotations
+  if (pole.value) airtable.freePole(poleKeyMap[pole.value])
   selectedGroupData.value = null
   groupId.value = ''
   groupColor.value = ''
 }
 
-// Charge les IDs déjà enregistrés pour ce pôle aujourd'hui
 async function loadPassedGroups() {
   if (!pole.value) return
   try {
@@ -192,14 +198,17 @@ async function loadPassedGroups() {
     const records = await airtable.fetchRecords('s', {
       filterByFormula: `AND({Date}='${today}',{Pôle concerné}='${pole.value}')`
     })
+    // Exclure les check-ins (__IN__) — seuls les vrais suivis comptent
     passedGroupIds.value = new Set(
-      records.map(r => r.fields?.['Groupe ID']).filter(Boolean)
+      records
+        .filter(r => (r.fields?.Observations || '') !== '__IN__')
+        .map(r => r.fields?.['Groupe ID'])
+        .filter(Boolean)
     )
-    // Désélectionner le groupe en cours s'il est déjà passé
     if (selectedGroupData.value && passedGroupIds.value.has(selectedGroupData.value.groupeId)) {
       deselectGroup()
     }
-  } catch { /* ignore silently */ }
+  } catch { /* ignore */ }
 }
 
 async function refreshGroups(silent = false) {
@@ -209,8 +218,9 @@ async function refreshGroups(silent = false) {
   if (!silent) loadingGroups.value = false
 }
 
-// Recharger les groupes passés quand le pôle change
-watch(pole, () => {
+watch(pole, (newPole, oldPole) => {
+  // Libérer l'ancien pôle si on en change
+  if (oldPole && oldPole !== newPole) airtable.freePole(poleKeyMap[oldPole])
   passedGroupIds.value = new Set()
   deselectGroup()
   loadPassedGroups()
@@ -248,8 +258,9 @@ async function submitForm() {
       'Contenus produits': parseInt(content.value, 10),
       Observations: notes.value.join(', ')
     })
-    // Marquer immédiatement ce groupe comme passé — il disparaît de la liste
     passedGroupIds.value = new Set([...passedGroupIds.value, groupId.value])
+    // Le pôle est maintenant libre dans les Rotations
+    airtable.freePole(poleKeyMap[pole.value])
     submitted.value = true
   } catch (error) {
     errorMessage.value = `Erreur Airtable : ${error.message}`
