@@ -60,6 +60,10 @@
             <div v-if="loadingGroups" class="gp-state">
               <AppIcon name="loader" :size="20" /> Chargement des groupes…
             </div>
+            <div v-else-if="accueilGroups.length === 0 && passedGroupIds.size > 0" class="gp-state gp-done">
+              <AppIcon name="check-circle" :size="20" />
+              Tous les groupes enregistrés sont passés par ce pôle.
+            </div>
             <div v-else-if="accueilGroups.length === 0" class="gp-state gp-empty">
               <AppIcon name="inbox" :size="20" />
               Aucun groupe enregistré à l'accueil aujourd'hui.
@@ -126,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAirtableStore } from '../store/airtable'
 import AppIcon from './AppIcon.vue'
 
@@ -141,6 +145,7 @@ const content = ref('')
 const notes = ref([])
 const loadingGroups = ref(false)
 const lastSync = ref(null)
+const passedGroupIds = ref(new Set()) // IDs déjà enregistrés pour ce pôle aujourd'hui
 let pollTimer = null
 const POLL_INTERVAL = 30_000 // 30 secondes
 
@@ -158,7 +163,10 @@ const errorMessage = ref('')
 const submitted = ref(false)
 const submitting = ref(false)
 
-const accueilGroups = computed(() => airtable.accueilRecords)
+// Groupes du jour non encore passés par ce pôle
+const accueilGroups = computed(() =>
+  airtable.accueilRecords.filter(g => !passedGroupIds.value.has(g.groupeId))
+)
 
 function pickPole(value) {
   pole.value = value
@@ -176,12 +184,37 @@ function deselectGroup() {
   groupColor.value = ''
 }
 
+// Charge les IDs déjà enregistrés pour ce pôle aujourd'hui
+async function loadPassedGroups() {
+  if (!pole.value) return
+  try {
+    const today = new Date().toISOString().split('T')[0]
+    const records = await airtable.fetchRecords('s', {
+      filterByFormula: `AND({Date}='${today}',{Pôle concerné}='${pole.value}')`
+    })
+    passedGroupIds.value = new Set(
+      records.map(r => r.fields?.['Groupe ID']).filter(Boolean)
+    )
+    // Désélectionner le groupe en cours s'il est déjà passé
+    if (selectedGroupData.value && passedGroupIds.value.has(selectedGroupData.value.groupeId)) {
+      deselectGroup()
+    }
+  } catch { /* ignore silently */ }
+}
+
 async function refreshGroups(silent = false) {
   if (!silent) loadingGroups.value = true
-  await airtable.loadAccueil()
+  await Promise.all([airtable.loadAccueil(), loadPassedGroups()])
   lastSync.value = new Date()
   if (!silent) loadingGroups.value = false
 }
+
+// Recharger les groupes passés quand le pôle change
+watch(pole, () => {
+  passedGroupIds.value = new Set()
+  deselectGroup()
+  loadPassedGroups()
+})
 
 function resetForm() {
   pole.value = ''
@@ -215,6 +248,8 @@ async function submitForm() {
       'Contenus produits': parseInt(content.value, 10),
       Observations: notes.value.join(', ')
     })
+    // Marquer immédiatement ce groupe comme passé — il disparaît de la liste
+    passedGroupIds.value = new Set([...passedGroupIds.value, groupId.value])
     submitted.value = true
   } catch (error) {
     errorMessage.value = `Erreur Airtable : ${error.message}`
@@ -276,6 +311,7 @@ onUnmounted(() => {
   border: 1.5px dashed #e8ddd0;
 }
 .gp-empty { color: #bbb; }
+.gp-done { color: #28a745; border-color: rgba(40,167,69,.3); background: rgba(40,167,69,.05); }
 
 .gp-list {
   display: flex; flex-direction: column; gap: 8px;
