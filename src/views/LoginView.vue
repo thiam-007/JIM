@@ -3,47 +3,36 @@
 
     <!-- ─── Panneau gauche : compte à rebours ─── -->
     <div class="login-side">
-      <div class="side-title">Musée Virtuel de Guinée</div>
-      <div class="side-sub">Journée Internationale des Musées</div>
-      <div class="side-dates">16 – 18 Mai 2026</div>
-
-      <div class="side-countdown">
-        <template v-if="!eventStarted">
-          <div class="side-cd-label">
-            <AppIcon name="clock" :size="14" /> Début de l'événement dans
+      <template v-if="!eventStarted">
+        <div class="side-cd-label">Début de l'événement</div>
+        <div class="side-cd-units">
+          <div class="side-cd-unit">
+            <span class="scu-num">{{ countdown.days }}</span>
+            <span class="scu-label">Jours</span>
           </div>
-          <div class="side-cd-units">
-            <div class="side-cd-unit">
-              <span class="scu-num">{{ countdown.days }}</span>
-              <span class="scu-label">Jours</span>
-            </div>
-            <div class="side-cd-sep">:</div>
-            <div class="side-cd-unit">
-              <span class="scu-num">{{ countdown.hours }}</span>
-              <span class="scu-label">Heures</span>
-            </div>
-            <div class="side-cd-sep">:</div>
-            <div class="side-cd-unit">
-              <span class="scu-num">{{ countdown.minutes }}</span>
-              <span class="scu-label">Min</span>
-            </div>
-            <div class="side-cd-sep">:</div>
-            <div class="side-cd-unit">
-              <span class="scu-num">{{ countdown.seconds }}</span>
-              <span class="scu-label">Sec</span>
-            </div>
+          <div class="side-cd-sep">:</div>
+          <div class="side-cd-unit">
+            <span class="scu-num">{{ countdown.hours }}</span>
+            <span class="scu-label">Heures</span>
           </div>
-        </template>
-        <template v-else>
-          <div class="side-event-live">
-            <AppIcon name="zap" :size="18" />
-            JIM 2026 est en cours !
+          <div class="side-cd-sep">:</div>
+          <div class="side-cd-unit">
+            <span class="scu-num">{{ countdown.minutes }}</span>
+            <span class="scu-label">Min</span>
           </div>
-        </template>
-      </div>
-
-      <div class="side-badge">JIM 2026</div>
-      <div class="side-quote">« Les musées unissent un monde divisé »</div>
+          <div class="side-cd-sep">:</div>
+          <div class="side-cd-unit">
+            <span class="scu-num">{{ countdown.seconds }}</span>
+            <span class="scu-label">Sec</span>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div class="side-event-live">
+          <AppIcon name="zap" :size="18" />
+          JIM 2026 est en cours !
+        </div>
+      </template>
     </div>
 
     <!-- ─── Panneau droit : formulaire ─── -->
@@ -165,106 +154,49 @@ function handleLogin() {
 .login-side {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  width: 380px;
-  min-width: 320px;
+  width: 340px;
+  min-width: 280px;
   flex-shrink: 0;
   background: linear-gradient(160deg, #5c3519 0%, #8f5b2c 55%, #c07c3a 100%);
-  padding: 48px 32px;
-  text-align: center;
-  position: relative;
-  overflow: visible;
-}
-.login-side::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: repeating-linear-gradient(60deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 18px);
-  pointer-events: none;
-  z-index: 0;
+  padding: 48px 40px;
 }
 
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
-.side-title {
-  font-size: 1rem; font-weight: 900; color: #fff;
-  text-transform: uppercase; letter-spacing: 1.2px;
-  margin-bottom: 6px; position: relative; z-index: 1;
-}
-.side-sub {
-  font-size: .7rem; color: rgba(255,255,255,.75);
-  letter-spacing: 1px; position: relative; z-index: 1;
-}
-.side-dates {
-  font-size: .8rem; font-weight: 800; color: #f9b233;
-  letter-spacing: 1px; margin-top: 4px;
-  position: relative; z-index: 1;
-}
-
-/* ── Compte à rebours côté gauche ── */
-.side-countdown {
-  margin: 32px 0 28px;
-  position: relative; z-index: 2;
-  width: 100%;
-}
 .side-cd-label {
-  font-size: .65rem; font-weight: 700;
+  font-size: .75rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 2px;
-  color: rgba(255,255,255,.85);
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  margin-bottom: 16px;
-  position: relative; z-index: 2;
+  color: rgba(255,255,255,.8);
+  margin-bottom: 20px;
 }
 .side-cd-units {
-  display: flex; align-items: center; justify-content: center;
-  gap: 6px; flex-wrap: wrap;
-  position: relative; z-index: 2;
+  display: flex; align-items: center;
+  gap: 4px;
 }
 .side-cd-unit {
   display: flex; flex-direction: column; align-items: center;
-  padding: 4px 10px; min-width: 52px;
-  position: relative; z-index: 2;
+  min-width: 54px;
 }
 .scu-num {
-  font-size: 2rem; font-weight: 900; color: #fff;
+  font-size: 2.2rem; font-weight: 900; color: #fff;
   line-height: 1; font-variant-numeric: tabular-nums;
-  text-shadow: 0 2px 8px rgba(0,0,0,.3);
 }
 .scu-label {
-  font-size: .6rem; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 1.4px;
-  color: rgba(255,255,255,.75); margin-top: 5px;
+  font-size: .58rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  color: rgba(255,255,255,.6); margin-top: 6px;
 }
 .side-cd-sep {
   font-size: 1.8rem; font-weight: 900;
-  color: rgba(255,255,255,.6); margin-bottom: 14px;
-  position: relative; z-index: 2;
+  color: rgba(255,255,255,.5); margin-bottom: 18px;
 }
 .side-event-live {
-  display: flex; align-items: center; justify-content: center; gap: 8px;
+  display: flex; align-items: center; gap: 8px;
   font-size: .9rem; font-weight: 800; color: #f9b233;
   text-transform: uppercase; letter-spacing: 1.4px;
   animation: pulse 1.5s ease-in-out infinite;
 }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
-
-.side-badge {
-  display: inline-block;
-  background: rgba(255,255,255,.18);
-  color: #fff;
-  padding: 5px 18px;
-  border-radius: 999px;
-  font-size: .68rem; font-weight: 700; letter-spacing: 2px;
-  border: 1px solid rgba(255,255,255,.28);
-  margin-bottom: 16px;
-  position: relative; z-index: 1;
-}
-.side-quote {
-  font-size: .75rem; font-style: italic;
-  color: rgba(255,255,255,.65);
-  line-height: 1.5;
-  position: relative; z-index: 1;
-}
 
 /* ═══════════════════════════════
    Panneau droit — Formulaire
@@ -434,24 +366,20 @@ function handleLogin() {
    Responsive — écrans < 800px
    ═══════════════════════════════ */
 @media (max-width: 800px) {
-  .login-shell {
-    flex-direction: column;
-    align-items: center;
-    padding: 0;
-  }
+  .login-shell { flex-direction: column; }
   .login-side {
     width: 100%;
     min-width: unset;
-    padding: 32px 24px;
-    border-radius: 0;
+    padding: 28px 24px;
+    align-items: center;
   }
   .side-cd-units { gap: 4px; }
-  .side-cd-unit { min-width: 52px; padding: 8px 10px; }
-  .scu-num { font-size: 1.4rem; }
+  .side-cd-unit { min-width: 48px; }
+  .scu-num { font-size: 1.6rem; }
   .login-card {
     width: calc(100% - 32px);
     max-width: 100%;
-    margin: 0 16px 32px;
+    margin: 16px 16px 32px;
     border-radius: 24px;
   }
 }
