@@ -34,10 +34,15 @@
         <div class="fg" v-reveal="60">
           <div class="gp-header">
             <label>Groupe <span class="req">*</span></label>
-            <button class="gp-refresh-btn" @click="refreshGroups" :disabled="loadingGroups" title="Actualiser">
-              <AppIcon :name="loadingGroups ? 'loader' : 'refresh-cw'" :size="14" />
-              {{ loadingGroups ? 'Chargement…' : 'Actualiser' }}
-            </button>
+            <div class="gp-header-right">
+              <span v-if="lastSync" class="gp-sync-time">
+                Sync {{ lastSync.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}
+              </span>
+              <button class="gp-refresh-btn" @click="refreshGroups(false)" :disabled="loadingGroups" title="Actualiser">
+                <AppIcon :name="loadingGroups ? 'loader' : 'refresh-cw'" :size="14" />
+                {{ loadingGroups ? '…' : 'Actualiser' }}
+              </button>
+            </div>
           </div>
 
           <!-- Groupe sélectionné -->
@@ -121,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAirtableStore } from '../store/airtable'
 import AppIcon from './AppIcon.vue'
 
@@ -135,6 +140,9 @@ const active = ref('')
 const content = ref('')
 const notes = ref([])
 const loadingGroups = ref(false)
+const lastSync = ref(null)
+let pollTimer = null
+const POLL_INTERVAL = 30_000 // 30 secondes
 
 const observationOptions = [
   'Fluide',
@@ -168,10 +176,11 @@ function deselectGroup() {
   groupColor.value = ''
 }
 
-async function refreshGroups() {
-  loadingGroups.value = true
+async function refreshGroups(silent = false) {
+  if (!silent) loadingGroups.value = true
   await airtable.loadAccueil()
-  loadingGroups.value = false
+  lastSync.value = new Date()
+  if (!silent) loadingGroups.value = false
 }
 
 function resetForm() {
@@ -215,11 +224,18 @@ async function submitForm() {
 }
 
 onMounted(async () => {
-  if (airtable.accueilRecords.length === 0) {
-    loadingGroups.value = true
-    await airtable.loadAccueil()
-    loadingGroups.value = false
-  }
+  // Premier chargement
+  loadingGroups.value = true
+  await airtable.loadAccueil()
+  lastSync.value = new Date()
+  loadingGroups.value = false
+  // Rafraîchissement automatique toutes les 30 s pour voir les nouveaux groupes
+  // enregistrés à l'accueil sur n'importe quel autre appareil
+  pollTimer = setInterval(() => refreshGroups(true), POLL_INTERVAL)
+})
+
+onUnmounted(() => {
+  clearInterval(pollTimer)
 })
 </script>
 
@@ -232,6 +248,14 @@ onMounted(async () => {
   margin-bottom: 10px;
 }
 .gp-header label { margin-bottom: 0; }
+
+.gp-header-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.gp-sync-time {
+  font-size: .65rem; font-weight: 600;
+  color: #bbb; font-variant-numeric: tabular-nums;
+}
 
 .gp-refresh-btn {
   display: flex; align-items: center; gap: 6px;
