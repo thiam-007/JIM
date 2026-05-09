@@ -174,13 +174,14 @@ function handleLogin() {
   padding: 48px 32px;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 .login-side::before {
   content: '';
   position: absolute; inset: 0;
   background: repeating-linear-gradient(60deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 18px);
   pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
@@ -203,36 +204,41 @@ function handleLogin() {
 /* ── Compte à rebours côté gauche ── */
 .side-countdown {
   margin: 32px 0 28px;
-  position: relative; z-index: 1;
+  position: relative; z-index: 2;
   width: 100%;
 }
 .side-cd-label {
   font-size: .65rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 2px;
-  color: rgba(255,255,255,.7);
+  color: rgba(255,255,255,.85);
   display: flex; align-items: center; justify-content: center; gap: 6px;
   margin-bottom: 16px;
+  position: relative; z-index: 2;
 }
 .side-cd-units {
   display: flex; align-items: center; justify-content: center;
   gap: 6px; flex-wrap: wrap;
+  position: relative; z-index: 2;
 }
 .side-cd-unit {
   display: flex; flex-direction: column; align-items: center;
   padding: 4px 10px; min-width: 52px;
+  position: relative; z-index: 2;
 }
 .scu-num {
-  font-size: 1.7rem; font-weight: 900; color: #fff;
+  font-size: 2rem; font-weight: 900; color: #fff;
   line-height: 1; font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 8px rgba(0,0,0,.3);
 }
 .scu-label {
-  font-size: .58rem; font-weight: 700;
+  font-size: .6rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 1.4px;
-  color: rgba(255,255,255,.6); margin-top: 4px;
+  color: rgba(255,255,255,.75); margin-top: 5px;
 }
 .side-cd-sep {
-  font-size: 1.5rem; font-weight: 900;
-  color: rgba(255,255,255,.45); margin-bottom: 14px;
+  font-size: 1.8rem; font-weight: 900;
+  color: rgba(255,255,255,.6); margin-bottom: 14px;
+  position: relative; z-index: 2;
 }
 .side-event-live {
   display: flex; align-items: center; justify-content: center; gap: 8px;
