@@ -159,14 +159,13 @@ function handleLogin() {
   width: 340px;
   min-width: 280px;
   flex-shrink: 0;
-  background: linear-gradient(160deg, #5c3519 0%, #8f5b2c 55%, #c07c3a 100%);
   padding: 48px 40px;
 }
 
 .side-cd-label {
-  font-size: .75rem; font-weight: 700;
+  font-size: .72rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 2px;
-  color: rgba(255,255,255,.8);
+  color: #8f5b2c;
   margin-bottom: 20px;
 }
 .side-cd-units {
@@ -178,21 +177,21 @@ function handleLogin() {
   min-width: 54px;
 }
 .scu-num {
-  font-size: 2.2rem; font-weight: 900; color: #fff;
+  font-size: 2.4rem; font-weight: 900; color: #5c3519;
   line-height: 1; font-variant-numeric: tabular-nums;
 }
 .scu-label {
   font-size: .58rem; font-weight: 700;
   text-transform: uppercase; letter-spacing: 1.2px;
-  color: rgba(255,255,255,.6); margin-top: 6px;
+  color: #b07a40; margin-top: 6px;
 }
 .side-cd-sep {
-  font-size: 1.8rem; font-weight: 900;
-  color: rgba(255,255,255,.5); margin-bottom: 18px;
+  font-size: 2rem; font-weight: 900;
+  color: #f9b233; margin-bottom: 18px;
 }
 .side-event-live {
   display: flex; align-items: center; gap: 8px;
-  font-size: .9rem; font-weight: 800; color: #f9b233;
+  font-size: .9rem; font-weight: 800; color: #8f5b2c;
   text-transform: uppercase; letter-spacing: 1.4px;
   animation: pulse 1.5s ease-in-out infinite;
 }
