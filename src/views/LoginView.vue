@@ -1,5 +1,55 @@
 <template>
   <div class="login-shell">
+
+    <!-- ─── Panneau gauche : compte à rebours ─── -->
+    <div class="login-side">
+      <div class="side-logo">
+        <img src="/images/logo.jpeg" alt="MVG" />
+      </div>
+      <div class="side-title">Musée Virtuel de Guinée</div>
+      <div class="side-sub">Journée Internationale des Musées</div>
+      <div class="side-dates">16 – 18 Mai 2026</div>
+
+      <div class="side-countdown">
+        <template v-if="!eventStarted">
+          <div class="side-cd-label">
+            <AppIcon name="clock" :size="14" /> Début de l'événement dans
+          </div>
+          <div class="side-cd-units">
+            <div class="side-cd-unit">
+              <span class="scu-num">{{ countdown.days }}</span>
+              <span class="scu-label">Jours</span>
+            </div>
+            <div class="side-cd-sep">:</div>
+            <div class="side-cd-unit">
+              <span class="scu-num">{{ countdown.hours }}</span>
+              <span class="scu-label">Heures</span>
+            </div>
+            <div class="side-cd-sep">:</div>
+            <div class="side-cd-unit">
+              <span class="scu-num">{{ countdown.minutes }}</span>
+              <span class="scu-label">Min</span>
+            </div>
+            <div class="side-cd-sep">:</div>
+            <div class="side-cd-unit">
+              <span class="scu-num">{{ countdown.seconds }}</span>
+              <span class="scu-label">Sec</span>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="side-event-live">
+            <AppIcon name="zap" :size="18" />
+            JIM 2026 est en cours !
+          </div>
+        </template>
+      </div>
+
+      <div class="side-badge">JIM 2026</div>
+      <div class="side-quote">« Les musées unissent un monde divisé »</div>
+    </div>
+
+    <!-- ─── Panneau droit : formulaire ─── -->
     <div class="login-card">
 
       <div class="login-header">
@@ -54,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -64,7 +114,31 @@ const showPwd  = ref(false)
 const error    = ref(false)
 const inputRef = ref(null)
 
-onMounted(() => inputRef.value?.focus())
+const EVENT_DATE = new Date('2026-05-16T08:30:00')
+const EVENT_END  = new Date('2026-05-18T23:59:59')
+const countdown    = reactive({ days: '00', hours: '00', minutes: '00', seconds: '00' })
+const eventStarted = ref(false)
+let timer = null
+
+function pad(n) { return String(n).padStart(2, '0') }
+
+function tick() {
+  const now = new Date()
+  if (now >= EVENT_DATE && now <= EVENT_END) { eventStarted.value = true; return }
+  if (now > EVENT_END) { eventStarted.value = true; return }
+  const diff = EVENT_DATE - now
+  countdown.days    = pad(Math.floor(diff / 86400000))
+  countdown.hours   = pad(Math.floor((diff % 86400000) / 3600000))
+  countdown.minutes = pad(Math.floor((diff % 3600000)  / 60000))
+  countdown.seconds = pad(Math.floor((diff % 60000)    / 1000))
+}
+
+onMounted(() => {
+  inputRef.value?.focus()
+  tick()
+  timer = setInterval(tick, 1000)
+})
+onUnmounted(() => clearInterval(timer))
 
 function handleLogin() {
   const expected = import.meta.env.VITE_APP_PASSWORD
@@ -83,26 +157,138 @@ function handleLogin() {
 .login-shell {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
+  align-items: stretch;
   background: radial-gradient(circle at top left, rgba(249,178,51,.15), transparent 30%),
               linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #f0dcc6 100%);
 }
 
-.login-card {
-  width: 100%;
-  max-width: 440px;
-  background: rgba(255,255,255,.95);
-  border-radius: 28px;
-  box-shadow: 0 24px 64px rgba(89,55,22,.18);
-  border: 1px solid rgba(255,255,255,.8);
+/* ═══════════════════════════════
+   Panneau gauche — Compte à rebours
+   ═══════════════════════════════ */
+.login-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 380px;
+  min-width: 320px;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #5c3519 0%, #8f5b2c 55%, #c07c3a 100%);
+  padding: 48px 32px;
+  text-align: center;
+  position: relative;
   overflow: hidden;
-  animation: cardIn .55s cubic-bezier(.22,1,.36,1);
 }
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(28px) scale(.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+.login-side::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(60deg, rgba(255,255,255,.04) 0, rgba(255,255,255,.04) 1px, transparent 1px, transparent 18px);
+  pointer-events: none;
+}
+
+.side-logo {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(255,255,255,.35);
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+  position: relative; z-index: 1;
+}
+.side-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.side-title {
+  font-size: 1rem; font-weight: 900; color: #fff;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  margin-bottom: 6px; position: relative; z-index: 1;
+}
+.side-sub {
+  font-size: .7rem; color: rgba(255,255,255,.75);
+  letter-spacing: 1px; position: relative; z-index: 1;
+}
+.side-dates {
+  font-size: .8rem; font-weight: 800; color: #f9b233;
+  letter-spacing: 1px; margin-top: 4px;
+  position: relative; z-index: 1;
+}
+
+/* ── Compte à rebours côté gauche ── */
+.side-countdown {
+  margin: 32px 0 28px;
+  position: relative; z-index: 1;
+  width: 100%;
+}
+.side-cd-label {
+  font-size: .65rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px;
+  color: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin-bottom: 16px;
+}
+.side-cd-units {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap;
+}
+.side-cd-unit {
+  display: flex; flex-direction: column; align-items: center;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 12px; padding: 10px 14px; min-width: 60px;
+}
+.scu-num {
+  font-size: 1.7rem; font-weight: 900; color: #fff;
+  line-height: 1; font-variant-numeric: tabular-nums;
+}
+.scu-label {
+  font-size: .58rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 1.4px;
+  color: rgba(255,255,255,.6); margin-top: 4px;
+}
+.side-cd-sep {
+  font-size: 1.5rem; font-weight: 900;
+  color: rgba(255,255,255,.45); margin-bottom: 14px;
+}
+.side-event-live {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: .9rem; font-weight: 800; color: #f9b233;
+  text-transform: uppercase; letter-spacing: 1.4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
+
+.side-badge {
+  display: inline-block;
+  background: rgba(255,255,255,.18);
+  color: #fff;
+  padding: 5px 18px;
+  border-radius: 999px;
+  font-size: .68rem; font-weight: 700; letter-spacing: 2px;
+  border: 1px solid rgba(255,255,255,.28);
+  margin-bottom: 16px;
+  position: relative; z-index: 1;
+}
+.side-quote {
+  font-size: .75rem; font-style: italic;
+  color: rgba(255,255,255,.65);
+  line-height: 1.5;
+  position: relative; z-index: 1;
+}
+
+/* ═══════════════════════════════
+   Panneau droit — Formulaire
+   ═══════════════════════════════ */
+.login-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 480px;
+  margin: auto;
+  background: rgba(255,255,255,.95);
+  border-radius: 0;
+  overflow: hidden;
 }
 
 /* ─── Header ─── */
@@ -115,8 +301,7 @@ function handleLogin() {
 }
 .login-header::before {
   content: '';
-  position: absolute;
-  inset: 0;
+  position: absolute; inset: 0;
   background: repeating-linear-gradient(60deg, rgba(255,255,255,.05) 0, rgba(255,255,255,.05) 1px, transparent 1px, transparent 18px);
 }
 .login-logo {
@@ -129,7 +314,6 @@ function handleLogin() {
   animation: float 3s ease-in-out infinite;
   position: relative; z-index: 1;
 }
-@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 .login-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .login-title {
   font-size: 1.1rem; font-weight: 900; color: #fff;
@@ -254,4 +438,29 @@ function handleLogin() {
   color: var(--brun); opacity: .6;
 }
 .login-footer em { color: var(--rouge); font-style: normal; }
+
+/* ═══════════════════════════════
+   Responsive — écrans < 800px
+   ═══════════════════════════════ */
+@media (max-width: 800px) {
+  .login-shell {
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+  }
+  .login-side {
+    width: 100%;
+    min-width: unset;
+    padding: 32px 24px;
+    border-radius: 0;
+  }
+  .side-cd-units { gap: 4px; }
+  .side-cd-unit { min-width: 52px; padding: 8px 10px; }
+  .scu-num { font-size: 1.4rem; }
+  .login-card {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
 </style>
