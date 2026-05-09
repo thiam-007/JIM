@@ -3,9 +3,6 @@
 
     <!-- ─── Panneau gauche : compte à rebours ─── -->
     <div class="login-side">
-      <div class="side-logo">
-        <img src="/images/logo.jpeg" alt="MVG" />
-      </div>
       <div class="side-title">Musée Virtuel de Guinée</div>
       <div class="side-sub">Journée Internationale des Musées</div>
       <div class="side-dates">16 – 18 Mai 2026</div>
@@ -186,17 +183,6 @@ function handleLogin() {
   pointer-events: none;
 }
 
-.side-logo {
-  width: 80px; height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid rgba(255,255,255,.35);
-  box-shadow: 0 8px 24px rgba(0,0,0,.25);
-  margin-bottom: 20px;
-  animation: float 3s ease-in-out infinite;
-  position: relative; z-index: 1;
-}
-.side-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 
 .side-title {
@@ -233,9 +219,7 @@ function handleLogin() {
 }
 .side-cd-unit {
   display: flex; flex-direction: column; align-items: center;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 12px; padding: 10px 14px; min-width: 60px;
+  padding: 4px 10px; min-width: 52px;
 }
 .scu-num {
   font-size: 1.7rem; font-weight: 900; color: #fff;
@@ -285,10 +269,11 @@ function handleLogin() {
   flex-direction: column;
   justify-content: center;
   max-width: 480px;
-  margin: auto;
-  background: rgba(255,255,255,.95);
-  border-radius: 0;
+  margin: auto 40px;
+  background: rgba(255,255,255,.97);
+  border-radius: 28px;
   overflow: hidden;
+  box-shadow: 0 24px 64px rgba(89,55,22,.18);
 }
 
 /* ─── Header ─── */
@@ -458,9 +443,10 @@ function handleLogin() {
   .side-cd-unit { min-width: 52px; padding: 8px 10px; }
   .scu-num { font-size: 1.4rem; }
   .login-card {
-    width: 100%;
+    width: calc(100% - 32px);
     max-width: 100%;
-    border-radius: 0;
+    margin: 0 16px 32px;
+    border-radius: 24px;
   }
 }
 </style>
