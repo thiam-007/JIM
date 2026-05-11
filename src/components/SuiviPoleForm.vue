@@ -189,11 +189,12 @@ async function loadPassedGroups() {
   if (!pole.value) return
   try {
     const today = new Date().toISOString().split('T')[0]
-    const records = await airtable.fetchRecords('s', {
-      filterByFormula: `AND({Date}='${today}',{Pôle concerné}='${pole.value}')`
-    })
+    const records = await airtable.fetchRecords('s')
     passedGroupIds.value = new Set(
-      records.map(r => r.fields?.['Groupe ID']).filter(Boolean)
+      records
+        .filter(r => (r.fields?.['Date'] || '').startsWith(today) && r.fields?.['Pôle concerné'] === pole.value)
+        .map(r => r.fields?.['Groupe ID'])
+        .filter(Boolean)
     )
     if (selectedGroupData.value && passedGroupIds.value.has(selectedGroupData.value.groupeId)) {
       deselectGroup()

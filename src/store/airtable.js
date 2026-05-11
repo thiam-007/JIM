@@ -155,7 +155,7 @@ export const useAirtableStore = defineStore('airtable', {
             heure: r.fields?.["Heure d'arrivée"] || '',
             date: r.fields?.['Date'] || '',
           }))
-          .filter(r => r.groupeId && r.date === today)
+          .filter(r => r.groupeId && r.date.startsWith(today))
       } catch (error) {
         console.warn('Erreur de chargement accueil :', error.message)
       }
