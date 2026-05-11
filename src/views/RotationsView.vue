@@ -36,12 +36,12 @@
                   <span v-else class="ps-empty">— Libre —</span>
                 </div>
               </div>
-              <div class="ps-history" v-if="history[pole.key]?.length">
+              <div class="ps-history" v-if="rot.history[pole.key]?.length">
                 <div class="ps-label">Dernières rotations</div>
                 <div class="ps-hist-list">
                   <div
                     class="ps-hist-item"
-                    v-for="(h, i) in history[pole.key].slice(-3).reverse()"
+                    v-for="(h, i) in rot.history[pole.key].slice(-3).reverse()"
                     :key="i"
                   >
                     <span class="ph-badge" :class="h.group">{{ groupLabel(h.group) }}</span>
@@ -86,13 +86,13 @@
         </div>
 
         <!-- Timeline des rotations -->
-        <div class="sd" v-reveal="120" v-if="allRotations.length">
+        <div class="sd" v-reveal="120" v-if="rot.allRotations.length">
           <div class="sl"></div><span>Historique du jour</span>
           <div class="sl" style="background:linear-gradient(90deg,transparent,var(--or))"></div>
         </div>
 
-        <div class="rotation-timeline" v-if="allRotations.length" v-reveal="140">
-          <div class="rt-item" v-for="(r, i) in visibleRotations" :key="i">
+        <div class="rotation-timeline" v-if="rot.allRotations.length" v-reveal="140">
+          <div class="rt-item" v-for="(r, i) in rot.visibleRotations" :key="i">
             <div class="rt-time">{{ r.time }}</div>
             <div class="rt-dot" :class="r.group"></div>
             <div class="rt-info">
@@ -101,8 +101,8 @@
               <span class="rt-group" :class="r.group">{{ groupLabel(r.group) }}</span>
             </div>
           </div>
-          <button v-if="allRotations.length > PAGE_SIZE" class="rt-toggle" @click="showAll = !showAll">
-            {{ showAll ? 'Réduire' : `Voir les ${allRotations.length - PAGE_SIZE} précédentes` }}
+          <button v-if="rot.allRotations.length > rot.PAGE_SIZE" class="rt-toggle" @click="rot.showAll = !rot.showAll">
+            {{ rot.showAll ? 'Réduire' : `Voir les ${rot.allRotations.length - rot.PAGE_SIZE} précédentes` }}
           </button>
         </div>
 
@@ -117,11 +117,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { reactive } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
+import { useRotationsStore } from '../store/rotations'
 
-const STORAGE_KEY = 'jim_rotations_v1'
-const PAGE_SIZE = 5
+const rot = useRotationsStore()
 
 const poles = [
   { key: 'photo', label: 'Pôle Photo',  icon: 'camera',         color: 'linear-gradient(135deg,#b1222a,#8c3b2a)' },
@@ -129,53 +129,14 @@ const poles = [
   { key: 'recit', label: 'Pôle Récit',  icon: 'message-circle', color: 'linear-gradient(135deg,#1a3a2a,#2d6a4a)' },
 ]
 
-function todayKey() {
-  return new Date().toLocaleDateString('fr-FR')
-}
-
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw)
-    if (data.date !== todayKey()) return null
-    return data
-  } catch { return null }
-}
-
-const saved = loadState()
-
-// état courant de chaque pôle
-const current = reactive(saved?.current ?? { photo: '', '3d': '', recit: '' })
-// historique par pôle
-const history = reactive(saved?.history ?? { photo: [], '3d': [], recit: [] })
-// toutes les rotations dans l'ordre
-const allRotations = ref(saved?.allRotations ?? [])
-
-const showAll = ref(false)
-
-const visibleRotations = computed(() => {
-  const reversed = allRotations.value.slice().reverse()
-  return showAll.value ? reversed : reversed.slice(0, PAGE_SIZE)
-})
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    date: todayKey(),
-    current: { ...current },
-    history: { photo: [...history.photo], '3d': [...history['3d']], recit: [...history.recit] },
-    allRotations: allRotations.value,
-  }))
-}
-
 const groupOrder = ['rouge', 'jaune', 'vert', 'libre', '']
 
-function currentGroup(poleKey) { return current[poleKey] }
+function currentGroup(poleKey) { return rot.current[poleKey] }
 
 function cycleGroup(poleKey) {
-  const idx = groupOrder.indexOf(current[poleKey])
+  const idx = groupOrder.indexOf(rot.current[poleKey])
   const next = groupOrder[(idx + 1) % groupOrder.length]
-  applyRotation(poleKey, next)
+  rot.applyRotation(poleKey, next)
 }
 
 function groupLabel(g) {
@@ -186,23 +147,11 @@ function poleLabel(k) {
   return poles.find(p => p.key === k)?.label || k
 }
 
-function now() {
-  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
-function applyRotation(poleKey, group) {
-  current[poleKey] = group
-  const entry = { pole: poleKey, group, time: now() }
-  history[poleKey].push(entry)
-  allRotations.value.push(entry)
-  saveState()
-}
-
 const newRotation = reactive({ pole: '', group: '' })
 
 function registerRotation() {
   if (!newRotation.pole || !newRotation.group) return
-  applyRotation(newRotation.pole, newRotation.group)
+  rot.applyRotation(newRotation.pole, newRotation.group)
   newRotation.pole  = ''
   newRotation.group = ''
 }

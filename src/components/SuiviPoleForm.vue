@@ -132,9 +132,11 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useAirtableStore } from '../store/airtable'
+import { useRotationsStore } from '../store/rotations'
 import AppIcon from './AppIcon.vue'
 
 const airtable = useAirtableStore()
+const rotations = useRotationsStore()
 const pole = ref('')
 const groupId = ref('')
 const groupColor = ref('')
@@ -248,6 +250,7 @@ async function submitForm() {
       Observations: notes.value.join(', ')
     })
     passedGroupIds.value = new Set([...passedGroupIds.value, groupId.value])
+    rotations.recordFromSuivi(pole.value, groupColor.value)
     submitted.value = true
     await Promise.all([airtable.loadSuivi(), airtable.loadAccueil()])
   } catch (error) {
