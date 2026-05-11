@@ -136,16 +136,29 @@ export const useAirtableStore = defineStore('airtable', {
         console.warn('Erreur de chargement des avis :', error.message)
       }
     },
+<<<<<<< HEAD
     async loadSuivi() {
       try {
         const records = await this.fetchRecords('s')
         this.suiviRecords = records.map((record) => record.fields || {})
       } catch (error) {
         console.warn('Erreur de chargement du suivi pôles :', error.message)
+=======
+    async fetchSuivi() {
+      return this.fetchRecords('s')
+    },
+    async loadSuivi() {
+      try {
+        const records = await this.fetchSuivi()
+        this.suiviRecords = records.map((record) => ({ id: record.id, ...(record.fields || {}) }))
+      } catch (error) {
+        console.warn('Erreur de chargement du suivi pôle :', error.message)
+>>>>>>> 8b994f06e809454bd4494f3cbe7d5b9c646621a8
       }
     },
     async loadAccueil() {
       try {
+<<<<<<< HEAD
         const today = new Date().toISOString().split('T')[0]
         const records = await this.fetchRecords('a', {
           filterByFormula: `{Date}='${today}'`
@@ -162,6 +175,13 @@ export const useAirtableStore = defineStore('airtable', {
     },
     addAccueilRecord(record) {
       this.accueilRecords.push(record)
+=======
+        const records = await this.fetchRecords('a')
+        this.accueilRecords = records.map((record) => ({ id: record.id, ...(record.fields || {}) }))
+      } catch (error) {
+        console.warn('Erreur de chargement des groupes accueil :', error.message)
+      }
+>>>>>>> 8b994f06e809454bd4494f3cbe7d5b9c646621a8
     }
   }
 })
