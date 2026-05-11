@@ -92,7 +92,7 @@ const filteredRecords = computed(() => {
 })
 
 function poleIconName(pole) {
-  return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle' }['pole'] || 'bar-chart'
+  return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle' }[pole] || 'bar-chart'
 }
 
 async function loadData() {
