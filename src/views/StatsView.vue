@@ -102,6 +102,57 @@
       </div>
     </div>
 
+    <!-- ─── Contrôle de cohérence Accueil ↔ Pôles ─── -->
+    <div class="stat-block" v-reveal="0">
+      <div class="stat-block-header">
+        <AppIcon name="check-circle" :size="18" />
+        <h2>Vérification des passages</h2>
+        <span class="badge" :class="reconciliationOk ? 'badge-ok' : 'badge-warn'">
+          {{ reconciliationOk ? 'Cohérent' : 'Écart détecté' }}
+        </span>
+      </div>
+
+      <div class="rec-accueil">
+        <AppIcon name="users" :size="16" />
+        <span>Total enregistré à l'accueil aujourd'hui :</span>
+        <strong>{{ totalAccueil }} personne{{ totalAccueil > 1 ? 's' : '' }}</strong>
+      </div>
+
+      <div class="rec-grid">
+        <div
+          class="rec-pole"
+          v-for="item in reconciliation"
+          :key="item.label"
+          :class="item.ok ? 'rec-ok' : 'rec-warn'"
+        >
+          <div class="rec-pole-header">
+            <AppIcon :name="item.icon" :size="16" />
+            <span>{{ item.label }}</span>
+            <AppIcon :name="item.ok ? 'check-circle' : 'alert-triangle'" :size="16" class="rec-status-ico" />
+          </div>
+          <div class="rec-numbers">
+            <div class="rec-num">
+              <span class="rec-num-val">{{ item.passés }}</span>
+              <span class="rec-num-lbl">passé{{ item.passés > 1 ? 's' : '' }}</span>
+            </div>
+            <div class="rec-sep">/</div>
+            <div class="rec-num">
+              <span class="rec-num-val">{{ totalAccueil }}</span>
+              <span class="rec-num-lbl">attendu{{ totalAccueil > 1 ? 's' : '' }}</span>
+            </div>
+          </div>
+          <div class="rec-ecart" v-if="!item.ok">
+            {{ item.ecart > 0 ? `+${item.ecart} en excès` : `${Math.abs(item.ecart)} manquant${Math.abs(item.ecart) > 1 ? 's' : ''}` }}
+          </div>
+        </div>
+      </div>
+
+      <div class="rec-note" v-if="totalAccueil === 0">
+        <AppIcon name="alert-triangle" :size="14" />
+        Aucun groupe enregistré à l'accueil aujourd'hui.
+      </div>
+    </div>
+
     <!-- ─── Export CSV ─── -->
     <div class="stat-block export-block" v-reveal="0">
       <div class="stat-block-header">
@@ -401,12 +452,39 @@ function exportCSV(type) {
   }
 }
 
+// ─── Contrôle de cohérence Accueil ↔ Pôles ───
+const totalAccueil = computed(() =>
+  airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
+)
+
+const POLES_DEF = [
+  { label: 'Pôle Photo',  icon: 'camera',         key: 'Pôle Photo'  },
+  { label: 'Pôle 3D',    icon: 'box',             key: 'Pôle 3D'     },
+  { label: 'Pôle Récit', icon: 'message-circle',  key: 'Pôle Récit'  },
+]
+
+const reconciliation = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return POLES_DEF.map(({ label, icon, key }) => {
+    const passés = airtable.suiviRecords
+      .filter(r => r['Pôle concerné'] === key && (r.Date || '').startsWith(today))
+      .reduce((s, r) => s + (r['Participants passés'] || 0), 0)
+    const ecart = passés - totalAccueil.value
+    return { label, icon, passés, ecart, ok: totalAccueil.value > 0 && ecart === 0 }
+  })
+})
+
+const reconciliationOk = computed(() =>
+  totalAccueil.value > 0 && reconciliation.value.every(r => r.ok)
+)
+
 async function loadAll() {
   if (airtable.isConnected) {
     await Promise.allSettled([
       airtable.loadEventRegistrations(),
       airtable.loadAvis(),
-      airtable.loadSuivi()
+      airtable.loadSuivi(),
+      airtable.loadAccueil(),
     ])
   }
 }
@@ -708,4 +786,73 @@ watch(() => airtable.isConnected, (connected) => { if (connected) loadAll() })
 .eb-title { font-size: .88rem; font-weight: 700; }
 .eb-sub   { font-size: .74rem; color: #999; margin-top: 2px; }
 .eb-dl    { margin-left: auto; color: var(--or); flex-shrink: 0; }
+
+/* ─── Contrôle de cohérence ─── */
+.badge-ok   { background: rgba(40,167,69,.12); color: #28a745; }
+.badge-warn { background: rgba(220,53,69,.1);  color: #dc3545; }
+
+.rec-accueil {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: rgba(132,89,54,.05);
+  border: 1.5px solid #e8ddd0;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  font-size: .9rem; color: var(--brun);
+}
+.rec-accueil strong { margin-left: auto; font-size: 1.1rem; font-weight: 900; }
+
+.rec-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 680px) { .rec-grid { grid-template-columns: 1fr; } }
+
+.rec-pole {
+  padding: 16px;
+  border-radius: 16px;
+  border: 2px solid;
+  transition: box-shadow .2s;
+}
+.rec-ok   { border-color: #28a745; background: rgba(40,167,69,.05); }
+.rec-warn { border-color: #dc3545; background: rgba(220,53,69,.05); }
+
+.rec-pole-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .82rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 14px;
+  color: var(--brun);
+}
+.rec-status-ico { margin-left: auto; }
+.rec-ok   .rec-status-ico { color: #28a745; }
+.rec-warn .rec-status-ico { color: #dc3545; }
+
+.rec-numbers {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px;
+}
+.rec-num { display: flex; flex-direction: column; align-items: center; }
+.rec-num-val { font-size: 1.6rem; font-weight: 900; line-height: 1; }
+.rec-num-lbl { font-size: .66rem; color: #aaa; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+.rec-ok  .rec-num-val { color: #28a745; }
+.rec-warn .rec-num-val { color: #dc3545; }
+.rec-sep { font-size: 1.4rem; color: #ccc; font-weight: 300; }
+
+.rec-ecart {
+  margin-top: 12px;
+  text-align: center;
+  font-size: .75rem; font-weight: 700;
+  color: #dc3545;
+  background: rgba(220,53,69,.08);
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+
+.rec-note {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 12px;
+  font-size: .8rem; color: #aaa;
+}
 </style>
