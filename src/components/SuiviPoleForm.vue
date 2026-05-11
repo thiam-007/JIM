@@ -108,6 +108,7 @@ async function submitForm() {
       Observations: notes.value.trim()
     })
     submitted.value = true
+    await airtable.loadSuivi()
   } catch (error) {
     errorMessage.value = `Erreur Airtable : ${error.message}`
   } finally {
