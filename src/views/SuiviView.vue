@@ -4,7 +4,7 @@
 
     <div class="form-card suivi-records" v-if="airtable.isConnected">
       <div class="fh fh-s">
-        <div class="fh-icon">📋</div>
+        <div class="fh-icon"><AppIcon name="file-text" :size="26" /></div>
         <div class="fh-title">Enregistrements par Pôle</div>
         <div class="fh-sub">Historique des suivis saisis</div>
       </div>
@@ -14,13 +14,15 @@
           <label>Filtrer par pôle</label>
           <select v-model="filterPole">
             <option value="">Tous les pôles</option>
-            <option value="Pôle Photo">📸 Pôle Photo</option>
-            <option value="Pôle 3D">🧊 Pôle 3D</option>
-            <option value="Pôle Récit">🗣️ Pôle Récit</option>
+            <option value="Pôle Photo">Pôle Photo</option>
+            <option value="Pôle 3D">Pôle 3D</option>
+            <option value="Pôle Récit">Pôle Récit</option>
           </select>
         </div>
 
-        <div v-if="loading" class="empty-state">⏳ Chargement des enregistrements…</div>
+        <div v-if="loading" class="empty-state">
+          <AppIcon name="loader" :size="20" /> Chargement des enregistrements…
+        </div>
 
         <div v-else-if="filteredRecords.length === 0" class="empty-state">
           Aucun enregistrement trouvé{{ filterPole ? ` pour ${filterPole}` : '' }}.
@@ -29,14 +31,29 @@
         <div v-else class="record-list">
           <div class="record-item" v-for="rec in filteredRecords" :key="rec.id">
             <div class="record-header">
-              <span class="record-pole">{{ poleIcon(rec['Pôle concerné']) }} {{ rec['Pôle concerné'] || '—' }}</span>
-              <span class="record-group">{{ groupDot(rec['Groupe attribué']) }} {{ rec['Groupe attribué'] || '' }} · {{ rec['Groupe ID'] || '—' }}</span>
+              <span class="record-pole">
+                <AppIcon :name="poleIconName(rec['Pôle concerné'])" :size="15" />
+                {{ rec['Pôle concerné'] || '—' }}
+              </span>
+              <span class="record-group">
+                <span class="dot-sm" :class="`dot-${(rec['Groupe attribué'] || '').toLowerCase()}`"></span>
+                {{ rec['Groupe attribué'] || '' }} · {{ rec['Groupe ID'] || '—' }}
+              </span>
               <span class="record-date">{{ rec.Date || '' }}</span>
             </div>
             <div class="record-stats">
-              <span>👥 Passés : <strong>{{ rec['Participants passés'] ?? '—' }}</strong></span>
-              <span>✋ Actifs : <strong>{{ rec['Participants actifs'] ?? '—' }}</strong></span>
-              <span>🎨 Contenus : <strong>{{ rec['Contenus produits'] ?? '—' }}</strong></span>
+              <span class="stat-chip">
+                <AppIcon name="users" :size="13" />
+                Passés : <strong>{{ rec['Participants passés'] ?? '—' }}</strong>
+              </span>
+              <span class="stat-chip">
+                <AppIcon name="user" :size="13" />
+                Actifs : <strong>{{ rec['Participants actifs'] ?? '—' }}</strong>
+              </span>
+              <span class="stat-chip">
+                <AppIcon name="file-text" :size="13" />
+                Contenus : <strong>{{ rec['Contenus produits'] ?? '—' }}</strong>
+              </span>
             </div>
             <div class="record-obs" v-if="rec.Observations">{{ rec.Observations }}</div>
           </div>
@@ -57,6 +74,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import SuiviPoleForm from '../components/SuiviPoleForm.vue'
+import AppIcon from '../components/AppIcon.vue'
 import { useAirtableStore } from '../store/airtable'
 
 const airtable = useAirtableStore()
@@ -73,12 +91,8 @@ const filteredRecords = computed(() => {
   return records.filter(r => r['Pôle concerné'] === filterPole.value)
 })
 
-function poleIcon(pole) {
-  return { 'Pôle Photo': '📸', 'Pôle 3D': '🧊', 'Pôle Récit': '🗣️' }[pole] || '📊'
-}
-
-function groupDot(group) {
-  return { Rouge: '🔴', Jaune: '🟡', Vert: '🟢' }[group] || ''
+function poleIconName(pole) {
+  return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle' }['pole'] || 'bar-chart'
 }
 
 async function loadData() {
@@ -128,7 +142,7 @@ watch(() => airtable.isConnected, (connected) => {
 .record-item {
   padding: 1rem;
   background: var(--bg-card);
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--border);
 }
 
@@ -137,15 +151,21 @@ watch(() => airtable.isConnected, (connected) => {
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
 .record-pole {
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
   color: var(--text);
 }
 
 .record-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-muted);
   font-size: 0.9rem;
 }
@@ -156,23 +176,50 @@ watch(() => airtable.isConnected, (connected) => {
   color: var(--text-muted);
 }
 
+.dot-sm {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.dot-rouge { background: #dc3545; }
+.dot-jaune { background: #d4a017; }
+.dot-vert  { background: #28a745; }
+
 .record-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1.5rem;
-  font-size: 0.9rem;
+  gap: 0.4rem 1rem;
   margin-bottom: 0.4rem;
 }
 
-.record-obs {
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.stat-chip strong {
+  color: var(--text);
+}
+
+.record-obs {
+  font-size: 0.82rem;
+  color: var(--text-muted);
   font-style: italic;
-  margin-top: 0.25rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
 }
 
 .empty-state {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 2rem;
   color: var(--text-muted);
 }
