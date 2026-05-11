@@ -153,14 +153,15 @@
       </div>
     </div>
 
-    <!-- ─── Export CSV ─── -->
+    <!-- ─── Export Excel ─── -->
     <div class="stat-block export-block" v-reveal="0">
       <div class="stat-block-header">
         <AppIcon name="download" :size="18" />
-        <h2>Exporter les données</h2>
+        <h2>Exporter en Excel</h2>
+        <span class="badge">.xlsx</span>
       </div>
       <div class="export-grid">
-        <button class="export-btn" @click="exportCSV('inscriptions')">
+        <button class="export-btn" @click="exportXLSX('inscriptions')">
           <AppIcon name="file-text" :size="18" />
           <div>
             <div class="eb-title">Inscriptions</div>
@@ -168,7 +169,15 @@
           </div>
           <AppIcon name="download" :size="16" class="eb-dl" />
         </button>
-        <button class="export-btn" @click="exportCSV('suivi')">
+        <button class="export-btn" @click="exportXLSX('accueil')">
+          <AppIcon name="users" :size="18" />
+          <div>
+            <div class="eb-title">Accueil visiteurs</div>
+            <div class="eb-sub">{{ airtable.accueilRecords.length }} groupes</div>
+          </div>
+          <AppIcon name="download" :size="16" class="eb-dl" />
+        </button>
+        <button class="export-btn" @click="exportXLSX('suivi')">
           <AppIcon name="bar-chart" :size="18" />
           <div>
             <div class="eb-title">Suivi pôles</div>
@@ -176,7 +185,7 @@
           </div>
           <AppIcon name="download" :size="16" class="eb-dl" />
         </button>
-        <button class="export-btn" @click="exportCSV('avis')">
+        <button class="export-btn" @click="exportXLSX('avis')">
           <AppIcon name="star" :size="18" />
           <div>
             <div class="eb-title">Avis visiteurs</div>
@@ -319,6 +328,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useAirtableStore } from '../store/airtable'
 import AppIcon from '../components/AppIcon.vue'
+import * as XLSX from 'xlsx'
 
 const airtable = useAirtableStore()
 
@@ -424,31 +434,90 @@ function printRapport() {
   window.print()
 }
 
-// ─── Export CSV ───
-function toCSV(rows) {
-  if (!rows.length) return ''
-  const headers = Object.keys(rows[0])
-  const escape  = v => `"${String(v ?? '').replace(/"/g, '""')}"`
-  return [headers.map(escape).join(','), ...rows.map(r => headers.map(k => escape(r[k])).join(','))].join('\n')
+// ─── Export Excel ───
+function downloadXLSX(rows, colDefs, sheetName, filename) {
+  if (!rows.length) {
+    alert('Aucune donnée à exporter.')
+    return
+  }
+  const data = [
+    colDefs.map(c => c.label),
+    ...rows.map(r => colDefs.map(c => {
+      const v = r[c.key] ?? ''
+      return c.num ? (Number(v) || 0) : String(v)
+    }))
+  ]
+  const ws = XLSX.utils.aoa_to_sheet(data)
+
+  ws['!cols'] = colDefs.map(c => {
+    const max = Math.max(
+      c.label.length,
+      ...rows.map(r => String(r[c.key] ?? '').length)
+    )
+    return { wch: Math.min(max + 2, 50) }
+  })
+
+  const range = XLSX.utils.decode_range(ws['!ref'])
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })]
+    if (cell) cell.s = { font: { bold: true } }
+  }
+
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, sheetName)
+  XLSX.writeFile(wb, filename)
 }
 
-function downloadCSV(content, filename) {
-  const blob = new Blob(['﻿' + content], { type: 'text/csv;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
-  a.href = url; a.download = filename; a.click()
-  URL.revokeObjectURL(url)
-}
+const COLS_INSCRIPTIONS = [
+  { key: 'Session',                   label: 'Session',                   num: false },
+  { key: 'Nombre de participants',    label: 'Nombre de participants',    num: true  },
+  { key: 'Prénom',                    label: 'Prénom',                    num: false },
+  { key: 'Nom',                       label: 'Nom',                       num: false },
+  { key: 'Email',                     label: 'Email',                     num: false },
+  { key: 'Téléphone',                 label: 'Téléphone',                 num: false },
+  { key: 'Profil',                    label: 'Profil',                    num: false },
+  { key: 'Accepte contact',           label: 'Accepte contact',           num: false },
+  { key: 'Date',                      label: 'Date',                      num: false },
+]
 
-function exportCSV(type) {
+const COLS_SUIVI = [
+  { key: 'Date',                   label: 'Date',                    num: false },
+  { key: 'Pôle concerné',         label: 'Pôle',                    num: false },
+  { key: 'Groupe ID',             label: 'Groupe ID',               num: false },
+  { key: 'Groupe attribué',      label: 'Couleur groupe',          num: false },
+  { key: 'Participants passés',  label: 'Participants passés',    num: true  },
+  { key: 'Participants actifs',   label: 'Participants actifs',    num: true  },
+  { key: 'Contenus produits',     label: 'Contenus produits',      num: true  },
+  { key: 'Observations',          label: 'Observations',           num: false },
+]
+
+const COLS_ACCUEIL = [
+  { key: 'groupeId',  label: 'Groupe ID',           num: false },
+  { key: 'groupe',    label: 'Couleur',              num: false },
+  { key: 'personnes', label: 'Nombre de personnes', num: true  },
+  { key: 'heure',     label: "Heure d'arrivée",     num: false },
+  { key: 'date',      label: 'Date',                 num: false },
+]
+
+const COLS_AVIS = [
+  { key: 'Date',                 label: 'Date',            num: false },
+  { key: 'Note de satisfaction', label: 'Note (/5)',        num: true  },
+  { key: 'Commentaire',         label: 'Commentaire',      num: false },
+  { key: 'Commentaires',        label: 'Commentaires bis', num: false },
+]
+
+async function exportXLSX(type) {
   const date = new Date().toISOString().split('T')[0]
   if (type === 'inscriptions') {
-    const rows = airtable.eventRecords.map(r => r.fields || r)
-    downloadCSV(toCSV(rows.length ? rows : airtable.eventRegistrations), `inscriptions-jim2026-${date}.csv`)
+    const raw = await airtable.fetchRecords('e').catch(() => [])
+    const rows = raw.map(r => r.fields || {})
+    downloadXLSX(rows, COLS_INSCRIPTIONS, 'Inscriptions', `inscriptions-jim2026-${date}.xlsx`)
   } else if (type === 'suivi') {
-    downloadCSV(toCSV(airtable.suiviRecords), `suivi-poles-jim2026-${date}.csv`)
+    downloadXLSX(airtable.suiviRecords, COLS_SUIVI, 'Suivi pôles', `suivi-poles-jim2026-${date}.xlsx`)
+  } else if (type === 'accueil') {
+    downloadXLSX(airtable.accueilRecords, COLS_ACCUEIL, 'Accueil visiteurs', `accueil-jim2026-${date}.xlsx`)
   } else if (type === 'avis') {
-    downloadCSV(toCSV(airtable.avisRecords), `avis-visiteurs-jim2026-${date}.csv`)
+    downloadXLSX(airtable.avisRecords, COLS_AVIS, 'Avis visiteurs', `avis-jim2026-${date}.xlsx`)
   }
 }
 
