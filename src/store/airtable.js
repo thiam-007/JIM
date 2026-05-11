@@ -146,15 +146,16 @@ export const useAirtableStore = defineStore('airtable', {
     async loadAccueil() {
       try {
         const today = new Date().toISOString().split('T')[0]
-        const records = await this.fetchRecords('a', {
-          filterByFormula: `{Date}='${today}'`
-        })
-        this.accueilRecords = records.map((r) => ({
-          groupeId: r.fields?.['Groupe ID'] || '',
-          groupe: r.fields?.['Groupe attribué'] || '',
-          personnes: r.fields?.['Nombre de personnes'] || 0,
-          heure: r.fields?.["Heure d'arrivée"] || '',
-        })).filter(r => r.groupeId)
+        const records = await this.fetchRecords('a')
+        this.accueilRecords = records
+          .map((r) => ({
+            groupeId: r.fields?.['Groupe ID'] || '',
+            groupe: r.fields?.['Groupe attribué'] || '',
+            personnes: r.fields?.['Nombre de personnes'] || 0,
+            heure: r.fields?.["Heure d'arrivée"] || '',
+            date: r.fields?.['Date'] || '',
+          }))
+          .filter(r => r.groupeId && r.date === today)
       } catch (error) {
         console.warn('Erreur de chargement accueil :', error.message)
       }
