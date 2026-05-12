@@ -9,8 +9,8 @@
         </div>
         <div class="kpi-body">
           <span class="kpi-val">{{ animatedGlobal }}</span>
-          <span class="kpi-lbl">Total participants</span>
-          <span class="kpi-sub">Participants uniques enregistrés</span>
+          <span class="kpi-lbl">Total participants (global)</span>
+          <span class="kpi-sub">Inscriptions + participants pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="60">
@@ -27,8 +27,8 @@
           <AppIcon name="bar-chart-2" :size="22" />
         </div>
         <div class="kpi-body">
-          <span class="kpi-val">{{ totalSuiviPassés }}</span>
-          <span class="kpi-lbl">Passages aux pôles</span>
+          <span class="kpi-val">{{ totalAccueil }}</span>
+          <span class="kpi-lbl">Participants aux pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="180">
@@ -221,16 +221,20 @@
         <div class="rs-title">Résumé général</div>
         <div class="rapport-kpis">
           <div class="rk">
+            <span class="rk-val">{{ totalGlobal }}</span>
+            <span class="rk-lbl">Total participants</span>
+          </div>
+          <div class="rk">
             <span class="rk-val">{{ totalRegistrations }}</span>
-            <span class="rk-lbl">Inscrits conférences</span>
+            <span class="rk-lbl">Inscrits conférences/ateliers</span>
+          </div>
+          <div class="rk">
+            <span class="rk-val">{{ totalAccueil }}</span>
+            <span class="rk-lbl">Participants pôles</span>
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalSuiviPassés }}</span>
-            <span class="rk-lbl">Passages aux pôles</span>
-          </div>
-          <div class="rk">
-            <span class="rk-val">{{ totalGlobal }}</span>
-            <span class="rk-lbl">Total participants</span>
+            <span class="rk-lbl">Rotations aux pôles</span>
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalAvis }}</span>
@@ -349,8 +353,9 @@ const totalAccueil = computed(() =>
   airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
 )
 
-// Participants uniques = personnes enregistrées à l'accueil (le même groupe passe par les 3 pôles)
-const totalGlobal = computed(() => totalAccueil.value)
+// Total global = inscriptions (ateliers/conférences) + personnes uniques aux pôles
+// Un groupe de 10 passant par 3 pôles compte pour 10, pas 30
+const totalGlobal = computed(() => totalRegistrations.value + totalAccueil.value)
 
 // ─── Compteurs animés ───
 const animatedTotal = ref(0)
