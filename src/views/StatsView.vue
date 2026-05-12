@@ -28,7 +28,7 @@
         </div>
         <div class="kpi-body">
           <span class="kpi-val">{{ totalAccueil }}</span>
-          <span class="kpi-lbl">Participants aux pôles</span>
+          <span class="kpi-lbl">Visiteurs pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="180">
@@ -230,7 +230,7 @@
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalAccueil }}</span>
-            <span class="rk-lbl">Participants pôles</span>
+            <span class="rk-lbl">Visiteurs pôles</span>
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalSuiviPassés }}</span>
