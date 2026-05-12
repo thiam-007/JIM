@@ -10,7 +10,7 @@
         <div class="kpi-body">
           <span class="kpi-val">{{ animatedGlobal }}</span>
           <span class="kpi-lbl">Total participants (global)</span>
-          <span class="kpi-sub">Conférences + pôles</span>
+          <span class="kpi-sub">Inscriptions + participants pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="60">
@@ -27,8 +27,8 @@
           <AppIcon name="bar-chart-2" :size="22" />
         </div>
         <div class="kpi-body">
-          <span class="kpi-val">{{ totalSuiviPassés }}</span>
-          <span class="kpi-lbl">Passages aux pôles</span>
+          <span class="kpi-val">{{ totalAccueil }}</span>
+          <span class="kpi-lbl">Visiteurs pôles</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="180">
@@ -115,7 +115,7 @@
       <div class="rec-accueil">
         <AppIcon name="users" :size="16" />
         <span>Total enregistré à l'accueil aujourd'hui :</span>
-        <strong>{{ totalAccueil }} personne{{ totalAccueil > 1 ? 's' : '' }}</strong>
+        <strong>{{ totalAccueilAujourdhui }} personne{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</strong>
       </div>
 
       <div class="rec-grid">
@@ -137,8 +137,8 @@
             </div>
             <div class="rec-sep">/</div>
             <div class="rec-num">
-              <span class="rec-num-val">{{ totalAccueil }}</span>
-              <span class="rec-num-lbl">attendu{{ totalAccueil > 1 ? 's' : '' }}</span>
+              <span class="rec-num-val">{{ totalAccueilAujourdhui }}</span>
+              <span class="rec-num-lbl">attendu{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</span>
             </div>
           </div>
           <div class="rec-ecart" v-if="!item.ok">
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <div class="rec-note" v-if="totalAccueil === 0">
+      <div class="rec-note" v-if="totalAccueilAujourdhui === 0">
         <AppIcon name="alert-triangle" :size="14" />
         Aucun groupe enregistré à l'accueil aujourd'hui.
       </div>
@@ -221,16 +221,20 @@
         <div class="rs-title">Résumé général</div>
         <div class="rapport-kpis">
           <div class="rk">
+            <span class="rk-val">{{ totalGlobal }}</span>
+            <span class="rk-lbl">Total participants</span>
+          </div>
+          <div class="rk">
             <span class="rk-val">{{ totalRegistrations }}</span>
-            <span class="rk-lbl">Inscrits conférences</span>
+            <span class="rk-lbl">Inscrits conférences/ateliers</span>
+          </div>
+          <div class="rk">
+            <span class="rk-val">{{ totalAccueil }}</span>
+            <span class="rk-lbl">Visiteurs pôles</span>
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalSuiviPassés }}</span>
-            <span class="rk-lbl">Passages aux pôles</span>
-          </div>
-          <div class="rk">
-            <span class="rk-val">{{ totalGlobal }}</span>
-            <span class="rk-lbl">Total participants</span>
+            <span class="rk-lbl">Rotations aux pôles</span>
           </div>
           <div class="rk">
             <span class="rk-val">{{ totalAvis }}</span>
@@ -343,7 +347,23 @@ const averageRating = computed(() => {
 const totalSuiviPassés = computed(() =>
   airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
 )
-const totalGlobal = computed(() => totalRegistrations.value + totalSuiviPassés.value)
+
+// totalAccueil (toutes dates) → KPI global "Visiteurs pôles"
+const totalAccueil = computed(() =>
+  airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
+)
+
+// totalAccueilAujourdhui → réconciliation (comparé aux passages pôles du jour)
+const totalAccueilAujourdhui = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return airtable.accueilRecords
+    .filter(r => (r.date || '').startsWith(today))
+    .reduce((s, r) => s + (r.personnes || 0), 0)
+})
+
+// Total global = inscriptions (ateliers/conférences) + personnes uniques aux pôles
+// Un groupe de 10 passant par 3 pôles compte pour 10, pas 30
+const totalGlobal = computed(() => totalRegistrations.value + totalAccueil.value)
 
 // ─── Compteurs animés ───
 const animatedTotal = ref(0)
@@ -521,11 +541,6 @@ async function exportXLSX(type) {
   }
 }
 
-// ─── Contrôle de cohérence Accueil ↔ Pôles ───
-const totalAccueil = computed(() =>
-  airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
-)
-
 const POLES_DEF = [
   { label: 'Pôle Photo',  icon: 'camera',         key: 'Pôle Photo'  },
   { label: 'Pôle 3D',    icon: 'box',             key: 'Pôle 3D'     },
@@ -534,17 +549,18 @@ const POLES_DEF = [
 
 const reconciliation = computed(() => {
   const today = new Date().toISOString().split('T')[0]
+  const attendus = totalAccueilAujourdhui.value
   return POLES_DEF.map(({ label, icon, key }) => {
     const passés = airtable.suiviRecords
       .filter(r => r['Pôle concerné'] === key && (r.Date || '').startsWith(today))
       .reduce((s, r) => s + (r['Participants passés'] || 0), 0)
-    const ecart = passés - totalAccueil.value
-    return { label, icon, passés, ecart, ok: totalAccueil.value > 0 && ecart === 0 }
+    const ecart = passés - attendus
+    return { label, icon, passés, ecart, ok: attendus > 0 && ecart === 0 }
   })
 })
 
 const reconciliationOk = computed(() =>
-  totalAccueil.value > 0 && reconciliation.value.every(r => r.ok)
+  totalAccueilAujourdhui.value > 0 && reconciliation.value.every(r => r.ok)
 )
 
 async function loadAll() {
