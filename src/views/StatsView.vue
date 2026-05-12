@@ -115,7 +115,7 @@
       <div class="rec-accueil">
         <AppIcon name="users" :size="16" />
         <span>Total enregistré à l'accueil aujourd'hui :</span>
-        <strong>{{ totalAccueil }} personne{{ totalAccueil > 1 ? 's' : '' }}</strong>
+        <strong>{{ totalAccueilAujourdhui }} personne{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</strong>
       </div>
 
       <div class="rec-grid">
@@ -137,8 +137,8 @@
             </div>
             <div class="rec-sep">/</div>
             <div class="rec-num">
-              <span class="rec-num-val">{{ totalAccueil }}</span>
-              <span class="rec-num-lbl">attendu{{ totalAccueil > 1 ? 's' : '' }}</span>
+              <span class="rec-num-val">{{ totalAccueilAujourdhui }}</span>
+              <span class="rec-num-lbl">attendu{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</span>
             </div>
           </div>
           <div class="rec-ecart" v-if="!item.ok">
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <div class="rec-note" v-if="totalAccueil === 0">
+      <div class="rec-note" v-if="totalAccueilAujourdhui === 0">
         <AppIcon name="alert-triangle" :size="14" />
         Aucun groupe enregistré à l'accueil aujourd'hui.
       </div>
@@ -348,10 +348,18 @@ const totalSuiviPassés = computed(() =>
   airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
 )
 
-// ─── Contrôle de cohérence Accueil ↔ Pôles ───
+// totalAccueil (toutes dates) → KPI global "Visiteurs pôles"
 const totalAccueil = computed(() =>
   airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
 )
+
+// totalAccueilAujourdhui → réconciliation (comparé aux passages pôles du jour)
+const totalAccueilAujourdhui = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return airtable.accueilRecords
+    .filter(r => (r.date || '').startsWith(today))
+    .reduce((s, r) => s + (r.personnes || 0), 0)
+})
 
 // Total global = inscriptions (ateliers/conférences) + personnes uniques aux pôles
 // Un groupe de 10 passant par 3 pôles compte pour 10, pas 30
@@ -541,17 +549,18 @@ const POLES_DEF = [
 
 const reconciliation = computed(() => {
   const today = new Date().toISOString().split('T')[0]
+  const attendus = totalAccueilAujourdhui.value
   return POLES_DEF.map(({ label, icon, key }) => {
     const passés = airtable.suiviRecords
       .filter(r => r['Pôle concerné'] === key && (r.Date || '').startsWith(today))
       .reduce((s, r) => s + (r['Participants passés'] || 0), 0)
-    const ecart = passés - totalAccueil.value
-    return { label, icon, passés, ecart, ok: totalAccueil.value > 0 && ecart === 0 }
+    const ecart = passés - attendus
+    return { label, icon, passés, ecart, ok: attendus > 0 && ecart === 0 }
   })
 })
 
 const reconciliationOk = computed(() =>
-  totalAccueil.value > 0 && reconciliation.value.every(r => r.ok)
+  totalAccueilAujourdhui.value > 0 && reconciliation.value.every(r => r.ok)
 )
 
 async function loadAll() {
