@@ -9,8 +9,8 @@
         </div>
         <div class="kpi-body">
           <span class="kpi-val">{{ animatedGlobal }}</span>
-          <span class="kpi-lbl">Total participants (global)</span>
-          <span class="kpi-sub">Conférences + pôles</span>
+          <span class="kpi-lbl">Total participants</span>
+          <span class="kpi-sub">Participants uniques enregistrés</span>
         </div>
       </div>
       <div class="kpi-card" v-reveal="60">
@@ -343,7 +343,14 @@ const averageRating = computed(() => {
 const totalSuiviPassés = computed(() =>
   airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
 )
-const totalGlobal = computed(() => totalRegistrations.value + totalSuiviPassés.value)
+
+// ─── Contrôle de cohérence Accueil ↔ Pôles ───
+const totalAccueil = computed(() =>
+  airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
+)
+
+// Participants uniques = personnes enregistrées à l'accueil (le même groupe passe par les 3 pôles)
+const totalGlobal = computed(() => totalAccueil.value)
 
 // ─── Compteurs animés ───
 const animatedTotal = ref(0)
@@ -520,11 +527,6 @@ async function exportXLSX(type) {
     downloadXLSX(airtable.avisRecords, COLS_AVIS, 'Avis visiteurs', `avis-jim2026-${date}.xlsx`)
   }
 }
-
-// ─── Contrôle de cohérence Accueil ↔ Pôles ───
-const totalAccueil = computed(() =>
-  airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
-)
 
 const POLES_DEF = [
   { label: 'Pôle Photo',  icon: 'camera',         key: 'Pôle Photo'  },
