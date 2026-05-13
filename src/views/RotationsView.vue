@@ -186,11 +186,13 @@ onMounted(async () => {
 .ps-group.rouge { background: rgba(220,53,69,.12); border-color: #dc3545; }
 .ps-group.jaune { background: rgba(212,160,23,.12); border-color: #d4a017; }
 .ps-group.vert  { background: rgba(40,167,69,.12);  border-color: #28a745; }
+.ps-group.bleu  { background: rgba(37,99,235,.12);  border-color: #2563eb; }
 .ps-group.libre { background: rgba(132,89,54,.06); border-color: #e8ddd0; }
 .ps-group-id { display: block; font-size: 1rem; font-weight: 900; font-family: monospace; letter-spacing: 1px; color: var(--brun); }
 .ps-group.rouge .ps-group-id { color: #dc3545; }
 .ps-group.jaune .ps-group-id { color: #8a6600; }
 .ps-group.vert  .ps-group-id { color: #28a745; }
+.ps-group.bleu  .ps-group-id { color: #2563eb; }
 .ps-group-color { display: block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; opacity: .7; margin-top: 2px; }
 .ps-empty { font-size: .88rem; font-weight: 600; font-style: italic; color: #bbb; }
 .ps-liberer {
@@ -208,6 +210,7 @@ onMounted(async () => {
 .ph-badge.rouge { background: rgba(220,53,69,.12); color: #dc3545; }
 .ph-badge.jaune { background: rgba(212,160,23,.12); color: #8a6600; }
 .ph-badge.vert  { background: rgba(40,167,69,.12);  color: #28a745; }
+.ph-badge.bleu  { background: rgba(37,99,235,.12);  color: #2563eb; }
 .ph-badge.libre { background: rgba(132,89,54,.08); color: #aaa; }
 .ph-time { font-size: .7rem; color: #bbb; }
 
@@ -222,6 +225,7 @@ onMounted(async () => {
 .rt-dot.rouge { background: #dc3545; }
 .rt-dot.jaune { background: #d4a017; }
 .rt-dot.vert  { background: #28a745; }
+.rt-dot.bleu  { background: #2563eb; }
 .rt-dot.libre { background: #ccc; }
 .rt-info { display: flex; align-items: center; gap: 6px; font-size: .84rem; }
 .rt-pole { font-weight: 700; color: var(--brun); }
@@ -230,6 +234,7 @@ onMounted(async () => {
 .rt-group.rouge { color: #dc3545; }
 .rt-group.jaune { color: #8a6600; }
 .rt-group.vert  { color: #28a745; }
+.rt-group.bleu  { color: #2563eb; }
 .rt-group.libre { color: #aaa; }
 
 .empty-rot { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 32px; color: #ccc; text-align: center; }

@@ -377,6 +377,7 @@ onUnmounted(() => {
 .gp-rouge:hover { border-color: #dc3545; background: rgba(220,53,69,.05); }
 .gp-jaune:hover { border-color: #d4a017; background: rgba(212,160,23,.05); }
 .gp-vert:hover  { border-color: #28a745; background: rgba(40,167,69,.05); }
+.gp-bleu:hover  { border-color: #2563eb; background: rgba(37,99,235,.05); }
 
 .gp-dot {
   width: 14px; height: 14px;
@@ -385,6 +386,7 @@ onUnmounted(() => {
 .dot-rouge { background: #dc3545; box-shadow: 0 0 0 3px rgba(220,53,69,.2); }
 .dot-jaune { background: #d4a017; box-shadow: 0 0 0 3px rgba(212,160,23,.2); }
 .dot-vert  { background: #28a745; box-shadow: 0 0 0 3px rgba(40,167,69,.2); }
+.dot-bleu  { background: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.2); }
 
 .gp-info {
   display: flex; flex-direction: column; flex: 1;
@@ -412,6 +414,7 @@ onUnmounted(() => {
 .gp-sel-rouge { background: rgba(220,53,69,.08); border-color: #dc3545; }
 .gp-sel-jaune { background: rgba(212,160,23,.08); border-color: #d4a017; }
 .gp-sel-vert  { background: rgba(40,167,69,.08);  border-color: #28a745; }
+.gp-sel-bleu  { background: rgba(37,99,235,.08);  border-color: #2563eb; }
 
 .gp-sel-id {
   font-size: 1rem; font-weight: 900; color: var(--brun);

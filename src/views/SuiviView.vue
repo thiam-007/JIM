@@ -200,6 +200,7 @@ watch(() => airtable.isConnected, (connected) => {
 .dot-rouge { background: #dc3545; }
 .dot-jaune { background: #d4a017; }
 .dot-vert  { background: #28a745; }
+.dot-bleu  { background: #2563eb; }
 
 .record-stats {
   display: flex;
