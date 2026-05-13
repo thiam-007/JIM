@@ -27,6 +27,11 @@
               <div class="pi"><AppIcon name="message-circle" :size="28" /></div>
               <div class="pn">Pôle Récit</div>
             </div>
+            <div class="pcard" :class="{ sel: pole === 'Pôle Musique' }" @click="pickPole('Pôle Musique')">
+              <span class="pck"><AppIcon name="check" :size="14" /></span>
+              <div class="pi"><AppIcon name="music" :size="28" /></div>
+              <div class="pn">Pôle Musique</div>
+            </div>
           </div>
         </div>
 

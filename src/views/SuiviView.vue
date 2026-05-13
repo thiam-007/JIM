@@ -17,6 +17,7 @@
             <option value="Pôle Photo">Pôle Photo</option>
             <option value="Pôle 3D">Pôle 3D</option>
             <option value="Pôle Récit">Pôle Récit</option>
+            <option value="Pôle Musique">Pôle Musique</option>
           </select>
         </div>
 
@@ -104,7 +105,7 @@ const hasMore = computed(() => visibleCount.value < filteredRecords.value.length
 watch(filterPole, () => { visibleCount.value = PAGE_SIZE })
 
 function poleIconName(pole) {
-  return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle' }[pole] || 'bar-chart'
+  return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle', 'Pôle Musique': 'music' }[pole] || 'bar-chart'
 }
 
 async function loadData() {
@@ -148,43 +149,44 @@ watch(() => airtable.isConnected, (connected) => {
 .record-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.4rem;
 }
 
 .record-item {
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   background: var(--bg-card);
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 
 .record-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 0.25rem 0.75rem;
   align-items: center;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.3rem;
 }
 
 .record-pole {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   font-weight: 700;
+  font-size: 0.82rem;
   color: var(--text);
 }
 
 .record-group {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .record-date {
   margin-left: auto;
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
 }
 
@@ -202,15 +204,15 @@ watch(() => airtable.isConnected, (connected) => {
 .record-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem 1rem;
-  margin-bottom: 0.4rem;
+  gap: 0.2rem 0.75rem;
+  margin-bottom: 0.2rem;
 }
 
 .stat-chip {
   display: flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.85rem;
+  gap: 4px;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
@@ -219,11 +221,11 @@ watch(() => airtable.isConnected, (connected) => {
 }
 
 .record-obs {
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
   font-style: italic;
-  margin-top: 0.4rem;
-  padding-top: 0.4rem;
+  margin-top: 0.25rem;
+  padding-top: 0.25rem;
   border-top: 1px solid var(--border);
 }
 

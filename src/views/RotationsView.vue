@@ -127,9 +127,10 @@ const rot = useRotationsStore()
 const airtable = useAirtableStore()
 
 const poles = [
-  { key: 'photo', label: 'Pôle Photo',  icon: 'camera',         color: 'linear-gradient(135deg,#b1222a,#8c3b2a)' },
-  { key: '3d',    label: 'Pôle 3D',     icon: 'box',            color: 'linear-gradient(135deg,#593716,#845936)' },
-  { key: 'recit', label: 'Pôle Récit',  icon: 'message-circle', color: 'linear-gradient(135deg,#1a3a2a,#2d6a4a)' },
+  { key: 'photo',   label: 'Pôle Photo',   icon: 'camera',         color: 'linear-gradient(135deg,#b1222a,#8c3b2a)' },
+  { key: '3d',      label: 'Pôle 3D',      icon: 'box',            color: 'linear-gradient(135deg,#593716,#845936)' },
+  { key: 'recit',   label: 'Pôle Récit',   icon: 'message-circle', color: 'linear-gradient(135deg,#1a3a2a,#2d6a4a)' },
+  { key: 'musique', label: 'Pôle Musique', icon: 'music',          color: 'linear-gradient(135deg,#1a2a4a,#2d4a8a)' },
 ]
 
 // Groupes disponibles depuis l'accueil (toutes dates)
