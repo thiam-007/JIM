@@ -145,7 +145,6 @@ export const useAirtableStore = defineStore('airtable', {
     },
     async loadAccueil() {
       try {
-        const today = new Date().toISOString().split('T')[0]
         const records = await this.fetchRecords('a')
         this.accueilRecords = records
           .map((r) => ({
@@ -155,7 +154,7 @@ export const useAirtableStore = defineStore('airtable', {
             heure: r.fields?.["Heure d'arrivée"] || '',
             date: r.fields?.['Date'] || '',
           }))
-          .filter(r => r.groupeId && r.date.startsWith(today))
+          .filter(r => r.groupeId)
       } catch (error) {
         console.warn('Erreur de chargement accueil :', error.message)
       }
