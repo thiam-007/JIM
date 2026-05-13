@@ -61,6 +61,14 @@ export const useRotationsStore = defineStore('rotations', () => {
   }
 
   function applyRotation(poleKey, group) {
+    // Un groupe ne peut être que sur un seul pôle à la fois
+    if (group && group !== 'libre') {
+      for (const key of Object.keys(current)) {
+        if (key !== poleKey && current[key] === group) {
+          current[key] = ''
+        }
+      }
+    }
     current[poleKey] = group
     const entry = { pole: poleKey, group, time: nowTime() }
     history[poleKey].push(entry)
