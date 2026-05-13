@@ -12,27 +12,35 @@
     </header>
 
     <nav class="nav-tabs">
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
-        <AppIcon name="home" :size="16" /> Accueil
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Programme' }" to="/programme">
-        <AppIcon name="calendar" :size="16" /> Programme
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Inscriptions' }" to="/inscriptions">
-        <AppIcon name="file-text" :size="16" /> Inscriptions
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Stats' }" to="/stats">
-        <AppIcon name="trending-up" :size="16" /> Statistiques
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Accueil' }" to="/accueil">
-        <AppIcon name="landmark" :size="16" /> Accueil Visiteurs
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Suivi' }" to="/suivi">
-        <AppIcon name="bar-chart" :size="16" /> Suivi par Pôle
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Rotations' }" to="/rotations">
-        <AppIcon name="refresh-cw" :size="16" /> Rotations
-      </RouterLink>
+      <div class="nav-group">
+        <span class="nav-group-label">Agents</span>
+        <div class="nav-group-tabs">
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
+            <AppIcon name="home" :size="16" /> Accueil
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Programme' }" to="/programme">
+            <AppIcon name="calendar" :size="16" /> Programme
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Inscriptions' }" to="/inscriptions">
+            <AppIcon name="file-text" :size="16" /> Inscriptions
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Accueil' }" to="/accueil">
+            <AppIcon name="landmark" :size="16" /> Accueil Visiteurs
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Suivi' }" to="/suivi">
+            <AppIcon name="bar-chart" :size="16" /> Suivi par Pôle
+          </RouterLink>
+        </div>
+      </div>
+      <div class="nav-divider"></div>
+      <div class="nav-group">
+        <span class="nav-group-label">Coordinateurs</span>
+        <div class="nav-group-tabs">
+          <RouterLink class="nav-tab nav-tab-coord" :class="{ active: route.name === 'Dashboard' }" to="/dashboard">
+            <AppIcon name="layout" :size="16" /> Dashboard
+          </RouterLink>
+        </div>
+      </div>
     </nav>
 
     <!-- Bannière masquée si le token vient de l'environnement (Vercel) -->
@@ -243,12 +251,22 @@ header::after {
 /* ─── Nav ─── */
 .nav-tabs {
   background: rgba(255,255,255,.92);
-  display: flex; flex-wrap: wrap; justify-content: center;
-  gap: 10px; padding: 10px;
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 10px; padding: 10px 14px;
   margin: 20px 0 0;
   border-radius: 999px;
   box-shadow: 0 10px 28px rgba(89, 55, 22, .08);
   animation: fadeInScale 0.6s ease-out 0.2s backwards;
+}
+.nav-group { display: flex; align-items: center; gap: 6px; }
+.nav-group-label {
+  font-size: .6rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px;
+  color: #bbb; white-space: nowrap; padding: 0 4px;
+}
+.nav-group-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.nav-divider { width: 1px; height: 32px; background: rgba(132,89,54,.18); margin: 0 4px; flex-shrink: 0; }
+.nav-tab-coord.active {
+  background: linear-gradient(135deg, var(--rouge), var(--terre)) !important;
 }
 .nav-tab {
   min-width: 140px;
