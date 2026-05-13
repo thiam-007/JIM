@@ -29,7 +29,8 @@
         </div>
 
         <div v-else class="record-list">
-          <div class="record-item" v-for="rec in filteredRecords" :key="rec.id">
+          <div class="records-count">{{ filteredRecords.length }} enregistrement{{ filteredRecords.length > 1 ? 's' : '' }}</div>
+          <div class="record-item" v-for="rec in visibleRecords" :key="rec.id">
             <div class="record-header">
               <span class="record-pole">
                 <AppIcon :name="poleIconName(rec['Pôle concerné'])" :size="15" />
@@ -57,6 +58,10 @@
             </div>
             <div class="record-obs" v-if="rec.Observations">{{ rec.Observations }}</div>
           </div>
+          <button v-if="hasMore" class="btn-voir-plus" @click="visibleCount += PAGE_SIZE">
+            <AppIcon name="chevron-down" :size="15" />
+            Voir plus ({{ filteredRecords.length - visibleCount }} restants)
+          </button>
         </div>
       </div>
     </div>
@@ -80,6 +85,8 @@ import { useAirtableStore } from '../store/airtable'
 const airtable = useAirtableStore()
 const filterPole = ref('')
 const loading = ref(false)
+const PAGE_SIZE = 10
+const visibleCount = ref(PAGE_SIZE)
 
 const filteredRecords = computed(() => {
   const records = [...airtable.suiviRecords].sort((a, b) => {
@@ -90,6 +97,11 @@ const filteredRecords = computed(() => {
   if (!filterPole.value) return records
   return records.filter(r => r['Pôle concerné'] === filterPole.value)
 })
+
+const visibleRecords = computed(() => filteredRecords.value.slice(0, visibleCount.value))
+const hasMore = computed(() => visibleCount.value < filteredRecords.value.length)
+
+watch(filterPole, () => { visibleCount.value = PAGE_SIZE })
 
 function poleIconName(pole) {
   return { 'Pôle Photo': 'camera', 'Pôle 3D': 'box', 'Pôle Récit': 'message-circle' }[pole] || 'bar-chart'
@@ -214,6 +226,19 @@ watch(() => airtable.isConnected, (connected) => {
   padding-top: 0.4rem;
   border-top: 1px solid var(--border);
 }
+
+.records-count {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .8px; color: #aaa; margin-bottom: 10px;
+}
+.btn-voir-plus {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; margin-top: 10px; padding: 12px;
+  background: none; border: 1.5px dashed rgba(132,89,54,.25);
+  border-radius: 12px; color: var(--brun); font-size: .82rem;
+  font-weight: 700; cursor: pointer; transition: all .2s;
+}
+.btn-voir-plus:hover { background: rgba(132,89,54,.05); border-color: var(--or); }
 
 .empty-state {
   display: flex;

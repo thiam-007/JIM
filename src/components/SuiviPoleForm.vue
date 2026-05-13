@@ -293,7 +293,7 @@ async function submitForm() {
       Observations: notes.value.join(', ')
     })
     passedGroupIds.value = new Set([...passedGroupIds.value, groupId.value])
-    rotations.recordFromSuivi(pole.value, groupColor.value)
+    rotations.recordFromSuivi(pole.value, groupColor.value, groupId.value)
     submitted.value = true
     await Promise.all([airtable.loadSuivi(), airtable.loadAccueil()])
   } catch (error) {

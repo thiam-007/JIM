@@ -1,7 +1,7 @@
 import { ref, reactive, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'jim_rotations_v1'
+const STORAGE_KEY = 'jim_rotations_v2'
 const PAGE_SIZE = 5
 
 function todayKey() {
@@ -18,12 +18,6 @@ const POLE_KEY_MAP = {
   'Pôle Récit': 'recit',
 }
 
-const GROUP_KEY_MAP = {
-  'Rouge': 'rouge',
-  'Jaune': 'jaune',
-  'Vert':  'vert',
-}
-
 export const useRotationsStore = defineStore('rotations', () => {
   function loadState() {
     try {
@@ -37,9 +31,10 @@ export const useRotationsStore = defineStore('rotations', () => {
 
   const saved = loadState()
 
-  const current      = reactive(saved?.current     ?? { photo: '', '3d': '', recit: '' })
-  const history      = reactive(saved?.history     ?? { photo: [], '3d': [], recit: [] })
-  const allRotations = ref(saved?.allRotations     ?? [])
+  // current[poleKey] = { id: 'GRP-001', color: 'rouge' } | null (libre)
+  const current      = reactive(saved?.current  ?? { photo: null, '3d': null, recit: null })
+  const history      = reactive(saved?.history  ?? { photo: [], '3d': [], recit: [] })
+  const allRotations = ref(saved?.allRotations  ?? [])
   const showAll      = ref(false)
 
   const visibleRotations = computed(() => {
@@ -50,7 +45,7 @@ export const useRotationsStore = defineStore('rotations', () => {
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       date: todayKey(),
-      current: { ...current },
+      current: { photo: current.photo, '3d': current['3d'], recit: current.recit },
       history: {
         photo: [...history.photo],
         '3d':  [...history['3d']],
@@ -60,27 +55,27 @@ export const useRotationsStore = defineStore('rotations', () => {
     }))
   }
 
-  function applyRotation(poleKey, group) {
+  function applyRotation(poleKey, groupId, groupColor) {
     // Un groupe ne peut être que sur un seul pôle à la fois
-    if (group && group !== 'libre') {
+    if (groupId) {
       for (const key of Object.keys(current)) {
-        if (key !== poleKey && current[key] === group) {
-          current[key] = ''
+        if (key !== poleKey && current[key]?.id === groupId) {
+          current[key] = null
         }
       }
     }
-    current[poleKey] = group
-    const entry = { pole: poleKey, group, time: nowTime() }
+    current[poleKey] = groupId ? { id: groupId, color: groupColor || '' } : null
+    const entry = { pole: poleKey, groupId: groupId || '', groupColor: groupColor || '', time: nowTime() }
     history[poleKey].push(entry)
     allRotations.value.push(entry)
     saveState()
   }
 
-  function recordFromSuivi(poleLabel, groupLabel) {
-    const poleKey  = POLE_KEY_MAP[poleLabel]
-    const groupKey = GROUP_KEY_MAP[groupLabel]
-    if (poleKey && groupKey) {
-      applyRotation(poleKey, groupKey)
+  function recordFromSuivi(poleLabel, groupLabel, groupId) {
+    const poleKey    = POLE_KEY_MAP[poleLabel]
+    const groupColor = groupLabel?.toLowerCase() || ''
+    if (poleKey) {
+      applyRotation(poleKey, groupId || groupLabel, groupColor)
     }
   }
 
