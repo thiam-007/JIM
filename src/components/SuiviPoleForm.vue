@@ -91,7 +91,23 @@
 
         <div class="fr" v-reveal="80">
           <div class="fg"><label>Participants passé(e)s <span class="req">*</span></label><input type="number" min="0" placeholder="0" v-model="passed" /></div>
-          <div class="fg"><label>Participants actif(ves) <span class="req">*</span></label><input type="number" min="0" placeholder="0" v-model="active" /></div>
+          <div class="fg">
+            <label>Participants actif(ves) <span class="req">*</span></label>
+            <input
+              type="number" min="0"
+              :max="selectedGroupData ? selectedGroupData.personnes : undefined"
+              placeholder="0"
+              v-model="active"
+              :class="{ 'input-error': activeExceedsGroup }"
+            />
+            <span v-if="selectedGroupData && activeExceedsGroup" class="field-error">
+              <AppIcon name="alert-triangle" :size="13" />
+              Ne peut pas dépasser {{ selectedGroupData.personnes }} (taille du groupe)
+            </span>
+            <span v-else-if="selectedGroupData" class="field-hint">
+              Max {{ selectedGroupData.personnes }} personne{{ selectedGroupData.personnes > 1 ? 's' : '' }}
+            </span>
+          </div>
         </div>
         <div class="fg" v-reveal="100">
           <label>Contenus produits <span class="req">*</span></label>
@@ -164,6 +180,12 @@ const observationOptions = [
 const errorMessage = ref('')
 const submitted = ref(false)
 const submitting = ref(false)
+
+const activeExceedsGroup = computed(() =>
+  selectedGroupData.value &&
+  active.value !== '' &&
+  parseInt(active.value, 10) > selectedGroupData.value.personnes
+)
 
 const accueilGroups = computed(() => {
   const today = new Date().toISOString().split('T')[0]
@@ -238,6 +260,10 @@ async function submitForm() {
   errorMessage.value = ''
   if (!pole.value || !groupId.value || !groupColor.value || passed.value === '' || active.value === '' || content.value === '') {
     errorMessage.value = 'Veuillez sélectionner un pôle, un groupe et remplir les données de participation.'
+    return
+  }
+  if (activeExceedsGroup.value) {
+    errorMessage.value = `Les participants actif(ves) (${active.value}) ne peuvent pas dépasser le nombre de personnes du groupe (${selectedGroupData.value.personnes}).`
     return
   }
   submitting.value = true
@@ -382,6 +408,21 @@ onUnmounted(() => {
   transition: color .2s;
 }
 .gp-desel:hover { color: var(--rouge); }
+
+/* ─── Validation champs ─── */
+.input-error {
+  border-color: var(--rouge) !important;
+  background: rgba(177,34,42,.04) !important;
+}
+.field-error {
+  display: flex; align-items: center; gap: 5px;
+  font-size: .72rem; font-weight: 700; color: var(--rouge);
+  margin-top: 6px;
+}
+.field-hint {
+  display: block;
+  font-size: .7rem; color: #aaa; margin-top: 5px;
+}
 
 /* ─── Observations ─── */
 .obs-grid {
