@@ -98,9 +98,13 @@
               :max="selectedGroupData ? selectedGroupData.personnes : undefined"
               placeholder="0"
               v-model="active"
-              :class="{ 'input-error': activeExceedsGroup }"
+              :class="{ 'input-error': activeExceedsGroup || activeExceedsPassed }"
             />
-            <span v-if="selectedGroupData && activeExceedsGroup" class="field-error">
+            <span v-if="activeExceedsPassed" class="field-error">
+              <AppIcon name="alert-triangle" :size="13" />
+              Ne peut pas dépasser les participants passé(e)s ({{ passed }})
+            </span>
+            <span v-else-if="selectedGroupData && activeExceedsGroup" class="field-error">
               <AppIcon name="alert-triangle" :size="13" />
               Ne peut pas dépasser {{ selectedGroupData.personnes }} (taille du groupe)
             </span>
@@ -187,6 +191,12 @@ const activeExceedsGroup = computed(() =>
   parseInt(active.value, 10) > selectedGroupData.value.personnes
 )
 
+const activeExceedsPassed = computed(() =>
+  active.value !== '' &&
+  passed.value !== '' &&
+  parseInt(active.value, 10) > parseInt(passed.value, 10)
+)
+
 const accueilGroups = computed(() => {
   const today = new Date().toISOString().split('T')[0]
   return airtable.accueilRecords.filter(g =>
@@ -260,6 +270,10 @@ async function submitForm() {
   errorMessage.value = ''
   if (!pole.value || !groupId.value || !groupColor.value || passed.value === '' || active.value === '' || content.value === '') {
     errorMessage.value = 'Veuillez sélectionner un pôle, un groupe et remplir les données de participation.'
+    return
+  }
+  if (activeExceedsPassed.value) {
+    errorMessage.value = `Les participants actif(ves) (${active.value}) ne peuvent pas dépasser les participants passé(e)s (${passed.value}).`
     return
   }
   if (activeExceedsGroup.value) {
