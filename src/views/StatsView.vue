@@ -412,9 +412,10 @@ const poleStats = computed(() => {
 })
 
 function poleIcon(pole) {
-  if (pole.includes('Photo')) return 'camera'
-  if (pole.includes('3D'))    return 'box'
-  if (pole.includes('Récit')) return 'message-circle'
+  if (pole.includes('Photo'))   return 'camera'
+  if (pole.includes('3D'))      return 'box'
+  if (pole.includes('Récit'))   return 'message-circle'
+  if (pole.includes('Musique')) return 'music'
   return 'layers'
 }
 
@@ -547,9 +548,10 @@ async function exportXLSX(type) {
 }
 
 const POLES_DEF = [
-  { label: 'Pôle Photo',  icon: 'camera',         key: 'Pôle Photo'  },
-  { label: 'Pôle 3D',    icon: 'box',             key: 'Pôle 3D'     },
-  { label: 'Pôle Récit', icon: 'message-circle',  key: 'Pôle Récit'  },
+  { label: 'Pôle Photo',   icon: 'camera',         key: 'Pôle Photo'   },
+  { label: 'Pôle 3D',     icon: 'box',             key: 'Pôle 3D'      },
+  { label: 'Pôle Récit',  icon: 'message-circle',  key: 'Pôle Récit'   },
+  { label: 'Pôle Musique',icon: 'music',            key: 'Pôle Musique' },
 ]
 
 const reconciliation = computed(() => {

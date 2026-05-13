@@ -516,11 +516,12 @@ textarea { resize: vertical; min-height: 100px; }
 .rp.sel { background: var(--or); border-color: var(--or); color: var(--blanc); box-shadow: 0 4px 14px rgba(132,89,54,.25); }
 
 /* ─── Pole cards ─── */
-.pc { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.pc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media(max-width:700px) { .pc { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width:580px) { .pc, .gs { grid-template-columns: 1fr; } }
 .pcard {
   border: 2px solid #e8ddd0; border-radius: var(--radius);
-  padding: 20px 16px; text-align: center; cursor: pointer;
+  padding: 14px 10px; text-align: center; cursor: pointer;
   transition: var(--trans); position: relative;
   background: rgba(255,255,255,.95);
   animation: fadeInScale 0.5s ease-out backwards;
