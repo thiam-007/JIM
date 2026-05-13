@@ -9,15 +9,8 @@
 
       <div class="fb">
 
-        <!-- Légende groupes -->
-        <div class="groups-legend" v-reveal="0">
-          <div class="gl-item rouge"><span class="gl-dot"></span>Groupe Rouge</div>
-          <div class="gl-item jaune"><span class="gl-dot"></span>Groupe Jaune</div>
-          <div class="gl-item vert"><span class="gl-dot"></span>Groupe Vert</div>
-        </div>
-
         <!-- Grille des pôles -->
-        <div class="poles-grid-rot" v-reveal="60">
+        <div class="poles-grid-rot" v-reveal="0">
           <div class="pole-slot" v-for="pole in poles" :key="pole.key">
             <div class="ps-header" :style="{ background: pole.color }">
               <AppIcon :name="pole.icon" :size="22" />
@@ -26,15 +19,16 @@
             <div class="ps-body">
               <div class="ps-current">
                 <div class="ps-label">Groupe actuel</div>
-                <div
-                  class="ps-group"
-                  :class="currentGroup(pole.key)"
-                  @click="cycleGroup(pole.key)"
-                  title="Cliquer pour changer"
-                >
-                  <span v-if="currentGroup(pole.key)">{{ groupLabel(currentGroup(pole.key)) }}</span>
+                <div class="ps-group" :class="currentGroup(pole.key)?.color || 'libre'">
+                  <template v-if="currentGroup(pole.key)">
+                    <span class="ps-group-id">{{ currentGroup(pole.key).id }}</span>
+                    <span class="ps-group-color">{{ currentGroup(pole.key).color }}</span>
+                  </template>
                   <span v-else class="ps-empty">— Libre —</span>
                 </div>
+                <button v-if="currentGroup(pole.key)" class="ps-liberer" @click="libererPole(pole.key)">
+                  <AppIcon name="x" :size="12" /> Libérer
+                </button>
               </div>
               <div class="ps-history" v-if="rot.history[pole.key]?.length">
                 <div class="ps-label">Dernières rotations</div>
@@ -44,7 +38,7 @@
                     v-for="(h, i) in rot.history[pole.key].slice(-3).reverse()"
                     :key="i"
                   >
-                    <span class="ph-badge" :class="h.group">{{ groupLabel(h.group) }}</span>
+                    <span class="ph-badge" :class="h.groupColor">{{ h.groupId || 'Libre' }}</span>
                     <span class="ph-time">{{ h.time }}</span>
                   </div>
                 </div>
@@ -70,16 +64,21 @@
             </div>
             <div class="fg">
               <label>Groupe entrant <span class="req">*</span></label>
-              <select v-model="newRotation.group">
+              <select v-if="accueilGroups.length" v-model="newRotation.groupId">
                 <option value="">— Sélectionner —</option>
-                <option value="rouge">Groupe Rouge</option>
-                <option value="jaune">Groupe Jaune</option>
-                <option value="vert">Groupe Vert</option>
-                <option value="libre">Libre (aucun groupe)</option>
+                <option
+                  v-for="g in accueilGroups"
+                  :key="g.groupeId"
+                  :value="g.groupeId"
+                >{{ g.groupeId }} · {{ g.groupe }} ({{ g.personnes }} pers.)</option>
+                <option value="libre">— Libérer le pôle —</option>
               </select>
+              <div v-else class="gp-state gp-empty" style="margin-top:6px">
+                <AppIcon name="inbox" :size="16" /> Aucun groupe enregistré à l'accueil
+              </div>
             </div>
           </div>
-          <button class="bsub bsub-v" @click="registerRotation" :disabled="!newRotation.pole || !newRotation.group">
+          <button class="bsub bsub-v" @click="registerRotation" :disabled="!newRotation.pole || !newRotation.groupId">
             <AppIcon name="refresh-cw" :size="18" />
             Enregistrer la rotation
           </button>
@@ -94,11 +93,13 @@
         <div class="rotation-timeline" v-if="rot.allRotations.length" v-reveal="140">
           <div class="rt-item" v-for="(r, i) in rot.visibleRotations" :key="i">
             <div class="rt-time">{{ r.time }}</div>
-            <div class="rt-dot" :class="r.group"></div>
+            <div class="rt-dot" :class="r.groupColor"></div>
             <div class="rt-info">
               <span class="rt-pole">{{ poleLabel(r.pole) }}</span>
               <span class="rt-arrow">→</span>
-              <span class="rt-group" :class="r.group">{{ groupLabel(r.group) }}</span>
+              <span class="rt-group" :class="r.groupColor">
+                {{ r.groupId || 'Libre' }}
+              </span>
             </div>
           </div>
           <button v-if="rot.allRotations.length > rot.PAGE_SIZE" class="rt-toggle" @click="rot.showAll = !rot.showAll">
@@ -117,11 +118,13 @@
 </template>
 
 <script setup>
-import { reactive } from 'vue'
+import { reactive, computed, onMounted } from 'vue'
 import AppIcon from '../components/AppIcon.vue'
 import { useRotationsStore } from '../store/rotations'
+import { useAirtableStore } from '../store/airtable'
 
 const rot = useRotationsStore()
+const airtable = useAirtableStore()
 
 const poles = [
   { key: 'photo', label: 'Pôle Photo',  icon: 'camera',         color: 'linear-gradient(135deg,#b1222a,#8c3b2a)' },
@@ -129,44 +132,40 @@ const poles = [
   { key: 'recit', label: 'Pôle Récit',  icon: 'message-circle', color: 'linear-gradient(135deg,#1a3a2a,#2d6a4a)' },
 ]
 
-const groupOrder = ['rouge', 'jaune', 'vert', 'libre', '']
+// Groupes disponibles depuis l'accueil (toutes dates)
+const accueilGroups = computed(() => airtable.accueilRecords)
 
 function currentGroup(poleKey) { return rot.current[poleKey] }
 
-function cycleGroup(poleKey) {
-  const idx = groupOrder.indexOf(rot.current[poleKey])
-  const next = groupOrder[(idx + 1) % groupOrder.length]
-  rot.applyRotation(poleKey, next)
-}
-
-function groupLabel(g) {
-  return { rouge: 'Groupe Rouge', jaune: 'Groupe Jaune', vert: 'Groupe Vert', libre: 'Libre', '': '— Libre —' }[g] || g
+function libererPole(poleKey) {
+  rot.applyRotation(poleKey, null, null)
 }
 
 function poleLabel(k) {
   return poles.find(p => p.key === k)?.label || k
 }
 
-const newRotation = reactive({ pole: '', group: '' })
+const newRotation = reactive({ pole: '', groupId: '' })
 
 function registerRotation() {
-  if (!newRotation.pole || !newRotation.group) return
-  rot.applyRotation(newRotation.pole, newRotation.group)
-  newRotation.pole  = ''
-  newRotation.group = ''
+  if (!newRotation.pole || !newRotation.groupId) return
+  if (newRotation.groupId === 'libre') {
+    rot.applyRotation(newRotation.pole, null, null)
+  } else {
+    const group = accueilGroups.value.find(g => g.groupeId === newRotation.groupId)
+    rot.applyRotation(newRotation.pole, newRotation.groupId, group?.groupe?.toLowerCase() || '')
+  }
+  newRotation.pole    = ''
+  newRotation.groupId = ''
 }
+
+onMounted(async () => {
+  if (airtable.isConnected) await airtable.loadAccueil()
+})
 </script>
 
 <style scoped>
 .rotations-page { display: flex; flex-direction: column; gap: 24px; }
-
-/* Légende */
-.groups-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 4px; }
-.gl-item { display: flex; align-items: center; gap: 8px; font-size: .82rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
-.gl-dot { width: 12px; height: 12px; border-radius: 50%; }
-.rouge .gl-dot { background: #dc3545; }
-.jaune .gl-dot { background: #d4a017; }
-.vert  .gl-dot { background: #28a745; }
 
 /* Grille pôles */
 .poles-grid-rot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 8px; }
@@ -179,16 +178,28 @@ function registerRotation() {
 .ps-current { margin-bottom: 14px; }
 
 .ps-group {
-  padding: 12px 16px; border-radius: 12px; font-weight: 800; font-size: .92rem;
-  text-align: center; cursor: pointer; transition: all .25s ease;
-  border: 2px solid transparent; user-select: none;
+  padding: 12px 16px; border-radius: 12px;
+  text-align: center; transition: all .25s ease;
+  border: 2px solid transparent;
 }
-.ps-group:hover { transform: scale(1.02); }
-.ps-group.rouge { background: rgba(220,53,69,.12); border-color: #dc3545; color: #dc3545; }
-.ps-group.jaune { background: rgba(212,160,23,.12); border-color: #d4a017; color: #8a6600; }
-.ps-group.vert  { background: rgba(40,167,69,.12);  border-color: #28a745; color: #28a745; }
-.ps-group.libre, .ps-group:not(.rouge):not(.jaune):not(.vert) { background: rgba(132,89,54,.06); border-color: #e8ddd0; color: #bbb; }
-.ps-empty { font-weight: 600; font-style: italic; }
+.ps-group.rouge { background: rgba(220,53,69,.12); border-color: #dc3545; }
+.ps-group.jaune { background: rgba(212,160,23,.12); border-color: #d4a017; }
+.ps-group.vert  { background: rgba(40,167,69,.12);  border-color: #28a745; }
+.ps-group.libre { background: rgba(132,89,54,.06); border-color: #e8ddd0; }
+.ps-group-id { display: block; font-size: 1rem; font-weight: 900; font-family: monospace; letter-spacing: 1px; color: var(--brun); }
+.ps-group.rouge .ps-group-id { color: #dc3545; }
+.ps-group.jaune .ps-group-id { color: #8a6600; }
+.ps-group.vert  .ps-group-id { color: #28a745; }
+.ps-group-color { display: block; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; opacity: .7; margin-top: 2px; }
+.ps-empty { font-size: .88rem; font-weight: 600; font-style: italic; color: #bbb; }
+.ps-liberer {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  width: 100%; margin-top: 8px; padding: 6px;
+  background: none; border: 1px dashed rgba(132,89,54,.2);
+  border-radius: 8px; font-size: .72rem; font-weight: 700;
+  color: #aaa; cursor: pointer; transition: all .2s;
+}
+.ps-liberer:hover { border-color: var(--rouge); color: var(--rouge); }
 
 .ps-hist-list { display: flex; flex-direction: column; gap: 5px; }
 .ps-hist-item { display: flex; align-items: center; gap: 8px; }
