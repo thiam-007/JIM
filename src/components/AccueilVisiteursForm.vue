@@ -152,6 +152,7 @@ async function submitForm() {
       groupe: selectedGroup.value,
       personnes: parseInt(peopleCount.value, 10),
       heure: arrivalTime.value,
+      date: new Date().toISOString().split('T')[0],
     })
     // Sauvegarder les compteurs pour persistance entre sessions
     localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert, bleu: groupCounters.bleu }))
@@ -181,7 +182,7 @@ onMounted(async () => {
         if (match[1] === 'R' && num > groupCounters.rouge) groupCounters.rouge = num
         if (match[1] === 'J' && num > groupCounters.jaune) groupCounters.jaune = num
         if (match[1] === 'V' && num > groupCounters.vert)  groupCounters.vert  = num
-          if (match[1] === 'B' && num > groupCounters.bleu)  groupCounters.bleu  = num
+        if (match[1] === 'B' && num > groupCounters.bleu)  groupCounters.bleu  = num
       }
     })
     localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert, bleu: groupCounters.bleu }))
