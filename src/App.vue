@@ -35,6 +35,13 @@
       </RouterLink>
     </nav>
 
+    <!-- Bannière mise à jour PWA -->
+    <div v-if="needsRefresh" class="pwa-update-banner">
+      <AppIcon name="refresh-cw" :size="16" />
+      <span>Nouvelle version disponible</span>
+      <button @click="updateApp">Mettre à jour</button>
+    </div>
+
     <!-- Bannière masquée si le token vient de l'environnement (Vercel) -->
     <template v-if="!envToken">
       <div v-if="connected" class="api-banner connected">
@@ -116,8 +123,18 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
+import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useAirtableStore } from './store/airtable'
 import AppIcon from './components/AppIcon.vue'
+
+const { needRefresh: needsRefresh, updateServiceWorker } = useRegisterSW({
+  onRegisteredSW(_, r) {
+    r && setInterval(() => r.update(), 60_000)
+  }
+})
+function updateApp() {
+  updateServiceWorker(true)
+}
 
 const route = useRoute()
 const airtable = useAirtableStore()
@@ -274,6 +291,20 @@ header::after {
   background: linear-gradient(135deg, var(--brun), var(--or));
   border-color: transparent;
   box-shadow: 0 12px 28px rgba(132, 89, 54, .2);
+}
+
+/* ─── PWA Update Banner ─── */
+.pwa-update-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px;
+  background: #1a3a2a; color: #fff;
+  font-size: .82rem; font-weight: 600;
+}
+.pwa-update-banner button {
+  margin-left: auto; padding: 6px 16px;
+  background: #fff; color: #1a3a2a;
+  border: none; border-radius: 8px;
+  font-size: .8rem; font-weight: 700; cursor: pointer;
 }
 
 /* ─── API Banner ─── */

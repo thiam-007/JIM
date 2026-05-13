@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       includeAssets: ['images/logo.jpeg'],
       manifest: {
         name: 'JIM 2026 — Musée Virtuel de Guinée',
