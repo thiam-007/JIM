@@ -1,7 +1,7 @@
 import { ref, reactive, computed } from 'vue'
 import { defineStore } from 'pinia'
 
-const STORAGE_KEY = 'jim_rotations_v2'
+const STORAGE_KEY = 'jim_rotations_v3'
 const PAGE_SIZE = 5
 
 function todayKey() {
@@ -13,9 +13,10 @@ function nowTime() {
 }
 
 const POLE_KEY_MAP = {
-  'Pôle Photo': 'photo',
-  'Pôle 3D':    '3d',
-  'Pôle Récit': 'recit',
+  'Pôle Photo':   'photo',
+  'Pôle 3D':      '3d',
+  'Pôle Récit':   'recit',
+  'Pôle Musique': 'musique',
 }
 
 export const useRotationsStore = defineStore('rotations', () => {
@@ -32,8 +33,8 @@ export const useRotationsStore = defineStore('rotations', () => {
   const saved = loadState()
 
   // current[poleKey] = { id: 'GRP-001', color: 'rouge' } | null (libre)
-  const current      = reactive(saved?.current  ?? { photo: null, '3d': null, recit: null })
-  const history      = reactive(saved?.history  ?? { photo: [], '3d': [], recit: [] })
+  const current      = reactive(saved?.current  ?? { photo: null, '3d': null, recit: null, musique: null })
+  const history      = reactive(saved?.history  ?? { photo: [], '3d': [], recit: [], musique: [] })
   const allRotations = ref(saved?.allRotations  ?? [])
   const showAll      = ref(false)
 
@@ -45,11 +46,12 @@ export const useRotationsStore = defineStore('rotations', () => {
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
       date: todayKey(),
-      current: { photo: current.photo, '3d': current['3d'], recit: current.recit },
+      current: { photo: current.photo, '3d': current['3d'], recit: current.recit, musique: current.musique },
       history: {
-        photo: [...history.photo],
-        '3d':  [...history['3d']],
-        recit: [...history.recit],
+        photo:   [...history.photo],
+        '3d':    [...history['3d']],
+        recit:   [...history.recit],
+        musique: [...history.musique],
       },
       allRotations: allRotations.value,
     }))
