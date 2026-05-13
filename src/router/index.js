@@ -7,19 +7,16 @@ import SuiviView from '../views/SuiviView.vue'
 import InscriptionsView from '../views/InscriptionsView.vue'
 import LoginView from '../views/LoginView.vue'
 import RotationsView from '../views/RotationsView.vue'
-import DashboardView from '../views/DashboardView.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: LoginView, meta: { public: true } },
   { path: '/', name: 'Home', component: HomeView },
   { path: '/programme', name: 'Programme', component: ProgrammeView },
   { path: '/inscriptions', name: 'Inscriptions', component: InscriptionsView },
+  { path: '/stats', name: 'Stats', component: StatsView },
   { path: '/accueil', name: 'Accueil', component: AccueilView },
   { path: '/suivi', name: 'Suivi', component: SuiviView },
-  { path: '/dashboard', name: 'Dashboard', component: DashboardView },
-  // Anciennes routes conservées pour compatibilité
-  { path: '/stats', name: 'Stats', component: StatsView },
-  { path: '/rotations', name: 'Rotations', component: RotationsView },
+  { path: '/rotations', name: 'Rotations', component: RotationsView }
 ]
 
 const router = createRouter({
