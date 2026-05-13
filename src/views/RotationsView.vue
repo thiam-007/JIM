@@ -169,8 +169,9 @@ onMounted(async () => {
 .rotations-page { display: flex; flex-direction: column; gap: 24px; }
 
 /* Grille pôles */
-.poles-grid-rot { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 8px; }
-@media (max-width: 680px) { .poles-grid-rot { grid-template-columns: 1fr; } }
+.poles-grid-rot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 8px; }
+@media (max-width: 900px) { .poles-grid-rot { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 580px) { .poles-grid-rot { grid-template-columns: 1fr; } }
 
 .pole-slot { border-radius: 18px; overflow: hidden; border: 1px solid rgba(132,89,54,.14); background: #fff; box-shadow: 0 4px 16px rgba(89,55,22,.08); }
 .ps-header { display: flex; align-items: center; gap: 10px; padding: 14px 18px; color: #fff; font-weight: 800; font-size: .88rem; text-transform: uppercase; letter-spacing: .8px; }
