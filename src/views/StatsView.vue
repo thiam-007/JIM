@@ -27,7 +27,7 @@
           <AppIcon name="bar-chart-2" :size="22" />
         </div>
         <div class="kpi-body">
-          <span class="kpi-val">{{ totalAccueil }}</span>
+          <span class="kpi-val">{{ totalVisiteursPoles }}</span>
           <span class="kpi-lbl">Visiteurs pôles</span>
         </div>
       </div>
@@ -114,8 +114,8 @@
 
       <div class="rec-accueil">
         <AppIcon name="users" :size="16" />
-        <span>Total enregistré à l'accueil aujourd'hui :</span>
-        <strong>{{ totalAccueilAujourdhui }} personne{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</strong>
+        <span>Total enregistré à l'accueil :</span>
+        <strong>{{ totalAccueil > 0 ? `${totalAccueil} personne${totalAccueil > 1 ? 's' : ''}` : 'Non renseigné' }}</strong>
       </div>
 
       <div class="rec-grid">
@@ -137,8 +137,8 @@
             </div>
             <div class="rec-sep">/</div>
             <div class="rec-num">
-              <span class="rec-num-val">{{ totalAccueilAujourdhui }}</span>
-              <span class="rec-num-lbl">attendu{{ totalAccueilAujourdhui > 1 ? 's' : '' }}</span>
+              <span class="rec-num-val">{{ totalAccueil > 0 ? totalAccueil : '–' }}</span>
+              <span class="rec-num-lbl">attendu{{ totalAccueil > 1 ? 's' : '' }}</span>
             </div>
           </div>
           <div class="rec-ecart" v-if="!item.ok">
@@ -147,7 +147,7 @@
         </div>
       </div>
 
-      <div class="rec-note" v-if="totalAccueilAujourdhui === 0">
+      <div class="rec-note" v-if="totalAccueil === 0">
         <AppIcon name="alert-triangle" :size="14" />
         Aucun groupe enregistré à l'accueil aujourd'hui.
       </div>
@@ -229,7 +229,7 @@
             <span class="rk-lbl">Inscrits conférences/ateliers</span>
           </div>
           <div class="rk">
-            <span class="rk-val">{{ totalAccueil }}</span>
+            <span class="rk-val">{{ totalVisiteursPoles }}</span>
             <span class="rk-lbl">Visiteurs pôles</span>
           </div>
           <div class="rk">
@@ -348,22 +348,27 @@ const totalSuiviPassés = computed(() =>
   airtable.suiviRecords.reduce((s, r) => s + (r['Participants passés'] || 0), 0)
 )
 
-// totalAccueil (toutes dates) → KPI global "Visiteurs pôles"
+// totalAccueil (toutes dates) → référence si l'accueil a été renseigné
 const totalAccueil = computed(() =>
   airtable.accueilRecords.reduce((s, r) => s + (r.personnes || 0), 0)
 )
 
-// totalAccueilAujourdhui → réconciliation (comparé aux passages pôles du jour)
-const totalAccueilAujourdhui = computed(() => {
-  const today = new Date().toISOString().split('T')[0]
-  return airtable.accueilRecords
-    .filter(r => (r.date || '').startsWith(today))
-    .reduce((s, r) => s + (r.personnes || 0), 0)
+// Visiteurs pôles uniques :
+// - Si l'accueil est renseigné → on l'utilise (source fiable)
+// - Sinon → max des passés par pôle dans le suivi (même groupe, toutes rotations confondues)
+const totalVisiteursPoles = computed(() => {
+  if (totalAccueil.value > 0) return totalAccueil.value
+  const byPole = {}
+  for (const r of airtable.suiviRecords) {
+    const pole = r['Pôle concerné'] || 'Autre'
+    byPole[pole] = (byPole[pole] || 0) + (r['Participants passés'] || 0)
+  }
+  const vals = Object.values(byPole)
+  return vals.length ? Math.max(...vals) : 0
 })
 
-// Total global = inscriptions (ateliers/conférences) + personnes uniques aux pôles
-// Un groupe de 10 passant par 3 pôles compte pour 10, pas 30
-const totalGlobal = computed(() => totalRegistrations.value + totalAccueil.value)
+// Total global = inscriptions (ateliers/conférences) + visiteurs pôles uniques
+const totalGlobal = computed(() => totalRegistrations.value + totalVisiteursPoles.value)
 
 // ─── Compteurs animés ───
 const animatedTotal = ref(0)
@@ -548,11 +553,10 @@ const POLES_DEF = [
 ]
 
 const reconciliation = computed(() => {
-  const today = new Date().toISOString().split('T')[0]
-  const attendus = totalAccueilAujourdhui.value
+  const attendus = totalAccueil.value
   return POLES_DEF.map(({ label, icon, key }) => {
     const passés = airtable.suiviRecords
-      .filter(r => r['Pôle concerné'] === key && (r.Date || '').startsWith(today))
+      .filter(r => r['Pôle concerné'] === key)
       .reduce((s, r) => s + (r['Participants passés'] || 0), 0)
     const ecart = passés - attendus
     return { label, icon, passés, ecart, ok: attendus > 0 && ecart === 0 }
@@ -560,7 +564,7 @@ const reconciliation = computed(() => {
 })
 
 const reconciliationOk = computed(() =>
-  totalAccueilAujourdhui.value > 0 && reconciliation.value.every(r => r.ok)
+  totalAccueil.value > 0 && reconciliation.value.every(r => r.ok)
 )
 
 async function loadAll() {

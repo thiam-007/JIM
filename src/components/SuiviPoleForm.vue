@@ -165,9 +165,12 @@ const errorMessage = ref('')
 const submitted = ref(false)
 const submitting = ref(false)
 
-const accueilGroups = computed(() =>
-  airtable.accueilRecords.filter(g => !passedGroupIds.value.has(g.groupeId))
-)
+const accueilGroups = computed(() => {
+  const today = new Date().toISOString().split('T')[0]
+  return airtable.accueilRecords.filter(g =>
+    g.date.startsWith(today) && !passedGroupIds.value.has(g.groupeId)
+  )
+})
 
 function pickPole(value) {
   pole.value = value
