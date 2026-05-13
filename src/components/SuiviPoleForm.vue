@@ -205,7 +205,7 @@ const activeExceedsPassed = computed(() =>
 const accueilGroups = computed(() => {
   const today = new Date().toISOString().split('T')[0]
   return airtable.accueilRecords.filter(g =>
-    g.date.startsWith(today) && !passedGroupIds.value.has(g.groupeId)
+    (g.date || '').startsWith(today) && !passedGroupIds.value.has(g.groupeId)
   )
 })
 
