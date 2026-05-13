@@ -32,6 +32,9 @@
             <div class="gb vert" :class="{ sel: selectedGroup === 'Vert' }" @click="pickGroup('vert')">
               <span class="group-dot vert-dot"></span>Groupe Vert
             </div>
+            <div class="gb bleu" :class="{ sel: selectedGroup === 'Bleu' }" @click="pickGroup('bleu')">
+              <span class="group-dot bleu-dot"></span>Groupe Bleu
+            </div>
           </div>
         </div>
 
@@ -100,10 +103,10 @@ const errorMessage = ref('')
 const submitted = ref(false)
 const submitting = ref(false)
 
-const groupCounters = reactive({ rouge: 0, jaune: 0, vert: 0 })
+const groupCounters = reactive({ rouge: 0, jaune: 0, vert: 0, bleu: 0 })
 
 function formatGroupId(color) {
-  const prefix = { rouge: 'R', jaune: 'J', vert: 'V' }[color]
+  const prefix = { rouge: 'R', jaune: 'J', vert: 'V', bleu: 'B' }[color]
   return `${prefix}${String(groupCounters[color]).padStart(3, '0')}`
 }
 
@@ -151,7 +154,7 @@ async function submitForm() {
       heure: arrivalTime.value,
     })
     // Sauvegarder les compteurs pour persistance entre sessions
-    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert }))
+    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert, bleu: groupCounters.bleu }))
     submitted.value = true
   } catch (error) {
     errorMessage.value = `Erreur Airtable : ${error.message}`
@@ -172,15 +175,16 @@ onMounted(async () => {
     const records = await airtable.fetchRecords('a')
     records.forEach(r => {
       const id = r.fields?.['Groupe ID'] || ''
-      const match = id.match(/^([RJV])(\d+)$/)
+      const match = id.match(/^([RJVB])(\d+)$/)
       if (match) {
         const num = parseInt(match[2], 10)
         if (match[1] === 'R' && num > groupCounters.rouge) groupCounters.rouge = num
         if (match[1] === 'J' && num > groupCounters.jaune) groupCounters.jaune = num
         if (match[1] === 'V' && num > groupCounters.vert)  groupCounters.vert  = num
+          if (match[1] === 'B' && num > groupCounters.bleu)  groupCounters.bleu  = num
       }
     })
-    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert }))
+    localStorage.setItem('jim_counters', JSON.stringify({ rouge: groupCounters.rouge, jaune: groupCounters.jaune, vert: groupCounters.vert, bleu: groupCounters.bleu }))
   } catch {
     // Fallback : localStorage si Airtable inaccessible
     try {
@@ -188,6 +192,7 @@ onMounted(async () => {
       if (saved.rouge > 0) groupCounters.rouge = saved.rouge
       if (saved.jaune > 0) groupCounters.jaune = saved.jaune
       if (saved.vert  > 0) groupCounters.vert  = saved.vert
+      if (saved.bleu  > 0) groupCounters.bleu  = saved.bleu
     } catch { /* ignore */ }
   }
 })
@@ -206,4 +211,5 @@ onMounted(async () => {
 .rouge-dot { background: #dc3545; box-shadow: 0 0 0 2px rgba(220,53,69,.25); }
 .jaune-dot { background: #d4a017; box-shadow: 0 0 0 2px rgba(212,160,23,.25); }
 .vert-dot  { background: #28a745; box-shadow: 0 0 0 2px rgba(40,167,69,.25); }
+.bleu-dot  { background: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.25); }
 </style>

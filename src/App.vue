@@ -485,7 +485,7 @@ textarea { resize: vertical; min-height: 100px; }
 .sl { flex: 1; height: 2px; background: linear-gradient(90deg, var(--or), transparent); border-radius: 1px; }
 
 /* ─── Group selector ─── */
-.gs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.gs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 .gb {
   padding: 16px 12px; border: 3px solid #e8ddd0; border-radius: 16px;
   cursor: pointer; text-align: center; transition: var(--trans);
@@ -497,9 +497,11 @@ textarea { resize: vertical; min-height: 100px; }
 .gb.rouge { border-color: #dc3545; color: #dc3545; }
 .gb.jaune { border-color: #d4a017; color: #8a6600; }
 .gb.vert  { border-color: #28a745; color: #28a745; }
+.gb.bleu  { border-color: #2563eb; color: #2563eb; }
 .gb.rouge.sel { background: #dc3545; color: #fff; box-shadow: 0 8px 20px rgba(220,53,69,.3); }
 .gb.jaune.sel { background: #d4a017; color: #fff; box-shadow: 0 8px 20px rgba(212,160,23,.3); }
 .gb.vert.sel  { background: #28a745; color: #fff; box-shadow: 0 8px 20px rgba(40,167,69,.3); }
+.gb.bleu.sel  { background: #2563eb; color: #fff; box-shadow: 0 8px 20px rgba(37,99,235,.3); }
 
 /* ─── Profile pills ─── */
 .rg { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -514,11 +516,12 @@ textarea { resize: vertical; min-height: 100px; }
 .rp.sel { background: var(--or); border-color: var(--or); color: var(--blanc); box-shadow: 0 4px 14px rgba(132,89,54,.25); }
 
 /* ─── Pole cards ─── */
-.pc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.pc { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media(max-width:700px) { .pc { grid-template-columns: repeat(2, 1fr); } }
 @media(max-width:580px) { .pc, .gs { grid-template-columns: 1fr; } }
 .pcard {
   border: 2px solid #e8ddd0; border-radius: var(--radius);
-  padding: 20px 16px; text-align: center; cursor: pointer;
+  padding: 14px 10px; text-align: center; cursor: pointer;
   transition: var(--trans); position: relative;
   background: rgba(255,255,255,.95);
   animation: fadeInScale 0.5s ease-out backwards;
@@ -526,6 +529,7 @@ textarea { resize: vertical; min-height: 100px; }
 .pcard:nth-child(1) { animation-delay: 0.1s; }
 .pcard:nth-child(2) { animation-delay: 0.2s; }
 .pcard:nth-child(3) { animation-delay: 0.3s; }
+.pcard:nth-child(4) { animation-delay: 0.4s; }
 .pcard:hover { border-color: var(--or); transform: translateY(-3px); box-shadow: 0 12px 28px rgba(132, 89, 54, .14); }
 .pcard.sel { border-color: var(--rouge); background: rgba(177, 34, 42, .07); box-shadow: 0 8px 22px rgba(177, 34, 42, .16); }
 .pi { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--or); }
