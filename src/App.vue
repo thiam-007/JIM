@@ -33,6 +33,12 @@
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Rotations' }" to="/rotations">
         <AppIcon name="refresh-cw" :size="16" /> Rotations
       </RouterLink>
+      <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
+        <AppIcon name="calendar" :size="16" /> Événements
+      </RouterLink>
+      <RouterLink class="nav-tab" :class="{ active: route.name === 'Invites' }" to="/invites">
+        <AppIcon name="users" :size="16" /> Invités
+      </RouterLink>
     </nav>
 
     <!-- Bannière mise à jour PWA -->
@@ -125,6 +131,7 @@ import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useAirtableStore } from './store/airtable'
+import { useApiStore } from './store/api.js'
 import AppIcon from './components/AppIcon.vue'
 
 const { needRefresh: needsRefresh, updateServiceWorker } = useRegisterSW({
@@ -138,6 +145,7 @@ function updateApp() {
 
 const route = useRoute()
 const airtable = useAirtableStore()
+const apiStore = useApiStore()
 const tokenInput = ref(airtable.token)
 
 onMounted(async () => {

@@ -93,8 +93,10 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
+import { useApiStore } from '../store/api.js'
 
 const router   = useRouter()
+const apiStore = useApiStore()
 const password = ref('')
 const showPwd  = ref(false)
 const error    = ref(false)
@@ -126,12 +128,11 @@ onMounted(() => {
 })
 onUnmounted(() => clearInterval(timer))
 
-function handleLogin() {
-  const expected = import.meta.env.VITE_APP_PASSWORD
-  if (password.value === expected) {
-    sessionStorage.setItem('jim_auth', '1')
+async function handleLogin() {
+  try {
+    await apiStore.login(password.value)
     router.push('/')
-  } else {
+  } catch (err) {
     error.value = true
     password.value = ''
     setTimeout(() => { error.value = false }, 2500)
