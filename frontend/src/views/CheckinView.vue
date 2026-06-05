@@ -8,7 +8,7 @@
         <div>
           <div class="fh-title">Check-in QR Code</div>
           <div class="fh-sub" v-if="evenement">{{ evenement.titre }}</div>
-          <div class="fh-sub" v-else>Contrôle d'accès — JIM 2026</div>
+          <div class="fh-sub" v-else>Contrôle d'accès — MVG event's</div>
         </div>
       </div>
       <!-- Live counter -->

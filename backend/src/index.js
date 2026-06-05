@@ -95,10 +95,10 @@ app.get('/api/invitations/qr/:token', async (req, res, next) => {
 
 app.use('/api/auth', authRouter)
 
-app.use('/api/evenements', authMiddleware, evenementsRouter)
-app.use('/api/invites', authMiddleware, invitesRouter)
-app.use('/api/invitations', authMiddleware, invitationsRouter)
-app.use('/api/checkin', authMiddleware, checkinRouter)
+app.use('/api/evenements', evenementsRouter)
+app.use('/api/invites', invitesRouter)
+app.use('/api/invitations', invitationsRouter)
+app.use('/api/checkin', checkinRouter)
 
 // ─── 404 handler ───────────────────────────────────────────────────────────────
 

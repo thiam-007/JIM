@@ -6,7 +6,7 @@
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="users" :size="24" /></div>
         <div class="fh-title">Invités</div>
-        <div class="fh-sub">Gestion des contacts et invités — JIM 2026</div>
+        <div class="fh-sub">Gestion des contacts et invités — MVG event's</div>
       </div>
       <div class="fb inv-toolbar">
         <div class="inv-search-wrap">

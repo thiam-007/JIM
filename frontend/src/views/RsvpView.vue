@@ -8,7 +8,7 @@
       </div>
       <div>
         <h1 class="rsvp-brand">Musée Virtuel de Guinée</h1>
-        <p class="rsvp-brand-sub">Journée Internationale des Musées · JIM 2026</p>
+        <p class="rsvp-brand-sub">La gestion globale de vos événements</p>
       </div>
     </header>
 
@@ -37,8 +37,8 @@
       <!-- Carte événement -->
       <div class="rsvp-event-card">
         <div class="rsvp-event-header">
-          <div class="rsvp-event-badge">JIM 2026</div>
-          <h2 class="rsvp-event-title">{{ invitation.evenement?.titre || 'Événement JIM 2026' }}</h2>
+          <div class="rsvp-event-badge">MVG event's</div>
+          <h2 class="rsvp-event-title">{{ invitation.evenement?.titre || 'Événement' }}</h2>
           <div class="rsvp-event-details">
             <div v-if="invitation.evenement?.date_debut" class="rsvp-event-detail">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -54,7 +54,7 @@
         <!-- Salutation -->
         <div class="rsvp-greeting">
           <p>Chère / Cher <strong>{{ invitation.invite?.prenom }} {{ invitation.invite?.nom }}</strong>,</p>
-          <p>Vous êtes cordialement invité(e) à participer à cet événement organisé par le Musée Virtuel de Guinée dans le cadre de la Journée Internationale des Musées 2026.</p>
+          <p>Vous êtes cordialement invité(e) à participer à cet événement organisé par le Musée Virtuel de Guinée.</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@
           <a
             :href="`${apiUrl}/api/invitations/qr/${token}`"
             target="_blank"
-            download="qr-code-jim2026.png"
+            download="qr-code-mvg.png"
             class="rsvp-btn-dl"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -155,7 +155,7 @@
           <a
             :href="`${apiUrl}/api/invitations/qr/${token}`"
             target="_blank"
-            download="qr-code-jim2026.png"
+            download="qr-code-mvg.png"
             class="rsvp-btn-dl"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -172,7 +172,7 @@
 
     <!-- ─── Footer ─── -->
     <footer class="rsvp-footer">
-      <p>Musée Virtuel de Guinée · JIM 2026</p>
+      <p>Musée Virtuel de Guinée · MVG event's</p>
       <p class="rsvp-footer-em">Les musées unissent un monde divisé</p>
     </footer>
 

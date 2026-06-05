@@ -5,7 +5,7 @@
       <div class="fh fh-a">
         <div class="fh-icon"><AppIcon name="calendar" :size="24" /></div>
         <div class="fh-title">Événements</div>
-        <div class="fh-sub">Gestion des événements JIM 2026 — Musée Virtuel de Guinée</div>
+        <div class="fh-sub">Gestion de vos événements — MVG event's</div>
       </div>
       <div class="ev-header-actions fb">
         <div class="ev-search-row">
@@ -85,9 +85,16 @@
           <button
             class="ev-btn-invite"
             @click.stop="goToInvitations(evt)"
-            title="Invitations"
+            title="Invitations & Inscriptions"
           >
             <AppIcon name="mail" :size="15" /> Invitations
+          </button>
+          <button
+            class="ev-btn-checkin"
+            @click.stop="goToCheckin(evt)"
+            title="Émargement / Scan QR"
+          >
+            <AppIcon name="scan" :size="15" /> Émargement
           </button>
           <button
             class="ev-btn-delete"
@@ -341,6 +348,10 @@ function goToEvent(evt) {
 function goToInvitations(evt) {
   router.push({ name: 'Invitations', params: { eventId: evt.id } })
 }
+
+function goToCheckin(evt) {
+  router.push({ name: 'Checkin', params: { eventId: evt.id } })
+}
 </script>
 
 <style scoped>
@@ -472,6 +483,11 @@ function goToInvitations(evt) {
   border-color: rgba(249,178,51,.3);
 }
 .ev-btn-invite:hover { background: var(--or); color: #fff; }
+.ev-btn-checkin {
+  background: rgba(46,125,50,.1); color: #2e7d32;
+  border-color: rgba(46,125,50,.3);
+}
+.ev-btn-checkin:hover { background: #2e7d32; color: #fff; }
 .ev-btn-delete {
   margin-left: auto;
   background: rgba(177,34,42,.07); color: var(--rouge);

@@ -8,6 +8,11 @@ export const useApiStore = defineStore('api', {
     evenements: [],
     invites: [],
     invitations: [],
+    accueilRecords: [],
+    suiviRecords: [],
+    avisRecords: [],
+    sessionCounts: {},
+    totalRegistrations: 0,
     loading: false,
     error: ''
   }),

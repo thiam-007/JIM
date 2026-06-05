@@ -479,9 +479,7 @@ async function addInvitations() {
   addError.value = ''
   try {
     const ids = [...selectedIds.value]
-    for (const invite_id of ids) {
-      await api.post('/api/invitations', { evenement_id: eventId, invite_id })
-    }
+    await api.post('/api/invitations', { evenement_id: eventId, invite_ids: ids })
     await api.fetchInvitations(eventId)
     showAddModal.value = false
   } catch (err) {

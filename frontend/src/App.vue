@@ -1,37 +1,25 @@
 <template>
-  <div class="app-shell">
+  <div class="app-wrapper">
     <header>
-      <div class="logo-badge">
+      <div class="header-inner">
+        <div class="logo-badge">
         <img src="/images/logo.jpeg" alt="MVG" />
       </div>
       <div class="logo-text">
-        <h1>Musée Virtuel de Guinée</h1>
-        <span>Journée Internationale des Musées · 16 – 18 Mai 2026</span>
+        <div class="logo-title-wrap">
+          <span class="logo-pre">MVG</span>
+          <h1>event's</h1>
+        </div>
+        <span>La solution globale pour vos événements</span>
       </div>
-      <div class="jim-badge">JIM 2026</div>
+      </div>
     </header>
+
+    <div class="app-shell">
 
     <nav class="nav-tabs">
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
         <AppIcon name="home" :size="16" /> Accueil
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Programme' }" to="/programme">
-        <AppIcon name="calendar" :size="16" /> Programme
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Inscriptions' }" to="/inscriptions">
-        <AppIcon name="file-text" :size="16" /> Inscriptions
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Stats' }" to="/stats">
-        <AppIcon name="trending-up" :size="16" /> Statistiques
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Accueil' }" to="/accueil">
-        <AppIcon name="landmark" :size="16" /> Accueil Visiteurs
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Suivi' }" to="/suivi">
-        <AppIcon name="bar-chart" :size="16" /> Suivi par Pôle
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Rotations' }" to="/rotations">
-        <AppIcon name="refresh-cw" :size="16" /> Rotations
       </RouterLink>
       <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
         <AppIcon name="calendar" :size="16" /> Événements
@@ -48,39 +36,7 @@
       <button @click="updateApp">Mettre à jour</button>
     </div>
 
-    <!-- Bannière masquée si le token vient de l'environnement (Vercel) -->
-    <template v-if="!envToken">
-      <div v-if="connected" class="api-banner connected">
-        <span class="api-icon"><AppIcon name="check-circle" :size="22" /></span>
-        <div style="flex:1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-          <strong>Connexion Airtable active — enregistrement prêt.</strong>
-          <button class="btn-disconnect" @click="disconnectAT">
-            <AppIcon name="log-out" :size="14" /> Déconnecter
-          </button>
-        </div>
-      </div>
-      <div v-else class="api-banner config">
-        <span class="api-icon"><AppIcon name="key" :size="22" /></span>
-        <div style="flex:1">
-          <strong>Connexion Airtable — entrez votre Personal Access Token pour activer l'enregistrement</strong>
-          <div class="api-token-row">
-            <input
-              type="password"
-              class="api-token-input"
-              v-model="tokenInput"
-              placeholder="patXXXXXXXXXXXXXX..."
-            />
-            <button class="btn-connect" v-ripple @click="connectAT">
-              <AppIcon name="link" :size="15" /> Connecter
-            </button>
-          </div>
-          <div v-if="connectError" style="margin-top:8px;padding:10px 14px;background:#ffeaea;border:1.5px solid #B1222A;border-radius:12px;color:#B1222A;font-size:.78rem;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
-            <AppIcon name="alert-triangle" :size="14" style="flex-shrink:0;margin-top:1px" />
-            <span>{{ connectError }}</span>
-          </div>
-        </div>
-      </div>
-    </template>
+
 
     <main>
       <RouterView v-slot="{ Component }">
@@ -89,40 +45,28 @@
         </Transition>
       </RouterView>
     </main>
-
-    <!-- ─── Stand MVG ─── -->
-    <div class="stand-mvg-section" v-reveal="0">
-      <img src="/images/stand-mvg.jpeg" alt="Le Musée Virtuel de Guinée au 72H du livre" class="stand-mvg-img" />
-      <div class="stand-mvg-caption">Le Musée Virtuel de Guinée · 72H du Livre</div>
     </div>
 
-    <!-- ─── Partenaires ─── -->
-    <div class="partenaires-section" v-reveal="0">
-      <div class="partenaires-title">Nos Partenaires</div>
-      <div class="partenaires-track-wrapper">
-        <div class="partenaires-track">
-          <div class="partenaires-loop">
-            <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
-            <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-            <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
-            <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
-            <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
-            <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
-          </div>
-          <!-- Duplicata pour boucle infinie -->
-          <div class="partenaires-loop" aria-hidden="true">
-            <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
-            <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-            <img src="/images/partenaires/meae.png" alt="Ministère de l'Europe et des Affaires Étrangères" />
-            <img src="/images/partenaires/ccfg.png" alt="Centre Culturel Franco-Guinéen" />
-            <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
-            <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
-          </div>
-        </div>
+    <!-- ─── Partenaires Marquee ─── -->
+    <div class="partners-marquee-section">
+      <div class="marquee-content">
+        <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+        <img src="/images/partenaires/ccfg.png" alt="CCFG" />
+        <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+        <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
+        <img src="/images/partenaires/meae.png" alt="MEAE" />
+        <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+        <!-- Duplicate for loop -->
+        <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+        <img src="/images/partenaires/ccfg.png" alt="CCFG" />
+        <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+        <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
+        <img src="/images/partenaires/meae.png" alt="MEAE" />
+        <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
       </div>
     </div>
 
-    <footer>Musée Virtuel de Guinée · JIM 2026 · <em>Les musées unissent un monde divisé</em></footer>
+    <footer>Musée Virtuel de Guinée · MVG event's · <em>La gestion globale de vos événements</em></footer>
   </div>
 </template>
 
@@ -130,7 +74,6 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
-import { useAirtableStore } from './store/airtable'
 import { useApiStore } from './store/api.js'
 import AppIcon from './components/AppIcon.vue'
 
@@ -144,40 +87,11 @@ function updateApp() {
 }
 
 const route = useRoute()
-const airtable = useAirtableStore()
 const apiStore = useApiStore()
-const tokenInput = ref(airtable.token)
 
 onMounted(async () => {
-  if (airtable.isConnected) {
-    await Promise.allSettled([
-      airtable.loadEventRegistrations(),
-      airtable.loadAvis(),
-      airtable.loadSuivi()
-    ])
-  }
+  // Initialization logic for Supabase can go here
 })
-
-const connected = computed(() => airtable.isConnected)
-const envToken  = computed(() => airtable.isEnvToken)
-const connectError = ref('')
-
-async function connectAT() {
-  if (!tokenInput.value.trim()) return
-  connectError.value = ''
-  airtable.connect(tokenInput.value)
-  try {
-    await airtable.loadEventRegistrations()
-  } catch (error) {
-    connectError.value = error.message
-    airtable.connect('')
-  }
-}
-
-function disconnectAT() {
-  airtable.connect('')
-  tokenInput.value = ''
-}
 </script>
 
 <style>
@@ -199,24 +113,22 @@ function disconnectAT() {
 html, body { min-height: 100%; }
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, sans-serif;
-  background: radial-gradient(circle at top left, rgba(249, 178, 51, .12), transparent 24%),
-              linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #f0dcc6 100%);
+  font-family: Tahoma, Arial, Verdana, sans-serif;
+  background: radial-gradient(circle at top left, rgba(249, 178, 51, .08), transparent 28%),
+              linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #e8ddd0 100%);
   color: var(--noir);
 }
 button, input, textarea, select { font: inherit; }
-.app-shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 28px; }
+.app-wrapper { display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+.app-shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 28px; width: 100%; flex: 1; }
 
 /* ─── Header ─── */
 header {
   background:
-    linear-gradient(135deg, rgba(92,53,25,.82) 0%, rgba(143,91,44,.78) 40%, rgba(247,191,57,.72) 100%),
-    url('/images/motif-removebg-preview.png') center/auto 100% repeat-x;
+    linear-gradient(135deg, rgba(89,55,22,.9) 0%, rgba(132,89,54,.85) 40%, rgba(177,34,42,.8) 100%),
+    url('/images/motif-removebg-preview.png') center/auto 120% repeat-x;
   color: var(--blanc);
   padding: 22px 24px;
-  display: flex;
-  align-items: center;
-  gap: 18px;
   box-shadow: 0 10px 38px rgba(89, 55, 22, .18);
   position: sticky;
   top: 0;
@@ -224,6 +136,11 @@ header {
   border-bottom: 1px solid rgba(255,255,255,.16);
   animation: fadeInDown 0.5s ease-out;
   overflow: hidden;
+  width: 100%;
+}
+.header-inner {
+  max-width: 1180px; margin: 0 auto; width: 100%;
+  display: flex; align-items: center; gap: 18px;
 }
 header::after {
   content: '';
@@ -256,8 +173,15 @@ header::after {
   50%       { box-shadow: 0 0 0 7px rgba(249,178,51,.3); }
 }
 .logo-text { flex: 1; }
-.logo-text h1 { font-size: 1.3rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; line-height: 1.15; margin: 0; }
-.logo-text span { font-size: .76rem; color: rgba(255,255,255,.9); letter-spacing: 1.8px; text-transform: uppercase; display: block; margin-top: 5px; }
+.logo-title-wrap {
+  display: flex; align-items: baseline; gap: 8px;
+}
+.logo-pre {
+  font-size: 1.1rem; font-weight: 700; color: var(--gold);
+  letter-spacing: 1px;
+}
+.logo-title-wrap h1 { font-family: Tahoma, sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.15; margin: 0; }
+.logo-text span { font-family: Arial, sans-serif; font-size: .8rem; color: rgba(255,255,255,.9); letter-spacing: 1.2px; display: block; margin-top: 5px; }
 .jim-badge {
   background: rgba(255,255,255,.18); color: var(--blanc);
   padding: 8px 16px; border-radius: 999px;
@@ -299,6 +223,39 @@ header::after {
   background: linear-gradient(135deg, var(--brun), var(--or));
   border-color: transparent;
   box-shadow: 0 12px 28px rgba(132, 89, 54, .2);
+}
+
+/* ─── Partenaires Marquee ─── */
+.partners-marquee-section {
+  background: rgba(255,255,255,.6);
+  border-top: 1px solid rgba(132,89,54,.15);
+  border-bottom: 1px solid rgba(132,89,54,.15);
+  padding: 24px 0;
+  overflow: hidden;
+  display: flex;
+  white-space: nowrap;
+  width: 100%;
+}
+.marquee-content {
+  display: inline-flex;
+  align-items: center;
+  animation: marquee 30s linear infinite;
+  gap: 60px;
+  padding-left: 60px;
+}
+.marquee-content img {
+  height: 60px;
+  object-fit: contain;
+  filter: grayscale(100%) opacity(0.7);
+  transition: all 0.3s ease;
+}
+.marquee-content img:hover {
+  filter: grayscale(0%) opacity(1);
+  transform: scale(1.05);
+}
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-50% - 30px)); }
 }
 
 /* ─── PWA Update Banner ─── */
