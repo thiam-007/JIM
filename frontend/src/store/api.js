@@ -114,33 +114,8 @@ export const useApiStore = defineStore('api', {
           imageDetailUrl: item.image_detail_url || item.image_url || '/images/side-photo.jpeg'
         }))
       } catch (err) {
-        console.error('Erreur chargement Supabase actualites, using fallback:', err)
-        this.actualites = [
-          {
-            id: 'mock-1',
-            titre: 'Numérisation 3D du patrimoine guinéen',
-            description: 'Lancement de la phase de capture photogrammétrique des masques sacrés au Musée National de Sandervalia.',
-            contenu: `Nous avons le plaisir d'annoncer le début du projet de numérisation 3D haute définition des collections du Musée National de Guinée. Ce chantier scientifique et technologique mobilisera nos équipes pendant plusieurs mois pour immortaliser des pièces uniques de notre patrimoine, incluant des masques rituels centenaires, des instruments de musique traditionnels et des parures royales. L'objectif est double : assurer la conservation numérique de ces œuvres d'art et les rendre accessibles au monde entier à travers notre future galerie interactive.`,
-            publieLe: '2026-05-15T10:00:00Z',
-            imageUrl: '/images/side-photo.jpeg'
-          },
-          {
-            id: 'mock-2',
-            titre: 'Vernissage de l’exposition "Mémoires et Rythmes"',
-            description: 'Rejoignez-nous au Centre Culturel Franco-Guinéen pour une immersion physique et virtuelle inédite.',
-            contenu: `Le Musée Virtuel de Guinée vous invite au vernissage exceptionnel de son exposition hybride "Mémoires et Rythmes", qui se tiendra au Centre Culturel Franco-Guinéen (CCFG). Cette exposition propose une expérience inédite alliant la présentation d'objets physiques et des casques de réalité virtuelle permettant d'explorer les musées régionaux de l'intérieur du pays. C'est l'occasion de découvrir les créations sonores inspirées de nos archives musicales récemment restaurées. Venez nombreux célébrer la rencontre de la tradition et du futur !`,
-            publieLe: '2026-05-10T14:30:00Z',
-            imageUrl: '/images/stand-mvg.jpeg'
-          },
-          {
-            id: 'mock-3',
-            titre: 'Atelier pédagogique : le patrimoine et les jeunes',
-            description: 'Initiation à la modélisation 3D et aux techniques de récit pour les lycéens de Conakry.',
-            contenu: `Dans le cadre de la Journée Internationale des Musées, les équipes du MVG animent des ateliers interactifs destinés aux jeunes générations. Au programme : découverte du patrimoine matériel guinéen, initiation ludique à la numérisation 3D par smartphone, et ateliers d'écriture pour raconter l'histoire des objets familiaux. Plus d'une centaine de lycéens ont déjà participé et partagé leurs créations sur notre plateforme. Une belle réussite pour susciter des vocations dans les métiers de la culture et du numérique !`,
-            publieLe: '2026-05-08T09:00:00Z',
-            imageUrl: '/images/banner-mvg.jpeg'
-          }
-        ]
+        console.error('Erreur chargement Supabase actualites :', err)
+        this.actualites = []
       } finally {
         this.loading = false
       }
