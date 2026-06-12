@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['images/logo.jpeg'],
       manifest: {
-        name: 'MVG Event\\'s — Musée Virtuel de Guinée',
-        short_name: 'MVG Event\\'s',
+        name: "MVG Event's — Musée Virtuel de Guinée",
+        short_name: "MVG Event's",
         description: 'Application de gestion des événements du Musée Virtuel de Guinée',
         theme_color: '#5c3519',
         background_color: '#fef9f2',
