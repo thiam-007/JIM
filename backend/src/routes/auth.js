@@ -1,33 +1,72 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
+import supabase from '../config/supabase.js'
 import { authMiddleware } from '../middleware/auth.js'
+import { hashPassword, verifyPassword } from '../utils/crypto.js'
 
 const router = Router()
 
 /**
  * POST /api/auth/login
- * Body: { password: string }
- * Returns: { token: string }
+ * Body: { email, password }
+ * Returns: { token, role, email }
  */
-router.post('/login', (req, res, next) => {
+router.post('/login', async (req, res, next) => {
   try {
-    const { password } = req.body
+    const { email, password } = req.body
 
-    if (!password) {
-      return res.status(400).json({ error: 'Mot de passe requis' })
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' })
     }
 
-    if (password !== process.env.APP_PASSWORD) {
-      return res.status(401).json({ error: 'Mot de passe incorrect' })
+    const cleanEmail = email.toLowerCase().trim()
+
+    // Lookup user in Supabase
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', cleanEmail)
+      .single()
+
+    if (error || !user) {
+      // Auto-seeding: If it's the first login using the legacy APP_PASSWORD from env
+      if (cleanEmail === 'admin@mvg-events.com' && password === process.env.APP_PASSWORD) {
+        const hashed = hashPassword(password)
+        const { data: newUser, error: createErr } = await supabase
+          .from('users')
+          .insert({
+            email: 'admin@mvg-events.com',
+            password_hash: hashed,
+            role: 'super_admin'
+          })
+          .select()
+          .single()
+
+        if (!createErr && newUser) {
+          const token = jwt.sign(
+            { id: newUser.id, email: newUser.email, role: newUser.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '12h' }
+          )
+          return res.json({ token, role: newUser.role, email: newUser.email })
+        }
+      }
+      return res.status(401).json({ error: 'Identifiants incorrects' })
+    }
+
+    // Verify hashed password
+    const isValid = verifyPassword(password, user.password_hash)
+    if (!isValid) {
+      return res.status(401).json({ error: 'Identifiants incorrects' })
     }
 
     const token = jwt.sign(
-      { role: 'admin' },
+      { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '12h' }
     )
 
-    res.json({ token })
+    res.json({ token, role: user.role, email: user.email })
   } catch (err) {
     next(err)
   }
@@ -36,10 +75,105 @@ router.post('/login', (req, res, next) => {
 /**
  * GET /api/auth/me
  * Protected — requires valid JWT
- * Returns: { ok: true, role: string }
  */
 router.get('/me', authMiddleware, (req, res) => {
-  res.json({ ok: true, role: req.user.role })
+  res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role })
+})
+
+// ─── ADMIN MANAGEMENT (SUPER ADMIN ONLY) ──────────────────────────────────────
+
+// Check if user is super admin
+function requireSuperAdmin(req, res, next) {
+  if (!req.user || req.user.role !== 'super_admin') {
+    return res.status(403).json({ error: 'Accès réservé au Super Administrateur' })
+  }
+  next()
+}
+
+/**
+ * GET /api/auth/users
+ * Protected (Super Admin)
+ */
+router.get('/users', authMiddleware, requireSuperAdmin, async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, role, created_at')
+      .order('email', { ascending: true })
+
+    if (error) throw error
+    res.json(data || [])
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * POST /api/auth/users
+ * Protected (Super Admin)
+ */
+router.post('/users', authMiddleware, requireSuperAdmin, async (req, res, next) => {
+  try {
+    const { email, password, role } = req.body
+
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email et mot de passe requis' })
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Le mot de passe doit faire au moins 6 caractères' })
+    }
+
+    const validRoles = ['super_admin', 'admin']
+    const finalRole = validRoles.includes(role) ? role : 'admin'
+
+    const hashed = hashPassword(password)
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert({
+        email: email.toLowerCase().trim(),
+        password_hash: hashed,
+        role: finalRole
+      })
+      .select('id, email, role, created_at')
+      .single()
+
+    if (error) {
+      if (error.code === '23505' || error.message?.includes('duplicate key')) {
+        return res.status(400).json({ error: 'Cet email est déjà utilisé' })
+      }
+      throw error
+    }
+
+    res.status(201).json(data)
+  } catch (err) {
+    next(err)
+  }
+})
+
+/**
+ * DELETE /api/auth/users/:id
+ * Protected (Super Admin)
+ */
+router.delete('/users/:id', authMiddleware, requireSuperAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    if (req.user.id === id) {
+      return res.status(400).json({ error: 'Vous ne pouvez pas supprimer votre propre compte' })
+    }
+
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+    res.status(204).send()
+  } catch (err) {
+    next(err)
+  }
 })
 
 export default router

@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['images/logo.jpeg'],
       manifest: {
-        name: 'JIM 2026 — Musée Virtuel de Guinée',
-        short_name: 'JIM 2026',
-        description: 'Application de gestion de la Journée Internationale des Musées 2026',
+        name: 'MVG Event\\'s — Musée Virtuel de Guinée',
+        short_name: 'MVG Event\\'s',
+        description: 'Application de gestion des événements du Musée Virtuel de Guinée',
         theme_color: '#5c3519',
         background_color: '#fef9f2',
         display: 'standalone',

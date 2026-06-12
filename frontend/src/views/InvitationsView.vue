@@ -98,15 +98,15 @@
               @click="openDetail(inv)"
             >
               <td class="inv-name-cell">
-                <div class="inv-avatar">{{ initials(inv.invite) }}</div>
+                <div class="inv-avatar">{{ initials(inv.invites) }}</div>
                 <div>
-                  <div class="inv-fullname">{{ inv.invite?.prenom }} {{ inv.invite?.nom }}</div>
-                  <div v-if="inv.invite?.organisation" class="inv-org">{{ inv.invite.organisation }}</div>
+                  <div class="inv-fullname">{{ inv.invites?.prenom }} {{ inv.invites?.nom }}</div>
+                  <div v-if="inv.invites?.organisation" class="inv-org">{{ inv.invites.organisation }}</div>
                 </div>
               </td>
               <td>
-                <a v-if="inv.invite?.email" :href="`mailto:${inv.invite.email}`" class="inv-email" @click.stop>
-                  {{ inv.invite.email }}
+                <a v-if="inv.invites?.email" :href="`mailto:${inv.invites.email}`" class="inv-email" @click.stop>
+                  {{ inv.invites.email }}
                 </a>
                 <span v-else class="inv-empty">—</span>
               </td>
@@ -229,8 +229,8 @@
         <div class="modal-box form-card" v-if="detailInv">
           <div class="fh fh-a">
             <div class="fh-icon"><AppIcon name="user" :size="22" /></div>
-            <div class="fh-title">{{ detailInv.invite?.prenom }} {{ detailInv.invite?.nom }}</div>
-            <div class="fh-sub" v-if="detailInv.invite?.organisation">{{ detailInv.invite.organisation }}</div>
+            <div class="fh-title">{{ detailInv.invites?.prenom }} {{ detailInv.invites?.nom }}</div>
+            <div class="fh-sub" v-if="detailInv.invites?.organisation">{{ detailInv.invites.organisation }}</div>
           </div>
           <div class="fb">
             <div class="detail-grid">
@@ -238,13 +238,13 @@
                 <span class="detail-label">Statut</span>
                 <span class="statut-badge" :class="statutClass(detailInv.statut)">{{ statutLabel(detailInv.statut) }}</span>
               </div>
-              <div class="detail-item" v-if="detailInv.invite?.email">
+              <div class="detail-item" v-if="detailInv.invites?.email">
                 <span class="detail-label">Email</span>
-                <a :href="`mailto:${detailInv.invite.email}`" class="inv-email">{{ detailInv.invite.email }}</a>
+                <a :href="`mailto:${detailInv.invites.email}`" class="inv-email">{{ detailInv.invites.email }}</a>
               </div>
-              <div class="detail-item" v-if="detailInv.invite?.telephone">
+              <div class="detail-item" v-if="detailInv.invites?.telephone">
                 <span class="detail-label">Téléphone</span>
-                <span>{{ detailInv.invite.telephone }}</span>
+                <span>{{ detailInv.invites.telephone }}</span>
               </div>
               <div class="detail-item" v-if="detailInv.date_envoi">
                 <span class="detail-label">Date d'envoi</span>
@@ -262,7 +262,7 @@
               </div>
             </div>
             <div v-if="detailInv.token" class="detail-qr">
-              <img :src="`${apiUrl}/api/invitations/qr/${detailInv.token}`" :alt="`QR ${detailInv.invite?.nom}`" class="qr-img" />
+              <img :src="`${apiUrl}/api/invitations/qr/${detailInv.token}`" :alt="`QR ${detailInv.invites?.nom}`" class="qr-img" />
               <a :href="`${apiUrl}/api/invitations/qr/${detailInv.token}`" target="_blank" class="btn-dl-qr">
                 <AppIcon name="download" :size="16" /> Télécharger le QR code
               </a>
@@ -286,7 +286,7 @@
           <div class="fb">
             <p class="confirm-text">
               Supprimer l'invitation de
-              <strong>{{ deletingInv?.invite?.prenom }} {{ deletingInv?.invite?.nom }}</strong> ?
+              <strong>{{ deletingInv?.invites?.prenom }} {{ deletingInv?.invites?.nom }}</strong> ?
             </p>
             <div class="modal-actions">
               <button class="btn-cancel" @click="showDeleteModal = false">Annuler</button>
@@ -371,10 +371,10 @@ const filteredInvitations = computed(() => {
   if (search.value.trim()) {
     const q = search.value.toLowerCase()
     list = list.filter(i =>
-      (i.invite?.nom || '').toLowerCase().includes(q) ||
-      (i.invite?.prenom || '').toLowerCase().includes(q) ||
-      (i.invite?.email || '').toLowerCase().includes(q) ||
-      (i.invite?.organisation || '').toLowerCase().includes(q)
+      (i.invites?.nom || '').toLowerCase().includes(q) ||
+      (i.invites?.prenom || '').toLowerCase().includes(q) ||
+      (i.invites?.email || '').toLowerCase().includes(q) ||
+      (i.invites?.organisation || '').toLowerCase().includes(q)
     )
   }
   return list
@@ -382,7 +382,7 @@ const filteredInvitations = computed(() => {
 
 const alreadyInvited = computed(() => {
   const ids = new Set()
-  api.invitations.forEach(i => { if (i.invite?.id) ids.add(i.invite.id) })
+  api.invitations.forEach(i => { if (i.invites?.id) ids.add(i.invites.id) })
   return ids
 })
 
@@ -454,9 +454,13 @@ async function updateStatut(inv, newStatut) {
 }
 
 async function sendPending() {
+  const pendingInvites = api.invitations.filter(i => i.statut === 'pas_de_reaction')
+  const ids = pendingInvites.map(i => i.id)
+  if (ids.length === 0) return
+
   sending.value = true
   try {
-    await api.post(`/api/invitations/send`, { evenement_id: eventId })
+    await api.post(`/api/invitations/send`, { invitation_ids: ids })
     await api.fetchInvitations(eventId)
   } catch (err) {
     console.error(err)

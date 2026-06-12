@@ -22,7 +22,8 @@ router.get('/', async (req, res, next) => {
         heure_arrivee,
         notes_rsvp,
         created_at,
-        invites ( prenom, nom, email, organisation ),
+        invite_id,
+        invites ( id, prenom, nom, email, organisation ),
         evenements ( titre, date_debut )
       `)
       .order('created_at', { ascending: false })
@@ -66,7 +67,8 @@ router.post('/', async (req, res, next) => {
         statut,
         date_envoi,
         created_at,
-        invites ( prenom, nom, email ),
+        invite_id,
+        invites ( id, prenom, nom, email ),
         evenements ( titre, date_debut )
       `)
 
@@ -113,7 +115,8 @@ router.post('/send', async (req, res, next) => {
         token,
         statut,
         date_envoi,
-        invites ( prenom, nom, email ),
+        invite_id,
+        invites ( id, prenom, nom, email ),
         evenements ( id, titre, description, date_debut, date_fin, lieu )
       `)
       .in('id', invitation_ids)

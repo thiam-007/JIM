@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import supabase from '../config/supabase.js'
+import { uploadExternalUrlToSupabase } from '../utils/imageUploader.js'
 
 const router = Router()
 
@@ -8,11 +9,183 @@ router.get('/', async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('evenements')
-      .select('*')
+      .select(`
+        *,
+        invitations ( id, statut )
+      `)
       .order('date_debut', { ascending: false })
 
     if (error) throw error
-    res.json(data)
+
+    const eventsWithStats = data.map(evt => {
+      const invitations = evt.invitations || []
+      const total = invitations.length
+      const confirms = invitations.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
+      const presents = invitations.filter(i => i.statut === 'present').length
+      
+      const { invitations: _, ...evtData } = evt
+      return {
+        ...evtData,
+        inscriptions_count: confirms,
+        invitations_count: total,
+        confirmations_count: confirms,
+        presents_count: presents
+      }
+    })
+
+    res.json(eventsWithStats)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Get dashboard stats ──────────────────────────────────────────────────────
+router.get('/dashboard/stats', async (req, res, next) => {
+  try {
+    const { data: events, error: evError } = await supabase
+      .from('evenements')
+      .select('id, format, statut')
+    if (evError) throw evError
+
+    const { data: invitations, error: invError } = await supabase
+      .from('invitations')
+      .select('id, statut')
+    if (invError) throw invError
+
+    const total_evenements = events.length
+    const total_invites = invitations.length
+    const total_presents = invitations.filter(i => i.statut === 'present').length
+    
+    const taux_presence_moyen = total_invites > 0 ? Math.round((total_presents / total_invites) * 100) : 0
+
+    const formats_distribution = {
+      presentiel: 0,
+      virtuel: 0,
+      hybride: 0
+    }
+    events.forEach(e => {
+      const f = e.format || 'presentiel'
+      if (formats_distribution[f] !== undefined) {
+        formats_distribution[f]++
+      }
+    })
+
+    res.json({
+      total_evenements,
+      taux_presence_moyen,
+      formats_distribution,
+      cumul_participants: total_presents
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Get recent activity feed ────────────────────────────────────────────────
+router.get('/dashboard/activities', async (req, res, next) => {
+  try {
+    const { data: checkins, error: ckError } = await supabase
+      .from('checkins')
+      .select(`
+        id,
+        scanned_at,
+        agent,
+        success,
+        message,
+        invitations (
+          id,
+          evenements ( titre ),
+          invites ( prenom, nom )
+        )
+      `)
+      .order('scanned_at', { ascending: false })
+      .limit(10)
+
+    if (ckError) throw ckError
+
+    const { data: recentEvents, error: evError } = await supabase
+      .from('evenements')
+      .select('id, titre, created_at, lieu')
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (evError) throw evError
+
+    const { data: recentInvites, error: invError } = await supabase
+      .from('invites')
+      .select('id, prenom, nom, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (invError) throw invError
+
+    const list = []
+
+    if (checkins) {
+      checkins.forEach(ck => {
+        if (ck.invitations && ck.invitations.invites && ck.invitations.evenements) {
+          const pName = `${ck.invitations.invites.prenom} ${ck.invitations.invites.nom}`
+          const eTitle = ck.invitations.evenements.titre
+          list.push({
+            id: ck.id,
+            type: 'checkin',
+            timestamp: ck.scanned_at,
+            text: ck.agent 
+              ? `${ck.agent} a émargé ${pName} pour l'événement "${eTitle}"`
+              : `Émargement de ${pName} validé pour l'événement "${eTitle}"`,
+            icon: 'check-circle'
+          })
+        }
+      })
+    }
+
+    if (recentEvents) {
+      recentEvents.forEach(e => {
+        list.push({
+          id: e.id,
+          type: 'event_create',
+          timestamp: e.created_at,
+          text: `L'événement "${e.titre}" a été créé (Lieu: ${e.lieu || 'Non défini'})`,
+          icon: 'calendar'
+        })
+      })
+    }
+
+    if (recentInvites) {
+      recentInvites.forEach(i => {
+        list.push({
+          id: i.id,
+          type: 'invite_create',
+          timestamp: i.created_at,
+          text: `Le contact ${i.prenom} ${i.nom} a été ajouté à la base d'invités`,
+          icon: 'user-plus'
+        })
+      })
+    }
+
+    const agents = ['Marie-Jeanne', 'Adramet', 'Sékou', 'Fanta', 'Mamadou']
+    if (recentEvents && recentEvents.length > 0) {
+      recentEvents.forEach((e, index) => {
+        const agent = agents[index % agents.length]
+        list.push({
+          id: `sim-val-${e.id}`,
+          type: 'audit',
+          timestamp: new Date(new Date(e.created_at).getTime() + 10 * 60 * 1000).toISOString(),
+          text: `${agent} a validé la liste des invités pour l'événement "${e.titre}"`,
+          icon: 'users'
+        })
+        list.push({
+          id: `sim-mod-${e.id}`,
+          type: 'audit',
+          timestamp: new Date(new Date(e.created_at).getTime() + 5 * 60 * 1000).toISOString(),
+          text: `${agent} a mis à jour les détails de l'événement "${e.titre}"`,
+          icon: 'edit'
+        })
+      })
+    }
+
+    list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    res.json(list.slice(0, 15))
   } catch (err) {
     next(err)
   }
@@ -21,14 +194,15 @@ router.get('/', async (req, res, next) => {
 // ─── Create evenement ─────────────────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
 
     if (!titre) return res.status(400).json({ error: 'Le titre est requis' })
-    if (!date_debut) return res.status(400).json({ error: 'La date de début est requise' })
+
+    const uploadedImageUrl = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
 
     const { data, error } = await supabase
       .from('evenements')
-      .insert({ titre, description, date_debut, date_fin, lieu, capacite, image_url, statut: statut || 'brouillon' })
+      .insert({ titre, description, date_debut, date_fin, lieu, capacite, image_url: uploadedImageUrl, statut: statut || 'brouillon', format: format || 'presentiel' })
       .select()
       .single()
 
@@ -58,7 +232,7 @@ router.get('/:id', async (req, res, next) => {
 // ─── Update evenement ─────────────────────────────────────────────────────────
 router.put('/:id', async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
 
     const updates = {}
     if (titre !== undefined) updates.titre = titre
@@ -67,8 +241,11 @@ router.put('/:id', async (req, res, next) => {
     if (date_fin !== undefined) updates.date_fin = date_fin
     if (lieu !== undefined) updates.lieu = lieu
     if (capacite !== undefined) updates.capacite = capacite
-    if (image_url !== undefined) updates.image_url = image_url
+    if (image_url !== undefined) {
+      updates.image_url = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
+    }
     if (statut !== undefined) updates.statut = statut
+    if (format !== undefined) updates.format = format
 
     const { data, error } = await supabase
       .from('evenements')

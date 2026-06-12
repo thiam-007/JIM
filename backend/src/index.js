@@ -10,10 +10,13 @@ import invitesRouter from './routes/invites.js'
 import invitationsRouter from './routes/invitations.js'
 import rsvpRouter from './routes/rsvp.js'
 import checkinRouter from './routes/checkin.js'
+import actualitesRouter from './routes/actualites.js'
+import contactRouter from './routes/contact.js'
+import newsletterRouter from './routes/newsletter.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
-import supabase from './config/supabase.js'
+import supabase, { ensureStorageBuckets } from './config/supabase.js'
 
 // Middleware
 import { authMiddleware } from './middleware/auth.js'
@@ -30,6 +33,8 @@ app.use(helmet())
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
   'http://localhost:3000',
   'http://localhost:4173'
 ].filter(Boolean)
@@ -47,23 +52,62 @@ app.use(cors({
 }))
 
 // Body parsing
-app.use(express.json({ limit: '2mb' }))
-app.use(express.urlencoded({ extended: true }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 
 // ─── Health check (public) ─────────────────────────────────────────────────────
 
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    service: 'JIM Backend — Musée Virtuel de Guinée',
+    service: 'MVG Event\\'s Backend — Musée Virtuel de Guinée',
     timestamp: new Date().toISOString()
   })
+})
+
+// ─── Image proxy for CORS/Hotlink bypass (public) ─────────────────────────────
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const { url } = req.query
+    if (!url) return res.status(400).json({ error: 'URL is required' })
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      },
+      redirect: 'follow'
+    })
+
+    if (!response.ok) {
+      return res.status(response.status).send(`Failed to fetch image: ${response.statusText}`)
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+    res.setHeader('Cache-Control', 'public, max-age=86400') // Cache 1 day
+
+    const arrayBuffer = await response.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+    res.send(buffer)
+  } catch (err) {
+    res.status(500).send(`Error proxying image: ${err.message}`)
+  }
 })
 
 // ─── Public routes (no auth required) ─────────────────────────────────────────
 
 // RSVP: guests access their invitation by token without logging in
 app.use('/api/rsvp', rsvpRouter)
+
+// Actualités: public endpoint for website news
+app.use('/api/actualites', actualitesRouter)
+
+// Contact form: public endpoint for website enquiries
+app.use('/api/contact', contactRouter)
+
+// Newsletter subscription: public endpoint
+app.use('/api/newsletter', newsletterRouter)
 
 // QR code PNG — public so that email clients can embed the image directly.
 // This must be registered BEFORE the auth-protected /api/invitations mount.
@@ -114,11 +158,17 @@ app.use(errorHandler)
 
 const PORT = parseInt(process.env.PORT) || 3000
 
-app.listen(PORT, () => {
-  console.log(`✅  JIM Backend running on port ${PORT}`)
-  console.log(`   Frontend URL : ${process.env.FRONTEND_URL || '(not set)'}`)
-  console.log(`   Supabase URL : ${process.env.SUPABASE_URL || '(not set)'}`)
-  console.log(`   Environment  : ${process.env.NODE_ENV || 'development'}`)
-})
+const startServer = async () => {
+  await ensureStorageBuckets()
+
+  app.listen(PORT, () => {
+    console.log(`✅  MVG Event\\'s Backend running on port ${PORT}`)
+    console.log(`   Frontend URL : ${process.env.FRONTEND_URL || '(not set)'}`)
+    console.log(`   Supabase URL : ${process.env.SUPABASE_URL || '(not set)'}`)
+    console.log(`   Environment  : ${process.env.NODE_ENV || 'development'}`)
+  })
+}
+
+startServer()
 
 export default app

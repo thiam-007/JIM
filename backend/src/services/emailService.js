@@ -1,6 +1,16 @@
-import { resend } from '../config/resend.js'
+import nodemailer from 'nodemailer'
 
-const FROM_ADDRESS = 'Musée Virtuel de Guinée <onboarding@resend.dev>'
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+})
+
+function getFromAddress() {
+  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <onboarding@resend.dev>'
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -70,6 +80,11 @@ function emailShell(bodyContent) {
               <p style="margin:6px 0 0;color:#c9956a;font-size:11px;font-family:'Arial',sans-serif;">
                 Préserver la mémoire, célébrer la culture
               </p>
+              <div style="margin-top: 16px;">
+                <a href="https://www.facebook.com/profile.php?id=61584717626322" style="color:#f9b233; text-decoration:none; font-size:12px; font-family:'Arial',sans-serif; margin: 0 8px;">Facebook</a>
+                <span style="color:#c9956a;">|</span>
+                <a href="https://www.instagram.com/museevirtuelguinee?igsh=MWNsbmlrcGV6bnM3Nw==" style="color:#f9b233; text-decoration:none; font-size:12px; font-family:'Arial',sans-serif; margin: 0 8px;">Instagram</a>
+              </div>
             </td>
           </tr>
 
@@ -190,15 +205,21 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
     </p>
   `
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_ADDRESS,
-    to: invite.email,
-    subject: `Invitation — ${evenement.titre}`,
-    html: emailShell(body)
-  })
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  }
 
-  if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`)
-  return data
+  try {
+    const info = await transporter.sendMail({
+      from: getFromAddress(),
+      to: invite.email,
+      subject: `Invitation — ${evenement.titre}`,
+      html: emailShell(body)
+    })
+    return info
+  } catch (error) {
+    throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
+  }
 }
 
 // ─── sendConfirmation ──────────────────────────────────────────────────────────
@@ -207,6 +228,48 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
  * Send a confirmation email with an embedded QR code.
  * @param {{ invite: object, evenement: object, qrCodeBase64: string, token: string }} params
  */
+export async function sendContactMessage({ prenom, nom, email, sujet, message, recipient }) {
+  const body = `
+    <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
+      Nouveau message de contact
+    </h2>
+
+    <p style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+      Une nouvelle demande a été envoyée depuis le site du Musée Virtuel de Guinée.
+    </p>
+
+    <div style="background-color:#fdf3e3;border:1px solid #e8d4b8;border-radius:8px;padding:20px;margin:24px 0;">
+      <p style="margin:0 0 8px;color:#8b5a2b;font-size:13px;font-family:'Arial',sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Informations</p>
+      <p style="margin:0 0 6px;color:#3a2010;font-size:14px;"><strong>Nom :</strong> ${prenom} ${nom}</p>
+      <p style="margin:0 0 6px;color:#3a2010;font-size:14px;"><strong>Email :</strong> ${email}</p>
+      <p style="margin:0 0 6px;color:#3a2010;font-size:14px;"><strong>Objet :</strong> ${sujet}</p>
+      <p style="margin:12px 0 0;color:#3a2010;font-size:14px;line-height:1.7;"><strong>Message :</strong><br />${message.replace(/\n/g, '<br />')}</p>
+    </div>
+
+    <p style="margin:0;color:#4a3020;font-size:14px;line-height:1.7;">
+      Merci de traiter cette demande dans les meilleurs délais.<br />
+      <span style="color:#8b5a2b;">— L'équipe du Musée Virtuel de Guinée</span>
+    </p>
+  `
+
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: getFromAddress(),
+      to: recipient,
+      replyTo: email,
+      subject: `Nouveau message de contact — ${sujet}`,
+      html: emailShell(body)
+    })
+    return info
+  } catch (error) {
+    throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
+  }
+}
+
 export async function sendConfirmation({ invite, evenement, qrCodeBase64, token }) {
   const fullName = `${invite.prenom} ${invite.nom}`
 
@@ -276,13 +339,63 @@ export async function sendConfirmation({ invite, evenement, qrCodeBase64, token 
     </p>
   `
 
-  const { data, error } = await resend.emails.send({
-    from: FROM_ADDRESS,
-    to: invite.email,
-    subject: `Confirmation — ${evenement.titre}`,
-    html: emailShell(body)
-  })
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  }
 
-  if (error) throw new Error(`Resend error: ${JSON.stringify(error)}`)
-  return data
+  try {
+    const info = await transporter.sendMail({
+      from: getFromAddress(),
+      to: invite.email,
+      subject: `Confirmation — ${evenement.titre}`,
+      html: emailShell(body)
+    })
+    return info
+  } catch (error) {
+    throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
+  }
+}
+
+export async function sendNewsletterWelcome({ email }) {
+  const body = `
+    <!-- Success banner -->
+    <div style="background:linear-gradient(135deg,#f9b233,#e09820);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;color:#3a2010;font-size:16px;font-family:'Arial',sans-serif;font-weight:bold;">
+        🎉 Bienvenue dans notre communauté !
+      </p>
+    </div>
+
+    <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
+      Bonjour,
+    </h2>
+
+    <p style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+      Merci de vous être inscrit(e) à la newsletter du <strong>Musée Virtuel de Guinée</strong>. Nous sommes ravis de vous compter parmi nous !
+    </p>
+
+    <p style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+      Vous recevrez prochainement nos actualités, nos découvertes et nos invitations aux futurs événements culturels et expositions immersives.
+    </p>
+
+    <p style="margin:24px 0 0;color:#4a3020;font-size:14px;line-height:1.7;">
+      À très bientôt,<br />
+      <span style="color:#8b5a2b;">— L'équipe du Musée Virtuel de Guinée</span>
+    </p>
+  `
+
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: getFromAddress(),
+      to: email,
+      subject: "Bienvenue à la newsletter du Musée Virtuel de Guinée !",
+      html: emailShell(body)
+    })
+    return info
+  } catch (error) {
+    throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
+  }
 }

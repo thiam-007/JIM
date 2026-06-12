@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS evenements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   titre VARCHAR NOT NULL,
   description TEXT,
-  date_debut TIMESTAMPTZ NOT NULL,
+  date_debut TIMESTAMPTZ,
   date_fin TIMESTAMPTZ,
   lieu VARCHAR,
   capacite INTEGER,
@@ -59,6 +59,40 @@ CREATE TABLE IF NOT EXISTS checkins (
   message TEXT
 );
 
+-- actualites
+CREATE TABLE IF NOT EXISTS actualites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titre VARCHAR NOT NULL,
+  description TEXT,
+  contenu TEXT,
+  image_url TEXT,
+  image_detail_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- users
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR UNIQUE NOT NULL,
+  password_hash VARCHAR NOT NULL,
+  role VARCHAR NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- contact messages
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prenom VARCHAR NOT NULL,
+  nom VARCHAR NOT NULL,
+  email VARCHAR NOT NULL,
+  sujet VARCHAR NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================================
 -- Trigger: update updated_at automatically
 -- ============================================================
@@ -83,6 +117,18 @@ CREATE TRIGGER trg_invitations_updated
   BEFORE UPDATE ON invitations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+CREATE TRIGGER trg_actualites_updated
+  BEFORE UPDATE ON actualites
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER trg_users_updated
+  BEFORE UPDATE ON users
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER trg_contact_messages_updated
+  BEFORE UPDATE ON contact_messages
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
 -- ============================================================
 -- Indexes for common queries
 -- ============================================================
@@ -92,3 +138,18 @@ CREATE INDEX IF NOT EXISTS idx_invitations_invite_id ON invitations(invite_id);
 CREATE INDEX IF NOT EXISTS idx_invitations_token ON invitations(token);
 CREATE INDEX IF NOT EXISTS idx_invitations_statut ON invitations(statut);
 CREATE INDEX IF NOT EXISTS idx_checkins_invitation_id ON checkins(invitation_id);
+
+-- ============================================================
+-- Newsletter
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email VARCHAR UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_newsletter_subscribers_updated
+  BEFORE UPDATE ON newsletter_subscribers
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();

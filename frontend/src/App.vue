@@ -1,81 +1,248 @@
 <template>
   <div class="app-wrapper">
-    <header>
-      <div class="header-inner">
-        <div class="logo-badge">
-        <img src="/images/logo.jpeg" alt="MVG" />
-      </div>
-      <div class="logo-text">
-        <div class="logo-title-wrap">
-          <span class="logo-pre">MVG</span>
-          <h1>event's</h1>
+    <!-- Si domaine administration et non connecté : écran de connexion plein écran dédié -->
+    <div v-if="isAdminDomain && !apiStore.isConnected" class="admin-login-fullscreen">
+      <div class="admin-login-box modal-box modal-confirm form-card">
+        <div class="fh fh-a">
+          <div class="fh-icon"><AppIcon name="lock" :size="22" /></div>
+          <div class="fh-title">Connexion Équipe</div>
+          <div class="fh-sub">Saisissez le mot de passe pour accéder à la gestion du Musée Virtuel de Guinée</div>
         </div>
-        <span>La solution globale pour vos événements</span>
-      </div>
-      </div>
-    </header>
-
-    <div class="app-shell">
-
-    <nav class="nav-tabs">
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
-        <AppIcon name="home" :size="16" /> Accueil
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
-        <AppIcon name="calendar" :size="16" /> Événements
-      </RouterLink>
-      <RouterLink class="nav-tab" :class="{ active: route.name === 'Invites' }" to="/invites">
-        <AppIcon name="users" :size="16" /> Invités
-      </RouterLink>
-    </nav>
-
-    <!-- Bannière mise à jour PWA -->
-    <div v-if="needsRefresh" class="pwa-update-banner">
-      <AppIcon name="refresh-cw" :size="16" />
-      <span>Nouvelle version disponible</span>
-      <button @click="updateApp">Mettre à jour</button>
-    </div>
-
-
-
-    <main>
-      <RouterView v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
-          <component :is="Component" />
-        </Transition>
-      </RouterView>
-    </main>
-    </div>
-
-    <!-- ─── Partenaires Marquee ─── -->
-    <div class="partners-marquee-section">
-      <div class="marquee-content">
-        <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-        <img src="/images/partenaires/ccfg.png" alt="CCFG" />
-        <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
-        <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
-        <img src="/images/partenaires/meae.png" alt="MEAE" />
-        <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
-        <!-- Duplicate for loop -->
-        <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-        <img src="/images/partenaires/ccfg.png" alt="CCFG" />
-        <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
-        <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
-        <img src="/images/partenaires/meae.png" alt="MEAE" />
-        <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+        <div class="fb">
+          <form @submit.prevent="handleLogin">
+            <div class="fg">
+              <label>Adresse E-mail</label>
+              <input type="email" v-model="loginEmail" required placeholder="Ex : nom@mvg-events.com" />
+            </div>
+            <div class="fg">
+              <label>Mot de passe</label>
+              <input type="password" v-model="loginPassword" required placeholder="Mot de passe…" />
+            </div>
+            <div v-if="loginError" class="form-error-msg">
+              <AppIcon name="alert-triangle" :size="15" /> {{ loginError }}
+            </div>
+            <button type="submit" class="bsub bsub-a modal-submit" :disabled="loggingIn">
+              <AppIcon :name="loggingIn ? 'loader' : 'check'" :size="16" />
+              {{ loggingIn ? 'Connexion…' : 'Se connecter' }}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
 
-    <footer>Musée Virtuel de Guinée · MVG event's · <em>La gestion globale de vos événements</em></footer>
+    <!-- Sinon, afficher le site normal (vitrine visiteur ou site d'admin connecté) -->
+    <template v-else>
+      <header>
+        <div class="header-inner">
+          <RouterLink class="header-branding" to="/">
+            <div class="logo-badge">
+              <img src="/images/logo.jpeg" alt="MVG" />
+            </div>
+            <div class="logo-text">
+              <div class="logo-title-wrap">
+                <span class="logo-pre">MVG</span>
+                <h1>event's</h1>
+              </div>
+              <span>Explorer, préserver et transmettre le patrimoine à l'ère du numérique</span>
+            </div>
+          </RouterLink>
+        </div>
+      </header>
+
+      <div class="app-shell">
+        <nav class="nav-tabs">
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
+            <AppIcon name="home" :size="16" /> Accueil
+          </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
+            <AppIcon name="info" :size="16" /> Projet
+          </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
+            <AppIcon name="file-text" :size="16" /> Actualité
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
+            <AppIcon name="calendar" :size="16" /> Événement
+          </RouterLink>
+          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Invites' }" to="/invites">
+            <AppIcon name="users" :size="16" /> Invités
+          </RouterLink>
+          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageActualites' }" to="/admin/actualites">
+            <AppIcon name="file-text" :size="16" /> Gérer Actus
+          </RouterLink>
+          <RouterLink v-if="apiStore.isConnected && apiStore.isSuperAdmin" class="nav-tab" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs">
+            <AppIcon name="users" :size="16" /> Gérer Admins
+          </RouterLink>
+          <RouterLink class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
+            <AppIcon name="mail" :size="16" /> Contact
+          </RouterLink>
+          <!-- Connexion / Déconnexion : Déconnexion visible uniquement si connecté -->
+          <button v-if="apiStore.isConnected" class="nav-tab logout-tab" @click="handleLogout">
+            <AppIcon name="log-out" :size="16" /> Déconnexion
+          </button>
+        </nav>
+
+        <!-- Bannière mise à jour PWA -->
+        <div v-if="needsRefresh" class="pwa-update-banner">
+          <AppIcon name="refresh-cw" :size="16" />
+          <span>Nouvelle version disponible</span>
+          <button @click="updateApp">Mettre à jour</button>
+        </div>
+
+        <main>
+          <RouterView v-slot="{ Component, route }">
+            <Transition 
+              mode="out-in"
+              @enter="onPageEnter"
+              @leave="onPageLeave"
+              :css="false"
+            >
+              <component :is="Component" :key="route.path" />
+            </Transition>
+          </RouterView>
+        </main>
+      </div>
+
+      <!-- ─── Partenaires Marquee ─── -->
+      <div class="partners-marquee-section">
+        <div class="marquee-content">
+          <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+          <img src="/images/partenaires/ccfg.png" alt="CCFG" />
+          <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+          <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
+          <img src="/images/partenaires/meae.png" alt="MEAE" />
+          <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+          <!-- Duplicate for loop -->
+          <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
+          <img src="/images/partenaires/ccfg.png" alt="CCFG" />
+          <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
+          <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
+          <img src="/images/partenaires/meae.png" alt="MEAE" />
+          <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
+        </div>
+      </div>
+
+      <footer class="main-footer">
+        <div class="footer-container">
+          <!-- À gauche : Logo -->
+          <div class="footer-col footer-logo">
+            <RouterLink class="header-branding" to="/" style="align-items: flex-start;">
+              <div class="logo-badge" style="width: 80px; height: 80px; align-self: center;">
+                <img src="/images/logo.jpeg" alt="MVG" style="width: 68px; height: 68px;" />
+              </div>
+              <div class="logo-text">
+                <div class="logo-title-wrap">
+                  <span class="logo-pre" style="font-size: 1.6rem;">MVG</span>
+                  <h1 style="font-size: 1.6rem;">event's</h1>
+                </div>
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.7); display: block; margin-top: 6px; line-height: 1.4;">Explorer, préserver et transmettre le patrimoine à l'ère du numérique</span>
+              </div>
+            </RouterLink>
+          </div>
+
+          <!-- Au centre : Liens utiles -->
+          <div class="footer-col footer-links">
+            <h3>Liens utiles</h3>
+            <ul>
+              <li><RouterLink to="/">Accueil</RouterLink></li>
+              <li><RouterLink to="/a-propos">À propos</RouterLink></li>
+              <li><RouterLink to="/evenements">Événements</RouterLink></li>
+            </ul>
+          </div>
+
+          <!-- À droite : Réseaux Sociaux -->
+          <div class="footer-col footer-social">
+            <h3>Suivez-nous</h3>
+            <div class="social-icons">
+              <a href="https://www.facebook.com/profile.php?id=61584717626322" target="_blank" aria-label="Facebook" class="social-icon">
+                <AppIcon name="facebook" :size="22" />
+              </a>
+              <a href="https://www.instagram.com/museevirtuelguinee?igsh=MWNsbmlrcGV6bnM3Nw==" target="_blank" aria-label="Instagram" class="social-icon">
+                <AppIcon name="instagram" :size="22" />
+              </a>
+              <a href="https://twitter.com" target="_blank" aria-label="Twitter" class="social-icon">
+                <AppIcon name="twitter" :size="22" />
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          &copy; {{ new Date().getFullYear() }} Musée Virtuel de Guinée · MVG event's
+        </div>
+      </footer>
+      
+      <!-- Modal Connexion Admin (conservé par sécurité, mais masqué par défaut) -->
+      <Teleport to="body">
+        <div v-if="showLoginModal" class="modal-backdrop" @click.self="closeLogin">
+          <div class="modal-box modal-confirm form-card">
+            <div class="fh fh-a">
+              <div class="fh-icon"><AppIcon name="lock" :size="22" /></div>
+              <div class="fh-title">Connexion Équipe</div>
+              <div class="fh-sub">Saisissez le mot de passe pour accéder à la gestion</div>
+            </div>
+            <div class="fb">
+              <form @submit.prevent="handleLogin">
+                <div class="fg">
+                  <label>Adresse E-mail</label>
+                  <input type="email" v-model="loginEmail" required placeholder="Ex : nom@mvg-events.com" />
+                </div>
+                <div class="fg">
+                  <label>Mot de passe</label>
+                  <input type="password" v-model="loginPassword" required placeholder="Mot de passe…" />
+                </div>
+                <div v-if="loginError" class="form-error-msg">
+                  <AppIcon name="alert-triangle" :size="15" /> {{ loginError }}
+                </div>
+                <div class="modal-actions">
+                  <button type="button" class="btn-cancel" @click="closeLogin" :disabled="loggingIn">Annuler</button>
+                  <button type="submit" class="bsub bsub-a modal-submit" :disabled="loggingIn">
+                    <AppIcon :name="loggingIn ? 'loader' : 'check'" :size="16" />
+                    {{ loggingIn ? 'Connexion…' : 'Se connecter' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </Teleport>
+      <!-- Scroll Progress Button -->
+      <button class="scroll-top-btn" @click="handleScrollBtn" :aria-label="isScrolledDown ? 'Remonter' : 'Descendre'">
+        <svg class="progress-circle" viewBox="0 0 100 100">
+          <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+          <circle class="progress-bar" cx="50" cy="50" r="45" :style="{ strokeDashoffset: 283 - (283 * scrollProgress) / 100 }"></circle>
+        </svg>
+        <AppIcon :name="isScrolledDown ? 'chevron-up' : 'chevron-down'" :size="20" class="scroll-icon" />
+      </button>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
-import { useRoute, RouterLink, RouterView } from 'vue-router'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useApiStore } from './store/api.js'
 import AppIcon from './components/AppIcon.vue'
+import { animate } from 'animejs'
+
+function onPageEnter(el, done) {
+  animate(el, {
+    opacity: [0, 1],
+    translateY: [15, 0],
+    duration: 300,
+    easing: 'easeOutQuad',
+    onComplete: done
+  });
+}
+
+function onPageLeave(el, done) {
+  animate(el, {
+    opacity: [1, 0],
+    translateY: [0, -10],
+    duration: 150,
+    easing: 'easeInQuad',
+    onComplete: done
+  });
+}
 
 const { needRefresh: needsRefresh, updateServiceWorker } = useRegisterSW({
   onRegisteredSW(_, r) {
@@ -87,14 +254,97 @@ function updateApp() {
 }
 
 const route = useRoute()
+const router = useRouter()
 const apiStore = useApiStore()
 
-onMounted(async () => {
-  // Initialization logic for Supabase can go here
+// Détection réactive du sous-domaine admin
+const isAdminDomain = computed(() => {
+  const hostname = window.location.hostname
+  const adminDomain = import.meta.env.VITE_ADMIN_DOMAIN || 'admin.mvg-events.com'
+  const adminQueryParam = import.meta.env.VITE_ADMIN_QUERY_PARAM || 'admin'
+  return hostname === adminDomain || 
+         hostname.startsWith('admin.') || 
+         new URLSearchParams(window.location.search).get(adminQueryParam) === 'true'
+})
+
+const showLoginModal = ref(false)
+const loginEmail = ref('')
+const loginPassword = ref('')
+const loggingIn = ref(false)
+const loginError = ref('')
+
+function openLogin() {
+  loginEmail.value = ''
+  loginPassword.value = ''
+  loginError.value = ''
+  showLoginModal.value = true
+}
+
+function closeLogin() {
+  showLoginModal.value = false
+}
+
+async function handleLogin() {
+  if (!loginEmail.value || !loginPassword.value) return
+  loggingIn.value = true
+  loginError.value = ''
+  try {
+    await apiStore.login(loginEmail.value.trim(), loginPassword.value)
+    closeLogin()
+    if (route.name !== 'Home') {
+      router.push('/')
+    }
+  } catch (err) {
+    loginError.value = err.message || 'Identifiants incorrects'
+  } finally {
+    loggingIn.value = false
+  }
+}
+
+function handleLogout() {
+  apiStore.logout()
+  router.push('/')
+}
+
+// Scroll Progress Logic
+const scrollProgress = ref(0)
+const isScrolledDown = ref(false)
+
+function onScroll() {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop
+  const docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight
+  if (docHeight > 0) {
+    scrollProgress.value = (scrollTop / docHeight) * 100
+  } else {
+    scrollProgress.value = 0
+  }
+  isScrolledDown.value = scrollProgress.value > 50
+}
+
+function handleScrollBtn() {
+  if (isScrolledDown.value) {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  } else {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+  }
+}
+
+onMounted(() => {
+  if (isAdminDomain.value) {
+    window.addEventListener('open-login', openLogin)
+  }
+  window.addEventListener('scroll', onScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('open-login', openLogin)
+  window.removeEventListener('scroll', onScroll)
 })
 </script>
 
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
+
 :root {
   --or: #845936;
   --rouge: #B1222A;
@@ -118,6 +368,8 @@ body {
               linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #e8ddd0 100%);
   color: var(--noir);
 }
+html { scroll-behavior: smooth; }
+::selection { background: rgba(249, 178, 51, .35); color: var(--noir); }
 button, input, textarea, select { font: inherit; }
 .app-wrapper { display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 .app-shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 28px; width: 100%; flex: 1; }
@@ -125,22 +377,33 @@ button, input, textarea, select { font: inherit; }
 /* ─── Header ─── */
 header {
   background:
-    linear-gradient(135deg, rgba(89,55,22,.9) 0%, rgba(132,89,54,.85) 40%, rgba(177,34,42,.8) 100%),
-    url('/images/motif-removebg-preview.png') center/auto 120% repeat-x;
+    linear-gradient(135deg, rgba(46, 26, 11, 0.96) 0%, rgba(77, 43, 19, 0.94) 50%, rgba(20, 12, 6, 1) 100%),
+    url('/images/motif-removebg-preview.png') center/auto 120% repeat;
   color: var(--blanc);
-  padding: 22px 24px;
-  box-shadow: 0 10px 38px rgba(89, 55, 22, .18);
+  padding: 24px 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(255,255,255,.16);
+  border-bottom: 2px solid var(--gold);
   animation: fadeInDown 0.5s ease-out;
   overflow: hidden;
   width: 100%;
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+header:hover {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  border-bottom-color: #ffffff;
+  background-position: center 30%;
 }
 .header-inner {
   max-width: 1180px; margin: 0 auto; width: 100%;
-  display: flex; align-items: center; gap: 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+}
+.header-branding {
+  display: flex; align-items: center; gap: 24px; flex: 1;
+  text-decoration: none;
+  color: inherit;
 }
 header::after {
   content: '';
@@ -155,33 +418,77 @@ header::after {
   60%, 100% { left: 120%; }
 }
 .logo-badge {
-  width: 60px; height: 60px;
+  width: 120px; height: 120px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  border: 2.5px solid rgba(249, 178, 51, 0.25);
+  border-radius: 50%;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
   animation: float 3s ease-in-out infinite;
 }
+header:hover .logo-badge {
+  transform: scale(1.05) rotate(4deg);
+  border-color: var(--gold);
+  box-shadow: 0 0 25px rgba(249, 178, 51, 0.35);
+}
 .logo-badge img {
-  width: 56px; height: 56px;
+  width: 106px; height: 106px;
   object-fit: cover;
   border-radius: 50%;
   display: block;
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
-  animation: logoGlow 3.5s ease-in-out infinite;
+  transition: all 0.5s ease;
 }
-@keyframes logoGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(249,178,51,0); }
-  50%       { box-shadow: 0 0 0 7px rgba(249,178,51,.3); }
+header:hover .logo-badge img {
+  filter: drop-shadow(0 4px 12px rgba(249, 178, 51, 0.25));
 }
 .logo-text { flex: 1; }
 .logo-title-wrap {
-  display: flex; align-items: baseline; gap: 8px;
+  display: flex; align-items: baseline; gap: 12px;
 }
 .logo-pre {
-  font-size: 1.1rem; font-weight: 700; color: var(--gold);
-  letter-spacing: 1px;
+  font-family: 'Cinzel', serif;
+  font-size: 2.1rem; font-weight: 800; color: var(--gold);
+  letter-spacing: 4px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-.logo-title-wrap h1 { font-family: Tahoma, sans-serif; font-size: 1.5rem; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.15; margin: 0; }
-.logo-text span { font-family: Arial, sans-serif; font-size: .8rem; color: rgba(255,255,255,.9); letter-spacing: 1.2px; display: block; margin-top: 5px; }
+header:hover .logo-pre {
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(249, 178, 51, 0.65);
+}
+.logo-title-wrap h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 2.1rem; font-weight: 300;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  line-height: 1.15;
+  margin: 0;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+header:hover .logo-title-wrap h1 {
+  letter-spacing: 7px;
+  font-weight: 400;
+}
+.logo-text span {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: rgba(255,255,255,.75);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  display: block;
+  margin-top: 6px;
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+header:hover .logo-text span {
+  color: var(--gold);
+  letter-spacing: 5px;
+}
 .jim-badge {
   background: rgba(255,255,255,.18); color: var(--blanc);
   padding: 8px 16px; border-radius: 999px;
@@ -215,8 +522,8 @@ header::after {
 }
 .nav-tab:hover {
   color: var(--brun);
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(132, 89, 54, .08);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 10px 22px rgba(132, 89, 54, .12);
 }
 .nav-tab.active {
   color: var(--blanc);
@@ -334,6 +641,7 @@ header::after {
 
 /* ─── Main / Footer ─── */
 main { max-width: 1120px; margin: 28px auto 60px; padding: 0 20px; }
+
 footer {
   text-align: center; padding: 26px 10px 12px;
   color: var(--brun); font-size: .78rem; font-weight: 700;
@@ -388,6 +696,11 @@ footer em { color: var(--rouge); font-style: normal; }
   box-shadow: var(--shadow); overflow: hidden;
   border: 1px solid rgba(255,255,255,.75);
   animation: fadeInUp 0.6s ease-out;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.form-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 34px rgba(89, 55, 22, .12);
 }
 
 /* ─── Stats summary ─── */
@@ -457,7 +770,7 @@ footer em { color: var(--rouge); font-style: normal; }
 /* ─── Labels / inputs ─── */
 label { display: block; font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--brun); margin-bottom: 8px; }
 .req { color: var(--rouge); margin-left: 3px; }
-input[type=text], input[type=email], input[type=tel], input[type=time], input[type=number], select, textarea {
+input[type=text], input[type=password], input[type=email], input[type=tel], input[type=time], input[type=number], select, textarea {
   width: 100%; padding: 14px 16px;
   border: 2px solid #e8ddd0; border-radius: 14px;
   font-family: 'Segoe UI', Tahoma, sans-serif;
@@ -776,5 +1089,214 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   .nav-tabs { border-radius: 20px; }
   .nav-tab { min-width: unset; padding: 10px 14px; font-size: .72rem; }
   .stats-summary { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── Admin Fullscreen Login ─── */
+.admin-login-fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100vw;
+  background: radial-gradient(circle at top left, rgba(249, 178, 51, .08), transparent 28%),
+              linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #e8ddd0 100%);
+  padding: 24px;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow-y: auto;
+}
+.admin-login-box {
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 20px 50px rgba(89, 55, 22, 0.25) !important;
+}
+
+/* ─── Footer ─── */
+.main-footer {
+  background:
+    linear-gradient(135deg, rgba(46, 26, 11, 0.96) 0%, rgba(77, 43, 19, 0.94) 50%, rgba(20, 12, 6, 1) 100%),
+    url('/images/motif-removebg-preview.png') center/auto 120% repeat;
+  border-top: 2px solid var(--gold);
+  padding: 40px 20px 20px;
+  margin-top: 40px;
+  color: var(--blanc);
+}
+
+.footer-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 30px;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.footer-col h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  color: var(--gold);
+}
+
+/* Logo Column */
+.footer-logo {
+  align-items: flex-start;
+}
+.footer-logo .header-branding {
+  gap: 15px;
+}
+.footer-logo .logo-title-wrap h1 {
+  margin: 0;
+  color: #fff;
+}
+
+/* Links Column */
+.footer-links {
+  align-items: center;
+}
+
+.footer-links h3 {
+  text-align: center;
+}
+
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: center;
+  align-items: center;
+}
+
+.footer-links a {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--trans);
+}
+
+.footer-links a:hover,
+.footer-links a.router-link-active {
+  color: var(--gold);
+  padding-left: 5px;
+}
+
+/* Social Column */
+.footer-social {
+  align-items: flex-end;
+}
+
+.social-icons {
+  display: flex;
+  gap: 15px;
+}
+
+.social-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--blanc);
+  border-radius: 50%;
+  transition: var(--trans);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.social-icon:hover {
+  background: var(--gold);
+  color: var(--brun);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(249, 178, 51, 0.3);
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ─── Scroll Top Button ─── */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 50px;
+  height: 50px;
+  background: var(--surface);
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 0;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.scroll-top-btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(249, 178, 51, 0.4);
+}
+.progress-circle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.progress-bg {
+  fill: none;
+  stroke: rgba(132, 89, 54, 0.15);
+  stroke-width: 6;
+}
+.progress-bar {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 6;
+  stroke-dasharray: 283;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.1s linear;
+}
+.scroll-icon {
+  color: var(--brun);
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+.scroll-top-btn:hover .scroll-icon {
+  color: var(--gold);
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+  .footer-container {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 30px;
+  }
+  .footer-logo img {
+    align-self: center;
+  }
+  .footer-col {
+    align-items: center !important;
+  }
 }
 </style>
