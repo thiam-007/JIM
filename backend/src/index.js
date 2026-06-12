@@ -60,7 +60,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.get('/health', (_req, res) => {
   res.json({
     status: 'ok',
-    service: 'MVG Event\\'s Backend — Musée Virtuel de Guinée',
+    service: "MVG Event's Backend — Musée Virtuel de Guinée",
     timestamp: new Date().toISOString()
   })
 })
@@ -162,7 +162,7 @@ const startServer = async () => {
   await ensureStorageBuckets()
 
   app.listen(PORT, () => {
-    console.log(`✅  MVG Event\\'s Backend running on port ${PORT}`)
+    console.log(`✅  MVG Event's Backend running on port ${PORT}`)
     console.log(`   Frontend URL : ${process.env.FRONTEND_URL || '(not set)'}`)
     console.log(`   Supabase URL : ${process.env.SUPABASE_URL || '(not set)'}`)
     console.log(`   Environment  : ${process.env.NODE_ENV || 'development'}`)
