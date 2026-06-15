@@ -120,7 +120,7 @@ const filteredActualites = computed(() => {
 
 // Pagination
 const currentPage = ref(1)
-const itemsPerPage = 9
+const itemsPerPage = 6
 
 const totalPages = computed(() => Math.ceil(filteredActualites.value.length / itemsPerPage) || 1)
 

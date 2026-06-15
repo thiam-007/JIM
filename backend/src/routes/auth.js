@@ -80,6 +80,53 @@ router.get('/me', authMiddleware, (req, res) => {
   res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role })
 })
 
+/**
+ * PUT /api/auth/password
+ * Protected — requires valid JWT
+ */
+router.put('/password', authMiddleware, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Mot de passe actuel et nouveau mot de passe requis' })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 6 caractères' })
+    }
+
+    // Verify current password
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single()
+
+    if (error || !user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' })
+    }
+
+    const isValid = verifyPassword(currentPassword, user.password_hash)
+    if (!isValid) {
+      return res.status(401).json({ error: 'Mot de passe actuel incorrect' })
+    }
+
+    // Update password
+    const hashed = hashPassword(newPassword)
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password_hash: hashed })
+      .eq('id', req.user.id)
+
+    if (updateError) throw updateError
+
+    res.json({ success: true, message: 'Mot de passe mis à jour avec succès' })
+  } catch (err) {
+    next(err)
+  }
+})
+
 // ─── ADMIN MANAGEMENT (SUPER ADMIN ONLY) ──────────────────────────────────────
 
 // Check if user is super admin
