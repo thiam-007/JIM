@@ -1,11 +1,13 @@
 <template>
   <div class="detail-wrapper">
-    <!-- Back to all news button -->
-    <div class="back-nav" v-reveal="0">
-      <RouterLink to="/actualites" class="btn-back">
-        <AppIcon name="chevron-left" :size="16" /> Retour aux actualités
-      </RouterLink>
-    </div>
+    <!-- Breadcrumbs -->
+    <nav class="ev-breadcrumbs public-breadcrumbs" v-reveal="0">
+      <RouterLink to="/" class="ev-breadcrumb-link">Accueil</RouterLink>
+      <span class="ev-breadcrumb-sep">/</span>
+      <RouterLink to="/actualites" class="ev-breadcrumb-link">Actualités</RouterLink>
+      <span v-if="currentNews" class="ev-breadcrumb-sep">/</span>
+      <span v-if="currentNews" class="ev-breadcrumb-current">{{ currentNews.titre }}</span>
+    </nav>
 
     <!-- Error/Loading states -->
     <div v-if="api.loading && !currentNews" class="loader-state py-4 text-center glass" v-reveal="50">
@@ -134,23 +136,9 @@ function formatShortDate(dateStr) {
   padding-bottom: 40px;
 }
 
-/* Back navigation */
-.back-nav {
+.public-breadcrumbs {
   margin-top: 10px;
-}
-.btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.88rem;
-  font-weight: 700;
-  color: var(--brun);
-  text-decoration: none;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-.btn-back:hover {
-  color: var(--rouge);
-  transform: translateX(-4px);
+  margin-bottom: 4px;
 }
 
 /* Detail grid layout */

@@ -84,7 +84,7 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
 // ─── Create single news (PROTECTED) ───────────────────────────────────────────
 router.post('/', authMiddleware, async (req, res, next) => {
   try {
-    const { titre, description, contenu, image_url, image_detail_url } = req.body
+    const { titre, description, contenu, image_url, image_detail_url, date_evenement } = req.body
 
     if (!titre) return res.status(400).json({ error: 'Le titre est requis' })
 
@@ -93,7 +93,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from('actualites')
-      .insert({ titre, description, contenu, image_url: uploadedImageUrl, image_detail_url: uploadedImageDetailUrl })
+      .insert({ titre, description, contenu, image_url: uploadedImageUrl, image_detail_url: uploadedImageDetailUrl, date_evenement })
       .select()
       .single()
 
@@ -108,12 +108,13 @@ router.post('/', authMiddleware, async (req, res, next) => {
 router.put('/:id', authMiddleware, async (req, res, next) => {
   try {
     const { id } = req.params
-    const { titre, description, contenu, image_url, image_detail_url } = req.body
+    const { titre, description, contenu, image_url, image_detail_url, date_evenement } = req.body
 
     const updates = {}
     if (titre !== undefined) updates.titre = titre
     if (description !== undefined) updates.description = description
     if (contenu !== undefined) updates.contenu = contenu
+    if (date_evenement !== undefined) updates.date_evenement = date_evenement
     if (image_url !== undefined) {
       updates.image_url = image_url ? await uploadExternalUrlToSupabase(image_url, 'actualites') : image_url
     }

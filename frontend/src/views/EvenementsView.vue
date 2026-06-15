@@ -1,5 +1,12 @@
 <template>
   <div class="ev-shell">
+    <!-- Breadcrumbs -->
+    <nav class="ev-breadcrumbs">
+      <RouterLink to="/" class="ev-breadcrumb-link">Tableau de bord</RouterLink>
+      <span class="ev-breadcrumb-sep">/</span>
+      <span class="ev-breadcrumb-current">Gestion des Événements</span>
+    </nav>
+
     <!-- En-tête / Hero Section -->
     <section class="page-header-section" v-reveal="0">
       <div class="header-bg">
@@ -31,7 +38,6 @@
             <AppIcon name="plus" :size="16" /> Créer un événement
           </button>
         </div>
-      </div>
     </div>
 
     <!-- ─── États de chargement / vide ─── -->
@@ -50,9 +56,10 @@
     </div>
 
     <!-- ─── Grille d'événements ─── -->
-    <div v-else class="ev-grid">
-      <div
-        v-for="evt in filteredEvents"
+    <div v-else>
+      <div class="ev-grid">
+        <div
+          v-for="evt in paginatedEvents"
         :key="evt.id"
         class="ev-card"
         @click="goToEvent(evt)"
@@ -122,6 +129,17 @@
           </button>
         </div>
         </div>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" class="pagination-controls mt-4" style="margin-bottom: 20px;">
+        <button class="page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+          <AppIcon name="chevron-left" :size="16" /> Précédent
+        </button>
+        <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+          Suivant <AppIcon name="chevron-right" :size="16" />
+        </button>
       </div>
     </div>
 
@@ -467,6 +485,29 @@ const filteredEvents = computed(() => {
     (e.description || '').toLowerCase().includes(q)
   )
 })
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 10
+
+const totalPages = computed(() => Math.ceil(filteredEvents.value.length / itemsPerPage) || 1)
+
+const paginatedEvents = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredEvents.value.slice(start, end)
+})
+
+watch(search, () => {
+  currentPage.value = 1
+})
+
+function changePage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
 
 watch(filteredEvents, async (newVal) => {
   if (newVal && newVal.length > 0) {

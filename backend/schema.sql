@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS actualites (
   contenu TEXT,
   image_url TEXT,
   image_detail_url TEXT,
+  date_evenement TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -1,5 +1,12 @@
 <template>
   <div class="manage-actus-shell">
+    <!-- Breadcrumbs -->
+    <nav class="ev-breadcrumbs">
+      <RouterLink to="/" class="ev-breadcrumb-link">Tableau de bord</RouterLink>
+      <span class="ev-breadcrumb-sep">/</span>
+      <span class="ev-breadcrumb-current">Gestion des Actualités</span>
+    </nav>
+
     <!-- Header -->
     <div class="manage-actus-header form-card">
       <div class="fh fh-a">
@@ -42,9 +49,10 @@
     </div>
 
     <!-- Grid -->
-    <div v-else class="actus-grid">
-      <div
-        v-for="actu in filteredActualites"
+    <div v-else>
+      <div class="actus-grid">
+        <div
+          v-for="actu in paginatedActualites"
         :key="actu.id"
         class="actu-card form-card"
       >
@@ -79,6 +87,17 @@
           </button>
         </div>
       </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="totalPages > 1" class="pagination-controls mt-4">
+        <button class="page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+          <AppIcon name="chevron-left" :size="16" /> Précédent
+        </button>
+        <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+        <button class="page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+          Suivant <AppIcon name="chevron-right" :size="16" />
+        </button>
+      </div>
     </div>
 
     <!-- Create/Edit Modal -->
@@ -94,6 +113,14 @@
               <div class="fg">
                 <label>Titre de l'actualité <span class="req">*</span></label>
                 <input type="text" v-model="form.titre" required placeholder="Ex : Lancement de la numérisation 3D" />
+              </div>
+
+              <div class="fg">
+                <label>Date de l'événement / publication</label>
+                <input type="datetime-local" v-model="form.date_evenement" />
+                <div style="font-size: 0.8rem; color: #6a5040; margin-top: 4px; opacity: 0.8;">
+                  Laissez vide pour utiliser la date de création par défaut.
+                </div>
               </div>
 
               <div class="fg">
@@ -267,7 +294,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -290,7 +318,8 @@ const form = ref({
   description: '',
   contenu: '',
   image_url: '',
-  image_detail_url: ''
+  image_detail_url: '',
+  date_evenement: ''
 })
 
 const coverFile = ref(null) // { base64: '', name: '', mimeType: '' }
@@ -312,6 +341,29 @@ const filteredActualites = computed(() => {
     (a.contenu || '').toLowerCase().includes(q)
   )
 })
+
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 10
+
+const totalPages = computed(() => Math.ceil(filteredActualites.value.length / itemsPerPage) || 1)
+
+const paginatedActualites = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredActualites.value.slice(start, end)
+})
+
+watch(search, () => {
+  currentPage.value = 1
+})
+
+function changePage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
@@ -426,7 +478,8 @@ function openEdit(actu) {
     description: actu.description || '',
     contenu: actu.contenu || '',
     image_url: actu.imageUrl === '/images/side-photo.jpeg' ? '' : (actu.imageUrl || ''),
-    image_detail_url: actu.imageDetailUrl === '/images/side-photo.jpeg' ? '' : (actu.imageDetailUrl || '')
+    image_detail_url: actu.imageDetailUrl === '/images/side-photo.jpeg' ? '' : (actu.imageDetailUrl || ''),
+    date_evenement: actu.publieLe ? new Date(actu.publieLe).toISOString().slice(0, 16) : ''
   }
   coverFile.value = null
   detailFile.value = null
@@ -475,7 +528,8 @@ async function saveActu() {
       description: form.value.description.trim(),
       contenu: form.value.contenu.trim(),
       image_url: finalImageUrl,
-      image_detail_url: finalImageDetailUrl
+      image_detail_url: finalImageDetailUrl,
+      date_evenement: form.value.date_evenement || null
     }
 
     if (editingActu.value) {

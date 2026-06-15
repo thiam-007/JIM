@@ -1,5 +1,12 @@
 <template>
   <div class="actualites-wrapper">
+    <!-- Breadcrumbs -->
+    <nav class="ev-breadcrumbs public-breadcrumbs">
+      <RouterLink to="/" class="ev-breadcrumb-link">Accueil</RouterLink>
+      <span class="ev-breadcrumb-sep">/</span>
+      <span class="ev-breadcrumb-current">Actualités</span>
+    </nav>
+
     <!-- En-tête / Hero Section -->
     <section class="page-header-section" v-reveal="0">
       <div class="header-bg">
@@ -48,9 +55,10 @@
       </div>
 
       <!-- Grille des articles -->
-      <div v-else class="news-cards-grid">
-        <div 
-          v-for="news in filteredActualites" 
+      <div v-else>
+        <div class="news-cards-grid">
+          <div 
+            v-for="news in paginatedActualites" 
           :key="news.id" 
           class="news-card glass"
           @click="readNews(news.id)"
@@ -67,6 +75,17 @@
               Lire l'article <AppIcon name="chevron-right" :size="14" />
             </span>
           </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div v-if="totalPages > 1" class="pagination-controls mt-4">
+          <button class="page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+            <AppIcon name="chevron-left" :size="16" /> Précédent
+          </button>
+          <span class="page-info">Page {{ currentPage }} sur {{ totalPages }}</span>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+            Suivant <AppIcon name="chevron-right" :size="16" />
+          </button>
         </div>
       </div>
     </section>
@@ -99,6 +118,29 @@ const filteredActualites = computed(() => {
   )
 })
 
+// Pagination
+const currentPage = ref(1)
+const itemsPerPage = 9
+
+const totalPages = computed(() => Math.ceil(filteredActualites.value.length / itemsPerPage) || 1)
+
+const paginatedActualites = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredActualites.value.slice(start, end)
+})
+
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+function changePage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
 watch(filteredActualites, async (newVal) => {
   if (newVal && newVal.length > 0) {
     await nextTick()
@@ -130,8 +172,14 @@ function formatShortDate(dateStr) {
 .actualites-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 20px;
   padding-bottom: 40px;
+}
+
+.public-breadcrumbs {
+  margin-top: 10px;
+  margin-bottom: -10px;
+  padding: 0 4px;
 }
 
 /* Page Header / Hero */
