@@ -463,10 +463,12 @@ async function sendPending() {
 
   sending.value = true
   try {
-    await api.post(`/api/invitations/send`, { invitation_ids: ids })
+    const res = await api.post(`/api/invitations/send`, { invitation_ids: ids })
+    alert(`Envoi terminé !\n\nSuccès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}`)
     await api.fetchInvitations(eventId)
   } catch (err) {
     console.error(err)
+    alert('Erreur: ' + err.message)
   } finally {
     sending.value = false
   }
