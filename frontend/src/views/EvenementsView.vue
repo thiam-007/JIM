@@ -59,7 +59,7 @@
         @click="goToEvent(evt)"
       >
         <div v-if="evt.image_url" class="ev-card-img-wrap">
-          <img :src="getPreviewSrc(evt.image_url)" alt="Event Cover" />
+          <img :src="getPreviewSrc(evt.image_url)" loading="lazy" alt="Event Cover" />
         </div>
         
         <div class="ev-card-content">

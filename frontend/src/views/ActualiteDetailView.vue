@@ -48,7 +48,7 @@
               @click="readNews(news.id)"
             >
               <div class="suggestion-img-wrap">
-                <img :src="news.imageUrl" :alt="news.titre" class="suggestion-img" @error="($event.target.src = '/images/side-photo.jpeg')" />
+                <img :src="news.imageUrl" :alt="news.titre" class="suggestion-img" loading="lazy" @error="($event.target.src = '/images/side-photo.jpeg')" />
               </div>
               <div class="suggestion-info">
                 <h4 class="suggestion-title">{{ news.titre }}</h4>

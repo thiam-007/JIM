@@ -310,7 +310,7 @@
               </RouterLink>
             </div>
             <div class="showcase-image-wrap">
-              <img src="/images/side-photo.jpeg" alt="Numérisation 3D des masques" class="showcase-img" />
+              <img src="/images/side-photo.jpeg" alt="Numérisation 3D des masques" class="showcase-img" loading="lazy" />
               <div class="img-overlay-badge">Musée National de Guinée</div>
             </div>
           </div>
@@ -322,7 +322,7 @@
         <div class="showcase-card form-card">
           <div class="showcase-grid">
             <div class="showcase-image-wrap">
-              <img src="/images/stand-mvg.jpeg" alt="Exposition MVG" class="showcase-img" />
+              <img src="/images/stand-mvg.jpeg" alt="Exposition MVG" class="showcase-img" loading="lazy" />
               <div class="img-overlay-badge">Galerie & Expositions Digitaux</div>
             </div>
             <div class="showcase-info">
@@ -355,7 +355,7 @@
             @click="readNews(news.id)"
           >
             <div class="news-img-wrap">
-              <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" />
+              <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" loading="lazy" />
               <div class="news-date-badge">{{ news.date_evenement ? formatShortDate(news.date_evenement) : 'À venir' }}</div>
             </div>
             <div class="news-content-wrap">

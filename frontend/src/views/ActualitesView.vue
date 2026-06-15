@@ -59,7 +59,7 @@
           v-reveal="150"
         >
           <div class="news-img-wrap">
-            <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" @error="($event.target.src = '/images/side-photo.jpeg')" />
+            <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" loading="lazy" @error="($event.target.src = '/images/side-photo.jpeg')" />
             <div class="news-date-badge">{{ news.date_evenement ? formatShortDate(news.date_evenement) : 'À venir' }}</div>
           </div>
           <div class="news-content-wrap">
