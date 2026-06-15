@@ -388,11 +388,12 @@ async function importCSV(event) {
     return
   }
 
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
+  const separator = lines[0].includes(';') ? ';' : ','
+  const headers = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
   const records = []
 
   for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+    const cells = lines[i].split(separator).map(c => c.trim().replace(/^"|"$/g, ''))
     if (cells.every(c => !c)) continue
     const row = {}
     headers.forEach((h, idx) => { row[h] = cells[idx] || '' })
