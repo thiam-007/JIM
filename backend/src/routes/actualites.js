@@ -12,7 +12,7 @@ router.get('/', async (req, res, next) => {
     const { data, error } = await supabase
       .from('actualites')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('date_evenement', { ascending: false })
 
     if (error) throw error
     res.json(data || [])
