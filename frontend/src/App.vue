@@ -85,13 +85,35 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
             <AppIcon name="mail" :size="16" /> Contact
           </RouterLink>
-          <button v-if="apiStore.isConnected" class="nav-tab" @click="showChangePasswordModal = true">
-            <AppIcon name="key" :size="16" /> Mot de passe
-          </button>
-          <!-- Connexion / Déconnexion : Déconnexion visible uniquement si connecté -->
-          <button v-if="apiStore.isConnected" class="nav-tab logout-tab" @click="handleLogout">
-            <AppIcon name="log-out" :size="16" /> Déconnexion
-          </button>
+          <div v-if="apiStore.isConnected" class="profile-menu-container">
+            <button class="nav-tab profile-tab" :class="{ active: showProfileDropdown }" @click="showProfileDropdown = !showProfileDropdown">
+              <AppIcon name="user" :size="16" /> Mon Profil <AppIcon name="chevron-down" :size="14" style="margin-left: 4px;" />
+            </button>
+            
+            <div v-if="showProfileDropdown" class="profile-dropdown form-card">
+              <div class="profile-header">
+                <div class="profile-avatar">
+                  <AppIcon name="user" :size="24" />
+                </div>
+                <div class="profile-info">
+                  <span class="profile-email" :title="apiStore.userEmail">{{ apiStore.userEmail || 'Admin' }}</span>
+                  <span class="profile-role">{{ apiStore.isSuperAdmin ? 'Super Admin' : 'Administrateur' }}</span>
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button class="profile-action-btn" @click="openChangePassword">
+                  <AppIcon name="key" :size="16" /> Changer le mot de passe
+                </button>
+                <div class="profile-divider"></div>
+                <button class="profile-action-btn logout-btn" @click="handleLogoutProfile">
+                  <AppIcon name="log-out" :size="16" /> Se déconnecter
+                </button>
+              </div>
+            </div>
+            
+            <!-- Overlay invisible pour fermer au clic en dehors -->
+            <div v-if="showProfileDropdown" class="profile-overlay" @click="showProfileDropdown = false"></div>
+          </div>
         </nav>
 
         <!-- Bannière mise à jour PWA -->
@@ -344,6 +366,17 @@ const loginError = ref('')
 const loggingIn = ref(false)
 
 const showChangePasswordModal = ref(false)
+const showProfileDropdown = ref(false)
+
+function openChangePassword() {
+  showProfileDropdown.value = false
+  showChangePasswordModal.value = true
+}
+
+function handleLogoutProfile() {
+  showProfileDropdown.value = false
+  handleLogout()
+}
 const showPwdCurrent = ref(false)
 const showPwdNew = ref(false)
 const pwdForm = ref({
@@ -1425,6 +1458,116 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   .footer-col {
     align-items: center !important;
   }
+}
+
+/* ─── Profile Menu ─── */
+.profile-menu-container {
+  position: relative;
+}
+.profile-tab {
+  background: rgba(255, 127, 80, 0.1);
+  color: var(--prim-orange) !important;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 6px 14px;
+}
+.profile-tab:hover, .profile-tab.active {
+  background: var(--prim-orange);
+  color: white !important;
+}
+.profile-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 260px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  z-index: 1000;
+  overflow: hidden;
+  animation: dropdownIn 0.2s ease;
+}
+.profile-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+.profile-header {
+  padding: 16px;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 127, 80, 0.15);
+  color: var(--prim-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.profile-email {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.profile-role {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.profile-actions {
+  padding: 8px 0;
+}
+.profile-action-btn {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.profile-action-btn:hover {
+  background: rgba(0,0,0,0.03);
+  color: var(--prim-orange);
+}
+.profile-divider {
+  height: 1px;
+  background: rgba(0,0,0,0.05);
+  margin: 6px 0;
+}
+.logout-btn {
+  color: var(--rouge);
+}
+.logout-btn:hover {
+  background: rgba(177, 34, 42, 0.05);
+  color: var(--rouge);
+}
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>
 
