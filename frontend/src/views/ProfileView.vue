@@ -13,7 +13,8 @@
 
     <section class="main-content-section" v-reveal="100">
       <div class="profile-container">
-        <!-- Informations du profil -->
+        <div class="profile-left-col">
+          <!-- Informations du profil -->
         <div class="form-card profile-info-card">
           <div class="fh fh-a">
             <div class="fh-icon"><AppIcon name="user" :size="24" /></div>
@@ -31,6 +32,21 @@
           </div>
         </div>
 
+        <!-- Déconnexion -->
+        <div class="form-card profile-logout-card" style="border: 1px solid rgba(177, 34, 42, 0.2);">
+          <div class="fb" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h3 style="color: var(--rouge); margin-bottom: 4px;">Déconnexion</h3>
+              <p style="font-size: 0.9rem; color: #666; margin: 0;">Fermer la session actuelle.</p>
+            </div>
+            <button class="bsub" style="background: rgba(177, 34, 42, 0.1); color: var(--rouge); margin-top: 0; width: auto;" @click="handleLogout">
+              <AppIcon name="log-out" :size="16" /> Se déconnecter
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-right-col">
         <!-- Modifier Mot de passe -->
         <div class="form-card profile-pwd-card">
           <div class="fh fh-a">
@@ -81,20 +97,8 @@
             </form>
           </div>
         </div>
-
-        <!-- Déconnexion -->
-        <div class="form-card profile-logout-card" style="border: 1px solid rgba(177, 34, 42, 0.2);">
-          <div class="fb" style="display: flex; align-items: center; justify-content: space-between;">
-            <div>
-              <h3 style="color: var(--rouge); margin-bottom: 4px;">Déconnexion</h3>
-              <p style="font-size: 0.9rem; color: #666; margin: 0;">Fermer la session actuelle et retourner à l'accueil public.</p>
-            </div>
-            <button class="bsub" style="background: rgba(177, 34, 42, 0.1); color: var(--rouge);" @click="handleLogout">
-              <AppIcon name="log-out" :size="16" /> Se déconnecter
-            </button>
-          </div>
-        </div>
       </div>
+    </div>
     </section>
   </div>
 </template>
@@ -177,11 +181,22 @@ function handleLogout() {
   min-height: calc(100vh - 140px);
 }
 .profile-container {
-  max-width: 600px;
+  max-width: 1000px;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 24px;
+}
+.profile-left-col,
+.profile-right-col {
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+@media (max-width: 768px) {
+  .profile-container {
+    grid-template-columns: 1fr;
+  }
 }
 .profile-info-card {
   overflow: hidden;
