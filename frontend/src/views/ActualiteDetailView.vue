@@ -21,7 +21,7 @@
         <div class="article-banner">
           <img :src="currentNews.imageDetailUrl" :alt="currentNews.titre" class="banner-img" @error="($event.target.src = '/images/side-photo.jpeg')" />
           <div class="article-meta-overlay">
-            <span class="date-badge"><AppIcon name="calendar" :size="12" /> {{ formatDate(currentNews.publieLe) }}</span>
+            <span class="date-badge"><AppIcon name="calendar" :size="12" /> {{ currentNews.date_evenement ? formatDate(currentNews.date_evenement) : 'À venir' }}</span>
           </div>
         </div>
 
@@ -52,7 +52,7 @@
               </div>
               <div class="suggestion-info">
                 <h4 class="suggestion-title">{{ news.titre }}</h4>
-                <span class="suggestion-date">{{ formatShortDate(news.publieLe) }}</span>
+                <span class="suggestion-date">{{ news.date_evenement ? formatShortDate(news.date_evenement) : 'À venir' }}</span>
               </div>
             </div>
             <div v-if="suggestions.length === 0" class="empty-suggestions">
