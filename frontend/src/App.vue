@@ -67,7 +67,7 @@
           <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
             <AppIcon name="info" :size="16" /> Projet
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
+          <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
             <AppIcon name="file-text" :size="16" /> Actualité
           </RouterLink>
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
@@ -82,7 +82,7 @@
           <RouterLink v-if="apiStore.isConnected && apiStore.isSuperAdmin" class="nav-tab" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs">
             <AppIcon name="users" :size="16" /> Gérer Admins
           </RouterLink>
-          <RouterLink class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
+          <RouterLink v-if="!apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
             <AppIcon name="mail" :size="16" /> Contact
           </RouterLink>
           <RouterLink v-if="apiStore.isConnected" class="nav-tab profile-tab" :class="{ active: route.name === 'Profile' }" to="/profil">
