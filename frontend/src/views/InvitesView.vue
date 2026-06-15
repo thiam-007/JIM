@@ -381,8 +381,10 @@ async function importCSV(event) {
   if (!file) return
   importMsg.value = null
 
-  const text = await file.text()
-  const lines = text.trim().split('\n')
+  let text = await file.text()
+  // Supprimer le BOM (Byte Order Mark) ajouté par Excel
+  text = text.replace(/^\uFEFF/, '').trim()
+  const lines = text.split('\n')
   if (lines.length < 2) {
     importMsg.value = { type: 'error', text: 'Le fichier CSV est vide ou invalide.' }
     return
