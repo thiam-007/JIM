@@ -821,8 +821,8 @@ const upcomingList = computed(() => {
   return api.evenements
     .filter(e => e.statut === 'a_venir' || (e.date_debut && new Date(e.date_debut) > now) && e.id !== activeEvent.value?.id)
     .sort((a, b) => {
-      const dateA = a.date_debut ? new Date(a.date_debut) : new Date(8640000000000000);
-      const dateB = b.date_debut ? new Date(b.date_debut) : new Date(8640000000000000);
+      const dateA = a.date_debut ? new Date(a.date_debut) : new Date(0); // 0 puts it at the beginning of ascending sort
+      const dateB = b.date_debut ? new Date(b.date_debut) : new Date(0);
       return dateA - dateB;
     })
 })

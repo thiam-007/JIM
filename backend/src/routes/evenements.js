@@ -13,7 +13,7 @@ router.get('/', async (req, res, next) => {
         *,
         invitations ( id, statut )
       `)
-      .order('date_debut', { ascending: false })
+      .order('date_debut', { ascending: false, nullsFirst: true })
 
     if (error) throw error
 
