@@ -59,6 +59,9 @@
           </select>
         </div>
         <div class="inv-actions">
+          <RouterLink :to="`/checkin/${eventId}`" class="btn-scan">
+            <AppIcon name="scan" :size="15" /> Lancer le Scanner
+          </RouterLink>
           <button class="btn-send" @click="sendPending" :disabled="sending || pendingCount === 0">
             <AppIcon :name="sending ? 'loader' : 'send'" :size="15" />
             Envoyer invitations ({{ pendingCount }})
@@ -578,6 +581,15 @@ async function doDelete() {
   box-shadow: 0 6px 16px rgba(89,55,22,.2);
 }
 .btn-create:hover { transform: translateY(-1px); filter: brightness(1.06); }
+
+.btn-scan {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px; background: rgba(21,101,192,.1);
+  color: #1565c0; border: 1.5px solid rgba(21,101,192,.3);
+  border-radius: 999px; font-size: .84rem; font-weight: 700;
+  cursor: pointer; transition: all .25s; white-space: nowrap; text-decoration: none;
+}
+.btn-scan:hover { background: #1565c0; color: #fff; }
 
 /* Loading */
 .inv-loading {
