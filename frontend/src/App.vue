@@ -1427,3 +1427,36 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   }
 }
 </style>
+
+<style>
+/* ─── Modals (Teleport) - Styles globaux pour la Prod ─── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(26,16,8,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: fadeIn .2s ease;
+  backdrop-filter: blur(2px);
+}
+.modal-box {
+  width: 100%; max-width: 500px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-confirm { max-width: 480px; }
+.form-error-msg {
+  display: flex; align-items: center; gap: 8px;
+  background: #ffeaea; border: 1.5px solid var(--rouge); border-radius: 12px;
+  padding: 10px 14px; color: var(--rouge); font-size: .84rem; font-weight: 600;
+  margin-top: 12px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+</style>

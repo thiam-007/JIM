@@ -1,12 +1,5 @@
 <template>
   <div class="manage-actus-shell">
-    <!-- Breadcrumbs -->
-    <nav class="ev-breadcrumbs">
-      <RouterLink to="/" class="ev-breadcrumb-link">Tableau de bord</RouterLink>
-      <span class="ev-breadcrumb-sep">/</span>
-      <span class="ev-breadcrumb-current">Gestion des Actualités</span>
-    </nav>
-
     <!-- Header -->
     <div class="manage-actus-header form-card">
       <div class="fh fh-a">
@@ -98,6 +91,7 @@
           Suivant <AppIcon name="chevron-right" :size="16" />
         </button>
       </div>
+    </div>
     </div>
 
     <!-- Create/Edit Modal -->

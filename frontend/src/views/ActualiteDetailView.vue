@@ -1,14 +1,5 @@
 <template>
   <div class="detail-wrapper">
-    <!-- Breadcrumbs -->
-    <nav class="ev-breadcrumbs public-breadcrumbs" v-reveal="0">
-      <RouterLink to="/" class="ev-breadcrumb-link">Accueil</RouterLink>
-      <span class="ev-breadcrumb-sep">/</span>
-      <RouterLink to="/actualites" class="ev-breadcrumb-link">Actualités</RouterLink>
-      <span v-if="currentNews" class="ev-breadcrumb-sep">/</span>
-      <span v-if="currentNews" class="ev-breadcrumb-current">{{ currentNews.titre }}</span>
-    </nav>
-
     <!-- Error/Loading states -->
     <div v-if="api.loading && !currentNews" class="loader-state py-4 text-center glass" v-reveal="50">
       <AppIcon name="loader" class="spin mb-2" :size="32" />

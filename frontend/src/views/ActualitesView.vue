@@ -1,11 +1,5 @@
 <template>
   <div class="actualites-wrapper">
-    <!-- Breadcrumbs -->
-    <nav class="ev-breadcrumbs public-breadcrumbs">
-      <RouterLink to="/" class="ev-breadcrumb-link">Accueil</RouterLink>
-      <span class="ev-breadcrumb-sep">/</span>
-      <span class="ev-breadcrumb-current">Actualités</span>
-    </nav>
 
     <!-- En-tête / Hero Section -->
     <section class="page-header-section" v-reveal="0">
@@ -88,6 +82,7 @@
           </button>
         </div>
       </div>
+    </div>
     </section>
   </div>
 </template>

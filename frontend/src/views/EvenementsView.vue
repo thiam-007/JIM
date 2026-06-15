@@ -1,12 +1,5 @@
 <template>
   <div class="ev-shell">
-    <!-- Breadcrumbs -->
-    <nav class="ev-breadcrumbs">
-      <RouterLink to="/" class="ev-breadcrumb-link">Tableau de bord</RouterLink>
-      <span class="ev-breadcrumb-sep">/</span>
-      <span class="ev-breadcrumb-current">Gestion des Événements</span>
-    </nav>
-
     <!-- En-tête / Hero Section -->
     <section class="page-header-section" v-reveal="0">
       <div class="header-bg">
@@ -38,6 +31,7 @@
             <AppIcon name="plus" :size="16" /> Créer un événement
           </button>
         </div>
+      </div>
     </div>
 
     <!-- ─── États de chargement / vide ─── -->
@@ -141,6 +135,7 @@
           Suivant <AppIcon name="chevron-right" :size="16" />
         </button>
       </div>
+    </div>
     </div>
 
     <!-- ─── Modal Créer / Modifier ─── -->
