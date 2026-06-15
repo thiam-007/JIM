@@ -55,7 +55,10 @@
           </div>
           <div class="actu-card-info">
             <div class="actu-card-title">{{ actu.titre }}</div>
-            <div class="actu-card-date">{{ formatDate(actu.publieLe) }}</div>
+            <div class="actu-card-date">
+              <span v-if="!actu.date_evenement" class="status-badge status-a_venir">À venir</span>
+              <span v-else>{{ formatDate(actu.date_evenement) }}</span>
+            </div>
           </div>
         </div>
         
@@ -120,6 +123,14 @@
               <div class="fg">
                 <label>Description (Résumé court) <span class="req">*</span></label>
                 <textarea v-model="form.description" required placeholder="Un court résumé affiché sur les cartes de la page d'accueil (2-3 phrases)..." rows="3"></textarea>
+              </div>
+
+              <div class="fg">
+                <label>Date de l'événement (Optionnel)</label>
+                <input type="datetime-local" v-model="form.date_evenement" />
+                <div style="font-size: 0.8rem; color: #6a5040; margin-top: 6px; opacity: 0.8;">
+                  Laissez ce champ vide pour afficher l'étiquette <strong>"À venir"</strong>.
+                </div>
               </div>
 
               <div class="fg">
