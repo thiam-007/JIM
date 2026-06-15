@@ -34,6 +34,8 @@ function formatDateFr(iso) {
  * Shared HTML email shell with brand colours.
  */
 function emailShell(bodyContent) {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -54,6 +56,7 @@ function emailShell(bodyContent) {
           <!-- Header banner -->
           <tr>
             <td style="background:linear-gradient(135deg,#5c3519 0%,#8b5a2b 60%,#f9b233 100%);padding:36px 40px;text-align:center;">
+              <img src="${frontendUrl}/images/logo.jpeg" alt="Logo MVG" style="width:70px; height:70px; border-radius:50%; border:2px solid #f9b233; margin-bottom:16px;" />
               <p style="margin:0 0 6px 0;color:#f9b233;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-family:'Arial',sans-serif;">
                 Musée Virtuel de Guinée
               </p>
@@ -80,10 +83,18 @@ function emailShell(bodyContent) {
               <p style="margin:6px 0 0;color:#c9956a;font-size:11px;font-family:'Arial',sans-serif;">
                 Préserver la mémoire, célébrer la culture
               </p>
-              <div style="margin-top: 16px;">
-                <a href="https://www.facebook.com/profile.php?id=61584717626322" style="color:#f9b233; text-decoration:none; font-size:12px; font-family:'Arial',sans-serif; margin: 0 8px;">Facebook</a>
-                <span style="color:#c9956a;">|</span>
-                <a href="https://www.instagram.com/museevirtuelguinee?igsh=MWNsbmlrcGV6bnM3Nw==" style="color:#f9b233; text-decoration:none; font-size:12px; font-family:'Arial',sans-serif; margin: 0 8px;">Instagram</a>
+              <div style="margin-top: 16px; display:inline-block;">
+                <a href="${frontendUrl}" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
+                  <img src="https://img.icons8.com/ios-filled/24/f9b233/domain.png" alt="Site Web" style="vertical-align:middle;" />
+                </a>
+                <span style="color:#c9956a; vertical-align:middle; margin:0 4px;">|</span>
+                <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
+                  <img src="https://img.icons8.com/ios-filled/24/f9b233/facebook-new.png" alt="Facebook" style="vertical-align:middle;" />
+                </a>
+                <span style="color:#c9956a; vertical-align:middle; margin:0 4px;">|</span>
+                <a href="https://www.instagram.com/museevirtuelguinee?igsh=MWNsbmlrcGV6bnM3Nw==" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
+                  <img src="https://img.icons8.com/ios-filled/24/f9b233/instagram-new.png" alt="Instagram" style="vertical-align:middle;" />
+                </a>
               </div>
             </td>
           </tr>
