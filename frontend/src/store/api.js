@@ -7,6 +7,8 @@ export const useApiStore = defineStore('api', {
     token: sessionStorage.getItem('jim_jwt') || '',
     userRole: sessionStorage.getItem('jim_user_role') || '',
     userEmail: sessionStorage.getItem('jim_user_email') || '',
+    userPrenom: sessionStorage.getItem('jim_user_prenom') || '',
+    userNom: sessionStorage.getItem('jim_user_nom') || '',
     evenements: [],
     invites: [],
     invitations: [],
@@ -38,22 +40,30 @@ export const useApiStore = defineStore('api', {
         const errorData = await res.json().catch(() => ({}))
         throw new Error(errorData.error || 'Identifiants incorrects')
       }
-      const { token, role, email: userEmail } = await res.json()
+      const { token, role, email: userEmail, prenom, nom } = await res.json()
       this.token = token
       this.userRole = role || 'admin'
       this.userEmail = userEmail || ''
+      this.userPrenom = prenom || ''
+      this.userNom = nom || ''
       sessionStorage.setItem('jim_jwt', token)
       sessionStorage.setItem('jim_user_role', this.userRole)
       sessionStorage.setItem('jim_user_email', this.userEmail)
+      sessionStorage.setItem('jim_user_prenom', this.userPrenom)
+      sessionStorage.setItem('jim_user_nom', this.userNom)
       sessionStorage.setItem('jim_auth', '1')
     },
     logout() {
       this.token = ''
       this.userRole = ''
       this.userEmail = ''
+      this.userPrenom = ''
+      this.userNom = ''
       sessionStorage.removeItem('jim_jwt')
       sessionStorage.removeItem('jim_user_role')
       sessionStorage.removeItem('jim_user_email')
+      sessionStorage.removeItem('jim_user_prenom')
+      sessionStorage.removeItem('jim_user_nom')
       sessionStorage.removeItem('jim_auth')
     },
     async get(path) {

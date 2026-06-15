@@ -85,35 +85,9 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
             <AppIcon name="mail" :size="16" /> Contact
           </RouterLink>
-          <div v-if="apiStore.isConnected" class="profile-menu-container">
-            <button class="nav-tab profile-tab" :class="{ active: showProfileDropdown }" @click="showProfileDropdown = !showProfileDropdown">
-              <AppIcon name="user" :size="16" /> Mon Profil <AppIcon name="chevron-down" :size="14" style="margin-left: 4px;" />
-            </button>
-            
-            <div v-if="showProfileDropdown" class="profile-dropdown form-card">
-              <div class="profile-header">
-                <div class="profile-avatar">
-                  <AppIcon name="user" :size="24" />
-                </div>
-                <div class="profile-info">
-                  <span class="profile-email" :title="apiStore.userEmail">{{ apiStore.userEmail || 'Admin' }}</span>
-                  <span class="profile-role">{{ apiStore.isSuperAdmin ? 'Super Admin' : 'Administrateur' }}</span>
-                </div>
-              </div>
-              <div class="profile-actions">
-                <button class="profile-action-btn" @click="openChangePassword">
-                  <AppIcon name="key" :size="16" /> Changer le mot de passe
-                </button>
-                <div class="profile-divider"></div>
-                <button class="profile-action-btn logout-btn" @click="handleLogoutProfile">
-                  <AppIcon name="log-out" :size="16" /> Se déconnecter
-                </button>
-              </div>
-            </div>
-            
-            <!-- Overlay invisible pour fermer au clic en dehors -->
-            <div v-if="showProfileDropdown" class="profile-overlay" @click="showProfileDropdown = false"></div>
-          </div>
+          <RouterLink v-if="apiStore.isConnected" class="nav-tab profile-tab" :class="{ active: route.name === 'Profile' }" to="/profil">
+            <AppIcon name="user" :size="16" /> Mon Profil
+          </RouterLink>
         </nav>
 
         <!-- Bannière mise à jour PWA -->
@@ -240,60 +214,7 @@
         </div>
       </Teleport>
 
-    <!-- Modal de changement de mot de passe -->
-    <Teleport to="body">
-      <div v-if="showChangePasswordModal" class="modal-backdrop" @click.self="closeChangePasswordModal">
-        <div class="modal-box form-card">
-          <div class="fh fh-a">
-            <div class="fh-icon"><AppIcon name="key" :size="22" /></div>
-            <div class="fh-title">Modifier mon mot de passe</div>
-          </div>
-          <div class="fb">
-            <form @submit.prevent="handleChangePassword">
-              <div class="fg">
-                <label>Mot de passe actuel</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                  <input :type="showPwdCurrent ? 'text' : 'password'" v-model="pwdForm.current" required placeholder="Saisissez votre mot de passe actuel" style="flex: 1; padding-right: 40px;" />
-                  <button type="button" @click="showPwdCurrent = !showPwdCurrent" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #8b5a2b; display: flex; align-items: center; padding: 4px;" title="Afficher/Masquer le mot de passe">
-                    <AppIcon :name="showPwdCurrent ? 'eye-off' : 'eye'" :size="18" />
-                  </button>
-                </div>
-              </div>
-              <div class="fg">
-                <label>Nouveau mot de passe (Min. 6 caractères)</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                  <input :type="showPwdNew ? 'text' : 'password'" v-model="pwdForm.new" required placeholder="Votre nouveau mot de passe" style="flex: 1; padding-right: 40px;" />
-                  <button type="button" @click="showPwdNew = !showPwdNew" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #8b5a2b; display: flex; align-items: center; padding: 4px;" title="Afficher/Masquer le mot de passe">
-                    <AppIcon :name="showPwdNew ? 'eye-off' : 'eye'" :size="18" />
-                  </button>
-                </div>
-              </div>
-              <div class="fg">
-                <label>Confirmer le nouveau mot de passe</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                  <input :type="showPwdNew ? 'text' : 'password'" v-model="pwdForm.confirm" required placeholder="Confirmez-le ici" style="flex: 1;" />
-                </div>
-              </div>
 
-              <div v-if="pwdForm.error" class="form-error-msg">
-                <AppIcon name="alert-triangle" :size="15" /> {{ pwdForm.error }}
-              </div>
-              <div v-if="pwdForm.success" class="form-success-msg" style="display: flex; align-items: center; gap: 8px; background: #e8f5e9; border: 1.5px solid #4caf50; border-radius: 12px; padding: 10px 14px; color: #2e7d32; font-size: 0.84rem; font-weight: 600; margin-top: 12px;">
-                <AppIcon name="check-circle" :size="15" /> {{ pwdForm.success }}
-              </div>
-
-              <div class="ev-form-actions" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
-                <button type="button" class="btn-cancel" @click="closeChangePasswordModal">Fermer</button>
-                <button type="submit" class="bsub bsub-a modal-submit" :disabled="pwdForm.loading" style="width: auto; padding: 12px 28px; margin-top: 0;">
-                  <AppIcon :name="pwdForm.loading ? 'loader' : 'check'" :size="16" />
-                  {{ pwdForm.loading ? 'Mise à jour…' : 'Enregistrer' }}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </Teleport>
 
       <!-- Scroll Progress Button -->
       <button class="scroll-top-btn" @click="handleScrollBtn" :aria-label="isScrolledDown ? 'Remonter' : 'Descendre'">
@@ -365,68 +286,7 @@ const loginPassword = ref('')
 const loginError = ref('')
 const loggingIn = ref(false)
 
-const showChangePasswordModal = ref(false)
-const showProfileDropdown = ref(false)
 
-function openChangePassword() {
-  showProfileDropdown.value = false
-  showChangePasswordModal.value = true
-}
-
-function handleLogoutProfile() {
-  showProfileDropdown.value = false
-  handleLogout()
-}
-const showPwdCurrent = ref(false)
-const showPwdNew = ref(false)
-const pwdForm = ref({
-  current: '',
-  new: '',
-  confirm: '',
-  error: '',
-  success: '',
-  loading: false
-})
-
-function closeChangePasswordModal() {
-  showChangePasswordModal.value = false
-  pwdForm.value = { current: '', new: '', confirm: '', error: '', success: '', loading: false }
-}
-
-async function handleChangePassword() {
-  pwdForm.value.error = ''
-  pwdForm.value.success = ''
-  
-  if (pwdForm.value.new !== pwdForm.value.confirm) {
-    pwdForm.value.error = 'Les nouveaux mots de passe ne correspondent pas.'
-    return
-  }
-  if (pwdForm.value.new.length < 6) {
-    pwdForm.value.error = 'Le nouveau mot de passe doit faire au moins 6 caractères.'
-    return
-  }
-
-  pwdForm.value.loading = true
-  try {
-    const res = await apiStore.put('/api/auth/password', {
-      currentPassword: pwdForm.value.current,
-      newPassword: pwdForm.value.new
-    })
-    pwdForm.value.success = res.message || 'Mot de passe mis à jour avec succès.'
-    pwdForm.value.current = ''
-    pwdForm.value.new = ''
-    pwdForm.value.confirm = ''
-    
-    // Fermer le modal après un délai
-    setTimeout(() => {
-      closeChangePasswordModal()
-    }, 2500)
-  } catch (err) {
-    pwdForm.value.error = err.message || 'Erreur lors de la mise à jour.'
-  } finally {
-    pwdForm.value.loading = false
-  }
-}
 
 function returnToPublicSite() {
   const publicUrl = import.meta.env.VITE_PUBLIC_DOMAIN || '/'

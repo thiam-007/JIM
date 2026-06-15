@@ -44,11 +44,11 @@ router.post('/login', async (req, res, next) => {
 
         if (!createErr && newUser) {
           const token = jwt.sign(
-            { id: newUser.id, email: newUser.email, role: newUser.role },
+            { id: newUser.id, email: newUser.email, role: newUser.role, prenom: newUser.prenom, nom: newUser.nom },
             process.env.JWT_SECRET,
             { expiresIn: '12h' }
           )
-          return res.json({ token, role: newUser.role, email: newUser.email })
+          return res.json({ token, role: newUser.role, email: newUser.email, prenom: newUser.prenom, nom: newUser.nom })
         }
       }
       return res.status(401).json({ error: 'Identifiants incorrects' })
@@ -61,12 +61,12 @@ router.post('/login', async (req, res, next) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, prenom: user.prenom, nom: user.nom },
       process.env.JWT_SECRET,
       { expiresIn: '12h' }
     )
 
-    res.json({ token, role: user.role, email: user.email })
+    res.json({ token, role: user.role, email: user.email, prenom: user.prenom, nom: user.nom })
   } catch (err) {
     next(err)
   }
@@ -77,7 +77,7 @@ router.post('/login', async (req, res, next) => {
  * Protected — requires valid JWT
  */
 router.get('/me', authMiddleware, (req, res) => {
-  res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role })
+  res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role, prenom: req.user.prenom, nom: req.user.nom })
 })
 
 /**
@@ -145,7 +145,7 @@ router.get('/users', authMiddleware, requireSuperAdmin, async (req, res, next) =
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, email, role, created_at')
+      .select('id, email, role, prenom, nom, created_at')
       .order('email', { ascending: true })
 
     if (error) throw error
@@ -161,7 +161,7 @@ router.get('/users', authMiddleware, requireSuperAdmin, async (req, res, next) =
  */
 router.post('/users', authMiddleware, requireSuperAdmin, async (req, res, next) => {
   try {
-    const { email, password, role } = req.body
+    const { email, password, role, prenom, nom } = req.body
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email et mot de passe requis' })
@@ -181,9 +181,11 @@ router.post('/users', authMiddleware, requireSuperAdmin, async (req, res, next) 
       .insert({
         email: email.toLowerCase().trim(),
         password_hash: hashed,
-        role: finalRole
+        role: finalRole,
+        prenom: prenom?.trim() || null,
+        nom: nom?.trim() || null
       })
-      .select('id, email, role, created_at')
+      .select('id, email, role, prenom, nom, created_at')
       .single()
 
     if (error) {

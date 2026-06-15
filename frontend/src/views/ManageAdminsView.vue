@@ -52,7 +52,7 @@
           <table>
             <thead>
               <tr>
-                <th>Adresse E-mail</th>
+                <th>Administrateur</th>
                 <th>Rôle</th>
                 <th>Créé le</th>
                 <th style="text-align: right;">Actions</th>
@@ -62,11 +62,14 @@
               <tr v-for="user in filteredUsers" :key="user.id">
                 <td class="user-email-col">
                   <div class="user-email-wrap">
-                    <span class="user-avatar">{{ user.email.charAt(0).toUpperCase() }}</span>
-                    <span>
-                      {{ user.email }}
-                      <strong v-if="user.email === api.userEmail" class="self-badge">(Vous)</strong>
-                    </span>
+                    <span class="user-avatar">{{ (user.prenom ? user.prenom.charAt(0) : user.email.charAt(0)).toUpperCase() }}</span>
+                    <div style="display: flex; flex-direction: column;">
+                      <span style="font-weight: 600;">
+                        {{ user.prenom || user.nom ? `${user.prenom || ''} ${user.nom || ''}`.trim() : 'Sans nom' }}
+                        <strong v-if="user.email === api.userEmail" class="self-badge">(Vous)</strong>
+                      </span>
+                      <span style="font-size: 0.85rem; color: #666;">{{ user.email }}</span>
+                    </div>
                   </div>
                 </td>
                 <td>
@@ -103,6 +106,17 @@
           </div>
           <div class="fb">
             <form @submit.prevent="saveUser" class="ev-form">
+              <div class="fr">
+                <div class="fg">
+                  <label>Prénom <span class="req">*</span></label>
+                  <input type="text" v-model="form.prenom" required placeholder="Ex : John" />
+                </div>
+                <div class="fg">
+                  <label>Nom <span class="req">*</span></label>
+                  <input type="text" v-model="form.nom" required placeholder="Ex : Doe" />
+                </div>
+              </div>
+
               <div class="fg">
                 <label>Adresse E-mail <span class="req">*</span></label>
                 <input type="email" v-model="form.email" required placeholder="Ex : dialecte@mvg-events.com" />
@@ -183,6 +197,8 @@ const deleting = ref(false)
 const formError = ref('')
 
 const form = ref({
+  prenom: '',
+  nom: '',
   email: '',
   password: '',
   role: 'admin'
@@ -209,7 +225,9 @@ const filteredUsers = computed(() => {
   if (!search.value.trim()) return users.value
   const q = search.value.toLowerCase().trim()
   return users.value.filter(u =>
-    (u.email || '').toLowerCase().includes(q)
+    (u.email || '').toLowerCase().includes(q) ||
+    (u.prenom || '').toLowerCase().includes(q) ||
+    (u.nom || '').toLowerCase().includes(q)
   )
 })
 
@@ -226,7 +244,7 @@ function formatDate(dateStr) {
 }
 
 function openCreate() {
-  form.value = { email: '', password: '', role: 'admin' }
+  form.value = { prenom: '', nom: '', email: '', password: '', role: 'admin' }
   formError.value = ''
   showModal.value = true
 }
@@ -244,6 +262,8 @@ async function saveUser() {
   saving.value = true
   try {
     const created = await api.post('/api/auth/users', {
+      prenom: form.value.prenom.trim(),
+      nom: form.value.nom.trim(),
       email: form.value.email.trim(),
       password: form.value.password,
       role: form.value.role
