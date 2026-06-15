@@ -16,7 +16,12 @@
             </div>
             <div class="fg">
               <label>Mot de passe</label>
-              <input type="password" v-model="loginPassword" required placeholder="Mot de passe…" />
+              <div style="position: relative; display: flex; align-items: center;">
+                <input :type="showPassword ? 'text' : 'password'" v-model="loginPassword" required placeholder="Mot de passe…" style="flex: 1; padding-right: 40px;" />
+                <button type="button" @click="showPassword = !showPassword" style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: #8b5a2b; display: flex; align-items: center; padding: 4px;" title="Afficher/Masquer le mot de passe">
+                  <AppIcon :name="showPassword ? 'eye-off' : 'eye'" :size="18" />
+                </button>
+              </div>
             </div>
             <div v-if="loginError" class="form-error-msg">
               <AppIcon name="alert-triangle" :size="15" /> {{ loginError }}
@@ -26,6 +31,11 @@
               {{ loggingIn ? 'Connexion…' : 'Se connecter' }}
             </button>
           </form>
+          <div style="margin-top: 24px; text-align: center; border-top: 1px solid #e8d4b8; padding-top: 16px;">
+            <a href="#" @click.prevent="returnToPublicSite" style="color: #6a5040; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; font-family: 'Arial', sans-serif;">
+              <AppIcon name="arrow-left" :size="14" /> Retour au site public
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -268,10 +278,16 @@ const isAdminDomain = computed(() => {
 })
 
 const showLoginModal = ref(false)
+const showPassword = ref(false)
 const loginEmail = ref('')
 const loginPassword = ref('')
-const loggingIn = ref(false)
 const loginError = ref('')
+const loggingIn = ref(false)
+
+function returnToPublicSite() {
+  const publicUrl = import.meta.env.VITE_PUBLIC_DOMAIN || '/'
+  window.location.href = publicUrl.replace('?admin=true', '').replace('&admin=true', '')
+}
 
 function openLogin() {
   loginEmail.value = ''
