@@ -104,6 +104,10 @@
               <div class="fg">
                 <label>Contenu complet <span class="req">*</span></label>
                 <textarea v-model="form.contenu" required placeholder="Le corps complet de l'article avec tous les détails..." rows="8"></textarea>
+                <div style="font-size: 0.8rem; color: #6a5040; margin-top: 6px; opacity: 0.8;">
+                  <AppIcon name="info" :size="12" style="display: inline-block; vertical-align: middle; margin-right: 4px;" />
+                  <strong>Astuce de formatage :</strong> Utilisez <code>**texte**</code> pour mettre en <strong>gras</strong>, ou commencez une ligne par <code>- </code> pour créer une liste à puces.
+                </div>
               </div>
 
               <!-- Photo de couverture -->

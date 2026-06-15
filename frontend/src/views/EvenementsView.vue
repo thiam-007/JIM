@@ -89,7 +89,7 @@
           </div>
         </div>
 
-        <div v-if="evt.description" class="ev-card-desc">{{ evt.description }}</div>
+        <div v-if="evt.description" class="ev-card-desc markdown-body" v-html="renderMarkdown(evt.description)"></div>
 
         <div v-if="api.isConnected" class="ev-card-footer">
           <button
@@ -149,6 +149,10 @@
               <div class="fg">
                 <label>Description</label>
                 <textarea v-model="form.description" placeholder="Description de l'événement…" rows="3"></textarea>
+                <div style="font-size: 0.8rem; color: #6a5040; margin-top: 6px; opacity: 0.8;">
+                  <AppIcon name="info" :size="12" style="display: inline-block; vertical-align: middle; margin-right: 4px;" />
+                  <strong>Astuce de formatage :</strong> Utilisez <code>**texte**</code> pour mettre en <strong>gras</strong>, ou commencez une ligne par <code>- </code> pour créer une liste à puces.
+                </div>
               </div>
 
               <div class="fr">
@@ -325,7 +329,8 @@
 
               <div class="ev-description-large mt-4">
                 <h4>Description de l'événement</h4>
-                <p>{{ detailEvt?.description || 'Aucune description disponible pour cet événement.' }}</p>
+                <div v-if="detailEvt?.description" class="markdown-body" v-html="renderMarkdown(detailEvt.description)"></div>
+                <p v-else>Aucune description disponible pour cet événement.</p>
               </div>
 
               <div class="ev-form-actions mt-4">
@@ -344,6 +349,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
+import { renderMarkdown } from '../utils/markdown.js'
 import { animate, stagger } from 'animejs'
 
 const router = useRouter()
@@ -1127,19 +1133,21 @@ function formatLabel(format) {
   color: var(--brun);
 }
 .ev-description-large h4 {
-  margin: 0 0 10px;
-  font-size: 1rem;
-  color: var(--brun);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  font-size: 1.05rem; font-weight: 800; color: var(--brun); margin-bottom: 10px;
 }
 .ev-description-large p {
-  margin: 0;
-  font-size: 0.96rem;
-  line-height: 1.6;
-  color: #555;
-  white-space: pre-wrap;
+  font-size: 0.95rem; color: #444; line-height: 1.6; margin: 0; white-space: pre-wrap;
 }
+
+/* Styles Markdown (réutilisés) */
+.markdown-body :deep(p) { margin-bottom: 0.8em; }
+.markdown-body :deep(strong) { font-weight: 800; color: var(--brun); }
+.markdown-body :deep(ul) { padding-left: 20px; margin-bottom: 0.8em; list-style-type: disc; }
+.markdown-body :deep(ol) { padding-left: 20px; margin-bottom: 0.8em; list-style-type: decimal; }
+.markdown-body :deep(li) { margin-bottom: 0.3em; }
+.markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3) { color: var(--brun); margin-top: 1em; margin-bottom: 0.5em; }
+.markdown-body :deep(blockquote) { border-left: 4px solid var(--or); padding-left: 12px; color: #555; font-style: italic; background: rgba(249, 178, 51, 0.05); margin: 0.8em 0; padding: 8px 12px; border-radius: 0 6px 6px 0; }
+.markdown-body :deep(a) { color: var(--rouge); text-decoration: underline; font-weight: 600; }
 .mt-3 { margin-top: 14px; }
 .mt-4 { margin-top: 20px; }
 .ev-badge.inline {

@@ -36,7 +36,7 @@
           <h1 class="article-title">{{ currentNews.titre }}</h1>
           <p class="article-lead">{{ currentNews.description }}</p>
           <div class="article-divider"></div>
-          <div class="article-content">{{ currentNews.contenu }}</div>
+          <div class="article-content markdown-body" v-html="renderMarkdown(currentNews.contenu)"></div>
         </div>
       </article>
 
@@ -77,6 +77,7 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
+import { renderMarkdown } from '../utils/markdown.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,9 +232,17 @@ function formatShortDate(dateStr) {
   font-size: 0.95rem;
   line-height: 1.75;
   color: #333;
-  white-space: pre-wrap;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+/* Styles Markdown */
+.markdown-body :deep(p) { margin-bottom: 1em; }
+.markdown-body :deep(strong) { font-weight: 800; color: var(--brun); }
+.markdown-body :deep(ul) { padding-left: 24px; margin-bottom: 1em; list-style-type: disc; }
+.markdown-body :deep(ol) { padding-left: 24px; margin-bottom: 1em; list-style-type: decimal; }
+.markdown-body :deep(li) { margin-bottom: 0.5em; }
+.markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3) { color: var(--brun); margin-top: 1.5em; margin-bottom: 0.5em; }
+.markdown-body :deep(blockquote) { border-left: 4px solid var(--or); padding-left: 16px; color: #555; font-style: italic; background: rgba(249, 178, 51, 0.05); margin: 1em 0; padding: 10px 16px; border-radius: 0 8px 8px 0; }
+.markdown-body :deep(a) { color: var(--rouge); text-decoration: underline; font-weight: 600; }
 
 /* Sidebar block */
 .article-sidebar {
