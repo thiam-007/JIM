@@ -131,7 +131,10 @@ app.use('/api/newsletter', newsletterRouter)
 // This must be registered BEFORE the auth-protected /api/invitations mount.
 app.get('/api/invitations/qr/:token', async (req, res, next) => {
   try {
-    const { token } = req.params
+    let { token } = req.params
+    if (token.endsWith('.png')) {
+      token = token.slice(0, -4)
+    }
 
     // Verify token exists in DB (cheap lookup, no sensitive data returned)
     const { data, error } = await supabase
