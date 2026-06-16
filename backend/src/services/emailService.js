@@ -9,7 +9,43 @@ const transporter = nodemailer.createTransport({
 })
 
 function getFromAddress() {
-  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <onboarding@resend.dev>'
+  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <admin@mvg-events.com>'
+}
+
+const originalSendMail = transporter.sendMail.bind(transporter)
+transporter.sendMail = async (mailOptions) => {
+  // Si une clé Brevo est fournie, on utilise l'API HTTP au lieu du SMTP (contourne le blocage Render)
+  if (process.env.BREVO_API_KEY) {
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'admin@mvg-events.com'
+    const payload = {
+      sender: { name: "Musée Virtuel de Guinée", email: senderEmail },
+      to: [{ email: mailOptions.to }],
+      subject: mailOptions.subject,
+      htmlContent: mailOptions.html
+    }
+    if (mailOptions.replyTo) {
+      payload.replyTo = { email: mailOptions.replyTo }
+    }
+
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(errorData)}`)
+    }
+    return await response.json()
+  }
+
+  // Fallback classique sur Nodemailer / Gmail si pas de clé Brevo
+  return await originalSendMail(mailOptions)
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -216,8 +252,8 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
     </p>
   `
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
   try {
@@ -263,8 +299,8 @@ export async function sendContactMessage({ prenom, nom, email, sujet, message, r
     </p>
   `
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
   try {
@@ -350,8 +386,8 @@ export async function sendConfirmation({ invite, evenement, qrCodeBase64, token 
     </p>
   `
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
   try {
@@ -394,8 +430,8 @@ export async function sendNewsletterWelcome({ email }) {
     </p>
   `
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    throw new Error('Les variables EMAIL_USER et EMAIL_PASS ne sont pas configurées.')
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
   try {
