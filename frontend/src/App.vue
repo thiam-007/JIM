@@ -12,7 +12,7 @@
           <form @submit.prevent="handleLogin">
             <div class="fg">
               <label>Adresse E-mail</label>
-              <input type="email" v-model="loginEmail" required placeholder="Ex : nom@mvg-events.com" />
+              <input type="email" v-model="loginEmail" required placeholder="Ex : nom@expertisefrance.fr" />
             </div>
             <div class="fg">
               <label>Mot de passe</label>
@@ -192,7 +192,7 @@
               <form @submit.prevent="handleLogin">
                 <div class="fg">
                   <label>Adresse E-mail</label>
-                  <input type="email" v-model="loginEmail" required placeholder="Ex : nom@mvg-events.com" />
+                  <input type="email" v-model="loginEmail" required placeholder="Ex : nom@expertisefrance.fr" />
                 </div>
                 <div class="fg">
                   <label>Mot de passe</label>

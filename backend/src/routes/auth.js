@@ -30,12 +30,12 @@ router.post('/login', async (req, res, next) => {
 
     if (error || !user) {
       // Auto-seeding: If it's the first login using the legacy APP_PASSWORD from env
-      if (cleanEmail === 'admin@mvg-events.com' && password === process.env.APP_PASSWORD) {
+      if (cleanEmail === 'musee@expertisefrance.fr' && password === process.env.APP_PASSWORD) {
         const hashed = hashPassword(password)
         const { data: newUser, error: createErr } = await supabase
           .from('users')
           .insert({
-            email: 'admin@mvg-events.com',
+            email: 'musee@expertisefrance.fr',
             password_hash: hashed,
             role: 'super_admin'
           })

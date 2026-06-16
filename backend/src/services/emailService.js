@@ -9,14 +9,14 @@ const transporter = nodemailer.createTransport({
 })
 
 function getFromAddress() {
-  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <admin@mvg-events.com>'
+  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <musee@expertisefrance.fr>'
 }
 
 const originalSendMail = transporter.sendMail.bind(transporter)
 transporter.sendMail = async (mailOptions) => {
   // Si une clé Brevo est fournie, on utilise l'API HTTP au lieu du SMTP (contourne le blocage Render)
   if (process.env.BREVO_API_KEY) {
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'admin@mvg-events.com'
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'musee@expertisefrance.fr'
     const payload = {
       sender: { name: "Musée Virtuel de Guinée", email: senderEmail },
       to: [{ email: mailOptions.to }],

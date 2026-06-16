@@ -95,8 +95,8 @@
             <div class="direct-contact-item">
               <h4>Par e-mail</h4>
               <p>
-                <a href="mailto:contact@mvg-events.com" class="direct-link">
-                  contact@mvg-events.com
+                <a href="mailto:musee@expertisefrance.fr" class="direct-link">
+                  musee@expertisefrance.fr
                 </a>
               </p>
             </div>

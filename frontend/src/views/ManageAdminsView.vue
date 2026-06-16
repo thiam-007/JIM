@@ -119,7 +119,7 @@
 
               <div class="fg">
                 <label>Adresse E-mail <span class="req">*</span></label>
-                <input type="email" v-model="form.email" required placeholder="Ex : dialecte@mvg-events.com" />
+                <input type="email" v-model="form.email" required placeholder="Ex : nom@expertisefrance.fr" />
               </div>
 
               <div class="fg">
