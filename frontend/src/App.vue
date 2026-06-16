@@ -1321,18 +1321,18 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     gap: 12px;
   }
   header .logo-badge {
-    width: 50px; height: 50px;
+    width: 65px; height: 65px;
     border-width: 1.5px;
   }
   header .logo-badge img {
-    width: 44px; height: 44px;
+    width: 58px; height: 58px;
   }
   header .logo-pre {
-    font-size: 1rem;
+    font-size: 1.25rem;
     letter-spacing: 1px;
   }
   header .logo-title-wrap h1 {
-    font-size: 1rem;
+    font-size: 1.25rem;
     letter-spacing: 1px;
   }
   header .logo-title-wrap {
@@ -1340,7 +1340,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     gap: 6px;
   }
   header .logo-text span {
-    font-size: 0.65rem;
+    font-size: 0.75rem;
     letter-spacing: 1px;
     margin-top: 2px;
   }
