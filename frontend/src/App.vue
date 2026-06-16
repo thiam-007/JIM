@@ -1311,35 +1311,35 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   header {
     padding: 16px 20px;
   }
-  .header-inner {
+  header .header-inner {
     flex-direction: column;
     text-align: center;
     gap: 12px;
   }
-  .header-branding {
+  header .header-branding {
     flex-direction: column;
     gap: 12px;
   }
-  .logo-badge {
+  header .logo-badge {
     width: 50px; height: 50px;
     border-width: 1.5px;
   }
-  .logo-badge img {
+  header .logo-badge img {
     width: 44px; height: 44px;
   }
-  .logo-pre {
+  header .logo-pre {
     font-size: 1rem;
     letter-spacing: 1px;
   }
-  .logo-title-wrap h1 {
+  header .logo-title-wrap h1 {
     font-size: 1rem;
     letter-spacing: 1px;
   }
-  .logo-title-wrap {
+  header .logo-title-wrap {
     justify-content: center;
     gap: 6px;
   }
-  .logo-text span {
+  header .logo-text span {
     font-size: 0.65rem;
     letter-spacing: 1px;
     margin-top: 2px;
