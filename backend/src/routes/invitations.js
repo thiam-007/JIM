@@ -185,6 +185,7 @@ router.get('/qr/:token', async (req, res, next) => {
     const pngBuffer = await generateQrPng(token, frontendUrl)
 
     res.setHeader('Content-Type', 'image/png')
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
     res.setHeader('Cache-Control', 'public, max-age=86400') // Cache 1 day
     res.send(pngBuffer)
   } catch (err) {
