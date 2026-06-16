@@ -358,12 +358,12 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
     const info = await transporter.sendMail({
       from: getFromAddress(),
       to: email,
-      subject: \`Accusé de réception — \${sujet}\`,
+      subject: `Accusé de réception — ${sujet}`,
       html: emailShell(body)
     })
     return info
   } catch (error) {
-    throw new Error(\`Erreur d'envoi d'e-mail : \${error.message}\`)
+    throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
   }
 }
 
