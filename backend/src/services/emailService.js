@@ -26,6 +26,15 @@ transporter.sendMail = async (mailOptions) => {
     if (mailOptions.replyTo) {
       payload.replyTo = { email: mailOptions.replyTo }
     }
+    if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+      payload.attachment = mailOptions.attachments.map(att => {
+        // L'API Brevo requiert simplement le nom et le contenu en base64
+        return {
+          name: att.filename,
+          content: att.content
+        }
+      })
+    }
 
     const response = await fetch('https://api.brevo.com/v3/smtp/email', {
       method: 'POST',
@@ -408,7 +417,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
         Présentez ce code à l'entrée de l'événement pour valider votre présence.
       </p>
       <img
-        src="cid:qrcode"
+        src="cid:qr-code.png"
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
