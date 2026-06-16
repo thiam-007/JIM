@@ -173,7 +173,6 @@
     <!-- ─── Footer ─── -->
     <footer class="rsvp-footer">
       <p>Musée Virtuel de Guinée · MVG event's</p>
-      <p class="rsvp-footer-em">Les musées unissent un monde divisé</p>
     </footer>
 
   </div>
