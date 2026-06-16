@@ -1321,27 +1321,28 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     gap: 12px;
   }
   .logo-badge {
-    width: 80px; height: 80px;
-    border-width: 2px;
+    width: 50px; height: 50px;
+    border-width: 1.5px;
   }
   .logo-badge img {
-    width: 70px; height: 70px;
+    width: 44px; height: 44px;
   }
   .logo-pre {
-    font-size: 1.5rem;
-    letter-spacing: 2px;
+    font-size: 1rem;
+    letter-spacing: 1px;
   }
   .logo-title-wrap h1 {
-    font-size: 1.5rem;
-    letter-spacing: 2px;
+    font-size: 1rem;
+    letter-spacing: 1px;
   }
   .logo-title-wrap {
     justify-content: center;
+    gap: 6px;
   }
   .logo-text span {
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    margin-top: 4px;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    margin-top: 2px;
   }
 
   /* Footer Responsive */
