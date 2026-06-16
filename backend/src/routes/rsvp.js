@@ -110,14 +110,14 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
 
     // If confirmed, send confirmation email with QR code
     if (confirmed && invitation.invites?.email) {
-      qr_url = `${process.env.BACKEND_URL || ''}/api/invitations/qr/${token}`
+      const backendUrl = process.env.BACKEND_URL || 'https://jim-backend.railway.app'
+      qr_url = `${backendUrl}/api/invitations/qr/${token}`
 
       try {
-        const qrCodeBase64 = await generateQrDataUrl(token, frontendUrl)
         await sendConfirmation({
           invite: invitation.invites,
           evenement: invitation.evenements,
-          qrCodeBase64,
+          qrCodeUrl: qr_url,
           token
         })
       } catch (emailErr) {

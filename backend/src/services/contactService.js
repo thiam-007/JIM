@@ -1,5 +1,5 @@
 import supabase from '../config/supabase.js'
-import { sendContactMessage } from './emailService.js'
+import { sendContactMessage, sendContactReceipt } from './emailService.js'
 
 function normalizeContactPayload(payload = {}) {
   const prenom = String(payload?.prenom || '').trim().substring(0, 100)
@@ -56,10 +56,13 @@ export async function submitContactMessage(payload, deps = {}) {
 
   let emailSent = false
   try {
+    // Send to admin
     await sendMail({
       ...normalized,
       recipient
     })
+    // Send auto-reply to user
+    await sendContactReceipt(normalized)
     emailSent = true
   } catch (err) {
     console.warn('[contact] échec d’envoi d’e-mail:', err.message)

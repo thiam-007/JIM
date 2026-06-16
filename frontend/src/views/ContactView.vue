@@ -26,14 +26,6 @@
           <div v-if="success" class="omsg on">
             <div class="oico"><AppIcon name="check-circle" :size="48" /></div>
             <h3>Message envoyé avec succès !</h3>
-            <p>
-              Merci <strong>{{ sentData.prenom }} {{ sentData.nom }}</strong>. Votre message concernant le sujet 
-              <em>"{{ sentData.sujet }}"</em> a bien été reçu. Notre secrétariat reviendra vers vous à l'adresse 
-              <strong>{{ sentData.email }}</strong> dans les plus brefs délais (généralement sous 48h).
-            </p>
-            <button class="breset" @click="resetForm">
-              <AppIcon name="refresh-cw" :size="14" /> Envoyer un autre message
-            </button>
           </div>
 
           <form v-else @submit.prevent="handleSubmit">
@@ -160,6 +152,10 @@ async function handleSubmit() {
     success.value = true
     if (result?.emailSent === false) {
       error.value = 'Votre message a bien été enregistré, mais l’e-mail de notification n’a pas pu être envoyé.'
+    } else {
+      setTimeout(() => {
+        resetForm()
+      }, 4000)
     }
   } catch (err) {
     error.value = err.message || "Une erreur est survenue lors de l'envoi de votre message. Veuillez réessayer."

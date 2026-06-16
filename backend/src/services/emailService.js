@@ -319,11 +319,60 @@ export async function sendContactMessage({ prenom, nom, email, sujet, message, r
   }
 }
 
-export async function sendConfirmation({ invite, evenement, qrCodeBase64, token }) {
-  const fullName = `${invite.prenom} ${invite.nom}`
+// ─── sendContactReceipt ────────────────────────────────────────────────────────
 
-  // qrCodeBase64 is a full data URL: "data:image/png;base64,..."
-  // We embed it directly as an <img src="..."> for maximum compatibility.
+/**
+ * Send an auto-reply receipt to the user who contacted us.
+ */
+export async function sendContactReceipt({ prenom, email, sujet }) {
+  const body = `
+    <div style="background:linear-gradient(135deg,#f9b233,#e09820);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
+      <p style="margin:0;color:#3a2010;font-size:16px;font-family:'Arial',sans-serif;font-weight:bold;">
+        ✉️ Accusé de réception
+      </p>
+    </div>
+
+    <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
+      Bonjour ${prenom},
+    </h2>
+
+    <p style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+      Nous avons bien reçu votre message concernant le sujet <strong>"${sujet}"</strong>.
+    </p>
+
+    <p style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+      Notre équipe vous répondra dans les plus brefs délais (généralement sous 48h).
+    </p>
+
+    <p style="margin:24px 0 0;color:#4a3020;font-size:14px;line-height:1.7;">
+      Cordialement,<br />
+      <span style="color:#8b5a2b;">— L'équipe du Musée Virtuel de Guinée</span>
+    </p>
+  `
+
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
+  }
+
+  try {
+    const info = await transporter.sendMail({
+      from: getFromAddress(),
+      to: email,
+      subject: \`Accusé de réception — \${sujet}\`,
+      html: emailShell(body)
+    })
+    return info
+  } catch (error) {
+    throw new Error(\`Erreur d'envoi d'e-mail : \${error.message}\`)
+  }
+}
+
+/**
+ * Send a confirmation email with a QR code link.
+ * @param {{ invite: object, evenement: object, qrCodeUrl: string, token: string }} params
+ */
+export async function sendConfirmation({ invite, evenement, qrCodeUrl, token }) {
+  const fullName = `${invite.prenom} ${invite.nom}`
 
   const body = `
     <!-- Success banner -->
@@ -359,7 +408,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeBase64, token 
         Présentez ce code à l'entrée de l'événement pour valider votre présence.
       </p>
       <img
-        src="${qrCodeBase64}"
+        src="${qrCodeUrl}"
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
