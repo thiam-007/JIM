@@ -168,9 +168,12 @@ router.post('/send', async (req, res, next) => {
 })
 
 // ─── Get QR code as PNG image ──────────────────────────────────────────────────
-router.get('/qr/:token.png', async (req, res, next) => {
+router.get('/qr/:token', async (req, res, next) => {
   try {
-    const { token } = req.params
+    let { token } = req.params
+    if (token.endsWith('.png')) {
+      token = token.slice(0, -4)
+    }
 
     // Verify token exists
     const { data, error } = await supabase
