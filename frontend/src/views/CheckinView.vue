@@ -279,11 +279,22 @@ function startScanLoop() {
   scanLoop = requestAnimationFrame(tick)
 }
 
-async function handleScanResult(token) {
+async function handleScanResult(scannedText) {
   if (processing.value) return
   scanning.value = false
   processing.value = true
   try {
+    let token = scannedText
+    try {
+      const url = new URL(scannedText)
+      const parts = url.pathname.split('/')
+      token = parts[parts.length - 1]
+    } catch(e) {
+      // scannedText is not a URL, so we keep it as is
+    }
+    // Nettoyage au cas où .png traîne
+    if (token.endsWith('.png')) token = token.slice(0, -4)
+
     const result = await api.post('/api/checkin/scan', { token, evenement_id: eventId })
     scanResult.value = {
       type: 'success',

@@ -1305,8 +1305,46 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   color: var(--gold);
 }
 
-/* Responsive Footer */
+/* Responsive Footer & Header */
 @media (max-width: 768px) {
+  /* Header Responsive */
+  header {
+    padding: 16px 20px;
+  }
+  .header-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+  .header-branding {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .logo-badge {
+    width: 80px; height: 80px;
+    border-width: 2px;
+  }
+  .logo-badge img {
+    width: 70px; height: 70px;
+  }
+  .logo-pre {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+  }
+  .logo-title-wrap h1 {
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+  }
+  .logo-title-wrap {
+    justify-content: center;
+  }
+  .logo-text span {
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+
+  /* Footer Responsive */
   .footer-container {
     grid-template-columns: 1fr;
     text-align: center;

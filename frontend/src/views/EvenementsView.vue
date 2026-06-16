@@ -884,7 +884,7 @@ function formatLabel(format) {
   .ev-form-actions { flex-direction: column-reverse; }
   .btn-cancel, .ev-form .bsub { width: 100%; text-align: center; justify-content: center; }
   .ev-card-footer { flex-direction: column; }
-  .ev-btn-edit, .ev-btn-invite, .ev-btn-checkin, .ev-btn-delete { width: 100%; min-width: 0; }
+  .ev-btn-edit, .ev-btn-invite, .ev-btn-checkin, .ev-btn-delete { width: 100%; min-width: 0; flex: none; }
   .ev-btn-delete { margin-left: 0; }
 }
 
