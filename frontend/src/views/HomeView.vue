@@ -2227,6 +2227,41 @@ function formatTimeAgo(dateStr) {
 
 /* Responsive fixes for new elements */
 @media (max-width: 768px) {
+  /* Hero Section Responsive */
+  .hero-section {
+    padding: 30px 20px;
+    height: 60vh;
+    min-height: 380px;
+    max-height: 500px;
+    border-radius: 16px;
+  }
+  .hero-badge {
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    transform: translateY(-10px);
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-size: 1.6rem;
+    letter-spacing: 0.5px;
+  }
+  .text-light {
+    font-size: 1.1rem;
+  }
+  .hero-subtitle {
+    font-size: 0.9rem;
+  }
+  .hero-ctas-bottom {
+    right: 20px;
+    bottom: 20px;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .hero-copy-shell {
+    padding-bottom: 20px;
+  }
+  
+  /* Rest of the fixes */
   .news-cards-grid {
     grid-template-columns: 1fr;
     gap: 20px;
