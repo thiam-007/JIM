@@ -144,7 +144,7 @@
           <p>Voici votre QR code d'accès. Présentez-le à l'entrée de l'événement.</p>
           <div class="rsvp-qr-frame">
             <img
-              :src="`${apiUrl}/api/invitations/qr/${token}`"
+              :src="`${apiUrl}/api/invitations/qr/${token}.png`"
               :alt="`QR Code — ${invitation.invite?.nom}`"
               class="rsvp-qr-img"
               @error="qrError = true"
@@ -153,7 +153,7 @@
           <p class="rsvp-qr-name">{{ invitation.invite?.prenom }} {{ invitation.invite?.nom }}</p>
           <p class="rsvp-qr-hint">Présentez ce QR code à l'entrée de l'événement</p>
           <a
-            :href="`${apiUrl}/api/invitations/qr/${token}`"
+            :href="`${apiUrl}/api/invitations/qr/${token}.png`"
             target="_blank"
             download="qr-code-mvg.png"
             class="rsvp-btn-dl"

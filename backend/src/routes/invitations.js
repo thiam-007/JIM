@@ -168,7 +168,7 @@ router.post('/send', async (req, res, next) => {
 })
 
 // ─── Get QR code as PNG image ──────────────────────────────────────────────────
-router.get('/qr/:token', async (req, res, next) => {
+router.get('/qr/:token.png', async (req, res, next) => {
   try {
     const { token } = req.params
 
