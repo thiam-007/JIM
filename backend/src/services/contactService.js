@@ -2,11 +2,11 @@ import supabase from '../config/supabase.js'
 import { sendContactMessage } from './emailService.js'
 
 function normalizeContactPayload(payload = {}) {
-  const prenom = String(payload?.prenom || '').trim()
-  const nom = String(payload?.nom || '').trim()
-  const email = String(payload?.email || '').trim()
-  const sujet = String(payload?.sujet || '').trim()
-  const message = String(payload?.message || '').trim()
+  const prenom = String(payload?.prenom || '').trim().substring(0, 100)
+  const nom = String(payload?.nom || '').trim().substring(0, 100)
+  const email = String(payload?.email || '').trim().substring(0, 255)
+  const sujet = String(payload?.sujet || '').trim().substring(0, 200)
+  const message = String(payload?.message || '').trim().substring(0, 5000)
 
   if (!prenom || !nom || !email || !sujet || !message) {
     throw new Error('Tous les champs sont requis')

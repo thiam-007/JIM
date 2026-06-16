@@ -1,17 +1,26 @@
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
+import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { hashPassword, verifyPassword } from '../utils/crypto.js'
 
 const router = Router()
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // Limite chaque IP à 10 requêtes de login par fenêtre
+  message: { error: 'Trop de tentatives de connexion, veuillez patienter 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 /**
  * POST /api/auth/login
  * Body: { email, password }
  * Returns: { token, role, email }
  */
-router.post('/login', async (req, res, next) => {
+router.post('/login', loginLimiter, async (req, res, next) => {
   try {
     const { email, password } = req.body
 

@@ -1,11 +1,20 @@
 import express from 'express'
+import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
 import { sendNewsletterWelcome } from '../services/emailService.js'
 
 const router = express.Router()
 
+const newsletterLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Limite chaque IP à 5 inscriptions par minute
+  message: { error: 'Trop de tentatives, veuillez patienter une minute.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 // POST /api/newsletter/subscribe
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', newsletterLimiter, async (req, res) => {
   const { email } = req.body;
   
   if (!email || typeof email !== 'string') {

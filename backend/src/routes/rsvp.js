@@ -1,9 +1,18 @@
 import { Router } from 'express'
+import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
 import { sendConfirmation } from '../services/emailService.js'
 import { generateQrDataUrl } from '../services/qrService.js'
 
 const router = Router()
+
+const rsvpLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Limite chaque IP à 5 RSVP par minute
+  message: { error: 'Trop de requêtes, veuillez patienter une minute.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
 
 // ─── Get RSVP data by token (PUBLIC) ──────────────────────────────────────────
 router.get('/:token', async (req, res, next) => {
@@ -53,7 +62,7 @@ router.get('/:token', async (req, res, next) => {
 })
 
 // ─── Submit RSVP response (PUBLIC) ────────────────────────────────────────────
-router.post('/:token', async (req, res, next) => {
+router.post('/:token', rsvpLimiter, async (req, res, next) => {
   try {
     const { token } = req.params
     const { confirmed, notes } = req.body

@@ -2,6 +2,8 @@ import 'dotenv/config'
 import express from 'express'
 import helmet from 'helmet'
 import cors from 'cors'
+import rateLimit from 'express-rate-limit'
+import hpp from 'hpp'
 
 // Routes
 import authRouter from './routes/auth.js'
@@ -54,6 +56,22 @@ app.use(cors({
 // Body parsing
 app.use(express.json({ limit: '50mb' }))
 app.use(express.urlencoded({ limit: '50mb', extended: true }))
+
+// HTTP Parameter Pollution protection
+app.use(hpp())
+
+// Trust proxy for rate limiting if behind a reverse proxy (like Render/Railway)
+app.set('trust proxy', 1)
+
+// Global Rate Limiter (Anti DDoS basique)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limite chaque IP à 1000 requêtes par fenêtre
+  message: { error: 'Trop de requêtes, veuillez réessayer plus tard.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+app.use('/api', globalLimiter)
 
 // ─── Health check (public) ─────────────────────────────────────────────────────
 
