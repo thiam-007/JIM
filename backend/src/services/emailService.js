@@ -69,7 +69,7 @@ function formatDateFr(iso) {
 /**
  * Shared HTML email shell with brand colours.
  */
-function emailShell(bodyContent) {
+function emailShell(bodyContent, title = 'NOTIFICATION') {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
   
   return `<!DOCTYPE html>
@@ -97,7 +97,7 @@ function emailShell(bodyContent) {
                 Musée Virtuel de Guinée
               </p>
               <h1 style="margin:0;color:#fef9f2;font-size:28px;font-weight:normal;letter-spacing:1px;">
-                INVITATION OFFICIELLE
+                ${title}
               </h1>
               <div style="margin-top:16px;width:60px;height:3px;background:#f9b233;margin-left:auto;margin-right:auto;border-radius:2px;"></div>
             </td>
@@ -263,7 +263,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
       from: getFromAddress(),
       to: invite.email,
       subject: `Invitation — ${evenement.titre}`,
-      html: emailShell(body)
+      html: emailShell(body, 'INVITATION OFFICIELLE')
     })
     return info
   } catch (error) {
@@ -311,7 +311,7 @@ export async function sendContactMessage({ prenom, nom, email, sujet, message, r
       to: recipient,
       replyTo: email,
       subject: `Nouveau message de contact — ${sujet}`,
-      html: emailShell(body)
+      html: emailShell(body, 'NOUVEAU MESSAGE')
     })
     return info
   } catch (error) {
@@ -359,7 +359,7 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
       from: getFromAddress(),
       to: email,
       subject: `Accusé de réception — ${sujet}`,
-      html: emailShell(body)
+      html: emailShell(body, 'ACCUSÉ DE RÉCEPTION')
     })
     return info
   } catch (error) {
@@ -446,7 +446,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeUrl, token }) 
       from: getFromAddress(),
       to: invite.email,
       subject: `Confirmation — ${evenement.titre}`,
-      html: emailShell(body)
+      html: emailShell(body, 'CONFIRMATION')
     })
     return info
   } catch (error) {
@@ -490,7 +490,7 @@ export async function sendNewsletterWelcome({ email }) {
       from: getFromAddress(),
       to: email,
       subject: "Bienvenue à la newsletter du Musée Virtuel de Guinée !",
-      html: emailShell(body)
+      html: emailShell(body, 'BIENVENUE')
     })
     return info
   } catch (error) {
