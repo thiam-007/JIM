@@ -52,7 +52,7 @@ export async function submitContactMessage(payload, deps = {}) {
 
   const saved = await saveMessage(normalized)
 
-  const recipient = deps.recipient || process.env.CONTACT_EMAIL || process.env.APP_EMAIL || 'musee@expertisefrance.fr'
+  const recipient = deps.recipient || process.env.CONTACT_EMAIL || process.env.APP_EMAIL || 'cheickahmedthiam07@gmail.com'
 
   let emailSent = false
   try {
