@@ -369,9 +369,9 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
 
 /**
  * Send a confirmation email with a QR code link.
- * @param {{ invite: object, evenement: object, qrCodeUrl: string, token: string }} params
+ * @param {{ invite: object, evenement: object, qrCodeDataUrl: string, token: string }} params
  */
-export async function sendConfirmation({ invite, evenement, qrCodeUrl, token }) {
+export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token }) {
   const fullName = `${invite.prenom} ${invite.nom}`
 
   const body = `
@@ -408,7 +408,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeUrl, token }) 
         Présentez ce code à l'entrée de l'événement pour valider votre présence.
       </p>
       <img
-        src="${qrCodeUrl}"
+        src="cid:qrcode"
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
@@ -446,7 +446,15 @@ export async function sendConfirmation({ invite, evenement, qrCodeUrl, token }) 
       from: getFromAddress(),
       to: invite.email,
       subject: `Confirmation — ${evenement.titre}`,
-      html: emailShell(body, 'CONFIRMATION')
+      html: emailShell(body, 'CONFIRMATION'),
+      attachments: [
+        {
+          filename: 'qr-code.png',
+          content: qrCodeDataUrl.split(',')[1],
+          encoding: 'base64',
+          cid: 'qrcode' // same cid value as in the html img src
+        }
+      ]
     })
     return info
   } catch (error) {
