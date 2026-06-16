@@ -227,7 +227,7 @@ async function respond(statut) {
     const res = await fetch(`${apiUrl}/api/rsvp/${token}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ statut })
+      body: JSON.stringify({ confirmed: statut === 'inscrit' })
     })
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))

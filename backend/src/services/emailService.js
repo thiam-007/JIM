@@ -161,10 +161,12 @@ function emailShell(bodyContent) {
 
 function eventBlock(evenement) {
   const rows = [
-    ['📅 Date', formatDateFr(evenement.date_debut)],
+    evenement.date_debut ? ['📅 Date', formatDateFr(evenement.date_debut)] : null,
     evenement.date_fin ? ['⏰ Fin', formatDateFr(evenement.date_fin)] : null,
     evenement.lieu ? ['📍 Lieu', evenement.lieu] : null
   ].filter(Boolean)
+
+  if (rows.length === 0) return ''
 
   const rowsHtml = rows.map(([label, value]) => `
     <tr>
