@@ -1312,37 +1312,41 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     padding: 16px 20px;
   }
   header .header-inner {
-    flex-direction: column;
-    text-align: center;
+    flex-direction: row; /* garder en ligne si possible, sinon colonne mais aligné à gauche */
+    text-align: left;
     gap: 12px;
   }
   header .header-branding {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
     gap: 12px;
+    text-align: left;
   }
   header .logo-badge {
-    width: 65px; height: 65px;
+    width: 55px; height: 55px;
     border-width: 1.5px;
   }
   header .logo-badge img {
-    width: 58px; height: 58px;
+    width: 48px; height: 48px;
   }
   header .logo-pre {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     letter-spacing: 1px;
   }
   header .logo-title-wrap h1 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     letter-spacing: 1px;
   }
   header .logo-title-wrap {
-    justify-content: center;
+    justify-content: flex-start;
     gap: 6px;
   }
   header .logo-text span {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     letter-spacing: 1px;
     margin-top: 2px;
+    display: block;
+    line-height: 1.3;
   }
 
   /* Footer Responsive */

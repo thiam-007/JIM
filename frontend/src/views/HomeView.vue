@@ -2230,19 +2230,22 @@ function formatTimeAgo(dateStr) {
   /* Hero Section Responsive */
   .hero-section {
     padding: 30px 20px;
-    height: 60vh;
-    min-height: 380px;
-    max-height: 500px;
+    height: 45vh;
+    min-height: 280px;
+    max-height: 400px;
     border-radius: 16px;
+  }
+  .hero-img {
+    object-position: center 25%;
   }
   .hero-badge {
     font-size: 0.65rem;
     padding: 4px 10px;
-    transform: translateY(-10px);
+    transform: translateY(-5px);
     margin-bottom: 8px;
   }
   .hero-title {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     letter-spacing: 0.5px;
   }
   .text-light {
@@ -2288,6 +2291,25 @@ function formatTimeAgo(dateStr) {
   .btn-primary-custom, .btn-secondary-custom {
     width: 100%;
     justify-content: center;
+  }
+  
+  /* Newsletter Mobile Fix */
+  .newsletter-box {
+    padding: 24px 20px;
+    gap: 16px;
+  }
+  .newsletter-form {
+    min-width: 100%;
+  }
+  .newsletter-input-group {
+    flex-direction: column;
+  }
+  .newsletter-input-group input {
+    width: 100%;
+  }
+  .btn-newsletter {
+    width: 100%;
+    padding: 12px 20px;
   }
 }
 </style>
