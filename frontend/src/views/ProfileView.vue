@@ -177,21 +177,18 @@ function handleLogout() {
 </script>
 
 <style scoped>
-/* Page Header / Banner */
+/* Page Header */
 .page-header-section {
   position: relative;
-  border-radius: 0;
+  border-radius: 24px;
   overflow: hidden;
-  min-height: 250px;
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
-  margin-top: 0;
-  margin-bottom: 24px;
-  margin-left: -20px;
-  width: calc(100% + 40px);
-  padding: 30px 40px;
+  box-shadow: 0 15px 35px rgba(89,55,22,0.15);
+  margin-top: 10px;
+  padding: 40px 60px;
 }
 .header-bg {
   position: absolute; inset: 0; z-index: 1;
@@ -221,10 +218,13 @@ function handleLogout() {
   font-size: 1.05rem; line-height: 1.5; opacity: 0.95;
   margin: 0; font-family: Arial, sans-serif;
 }
-@media (max-width: 600px) {
+
+@media (max-width: 768px) {
   .page-header-section {
-    padding: 20px 20px;
-    min-height: 180px;
+    padding: 24px;
+    min-height: 220px; /* Banner proportion sur mobile */
+    border-radius: 16px; /* "rounder petit soit il" */
+    margin-top: 0;
   }
   .header-title { font-size: 1.8rem; }
   .header-subtitle { font-size: 0.9rem; }

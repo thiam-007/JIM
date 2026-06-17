@@ -185,15 +185,8 @@ function resetForm() {
   padding-bottom: 40px;
 }
 .contact-hero {
-  padding: 30px 40px;
-  border-radius: 0;
-  margin-left: -20px;
-  width: calc(100% + 40px);
-  margin-top: 0;
-  margin-bottom: 24px;
-  border: none !important;
-  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
-  background: rgba(255, 255, 255, 0.85); /* Si nécessaire pour contraster */
+  padding: 36px 40px;
+  border-radius: 24px;
 }
 .contact-badge {
   display: inline-flex;
@@ -228,6 +221,15 @@ function resetForm() {
 @media (max-width: 820px) {
   .contact-layout-grid {
     grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .contact-hero {
+    padding: 24px;
+    border-radius: 16px;
+  }
+  .contact-hero h1 {
+    font-size: 1.8rem;
   }
 }
 .contact-form-card {

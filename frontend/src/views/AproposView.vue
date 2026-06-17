@@ -362,21 +362,18 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   padding-bottom: 40px;
 }
 
-/* ─── Hero Section / Banner ─── */
+/* ─── Hero Section ─── */
 .ap-hero-section {
   position: relative;
-  border-radius: 0;
+  border-radius: 24px;
   overflow: hidden;
-  min-height: 250px;
+  min-height: 420px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
-  margin-top: 0;
-  margin-bottom: 24px;
-  margin-left: -20px;
-  width: calc(100% + 40px);
-  padding: 30px 40px;
+  box-shadow: 0 15px 35px rgba(89,55,22,0.15);
+  margin-top: 10px;
+  padding: 40px 60px;
 }
 .ap-hero-bg {
   position: absolute; inset: 0; z-index: 1;
@@ -425,6 +422,17 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
 .ap-hero-subtitle {
   font-size: 1.15rem; line-height: 1.5; opacity: 0.95;
   margin: 0; max-width: 580px; font-family: Arial, sans-serif;
+}
+
+@media (max-width: 768px) {
+  .ap-hero-section {
+    padding: 24px;
+    min-height: 220px;
+    border-radius: 16px;
+    margin-top: 0;
+  }
+  .ap-hero-title { font-size: 1.8rem; }
+  .ap-hero-subtitle { font-size: 0.9rem; }
 }
 
 /* Titles */
