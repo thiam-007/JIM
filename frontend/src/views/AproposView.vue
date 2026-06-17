@@ -362,18 +362,21 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   padding-bottom: 40px;
 }
 
-/* ─── Hero Section ─── */
+/* ─── Hero Section / Banner ─── */
 .ap-hero-section {
   position: relative;
-  border-radius: 24px;
+  border-radius: 0;
   overflow: hidden;
-  min-height: 420px;
+  min-height: 250px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  box-shadow: 0 15px 35px rgba(89,55,22,0.15);
-  margin-top: 10px;
-  padding: 40px 60px;
+  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
+  margin-top: 0;
+  margin-bottom: 24px;
+  margin-left: -20px;
+  width: calc(100% + 40px);
+  padding: 30px 40px;
 }
 .ap-hero-bg {
   position: absolute; inset: 0; z-index: 1;

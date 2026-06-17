@@ -185,8 +185,15 @@ function resetForm() {
   padding-bottom: 40px;
 }
 .contact-hero {
-  padding: 36px 40px;
-  border-radius: 24px;
+  padding: 30px 40px;
+  border-radius: 0;
+  margin-left: -20px;
+  width: calc(100% + 40px);
+  margin-top: 0;
+  margin-bottom: 24px;
+  border: none !important;
+  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
+  background: rgba(255, 255, 255, 0.85); /* Si nécessaire pour contraster */
 }
 .contact-badge {
   display: inline-flex;

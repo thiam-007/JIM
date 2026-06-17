@@ -177,6 +177,59 @@ function handleLogout() {
 </script>
 
 <style scoped>
+/* Page Header / Banner */
+.page-header-section {
+  position: relative;
+  border-radius: 0;
+  overflow: hidden;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
+  margin-top: 0;
+  margin-bottom: 24px;
+  margin-left: -20px;
+  width: calc(100% + 40px);
+  padding: 30px 40px;
+}
+.header-bg {
+  position: absolute; inset: 0; z-index: 1;
+}
+.header-overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(26,16,8,0.8) 0%, rgba(26,16,8,0.4) 40%, rgba(89,55,22,0.1) 100%);
+}
+.header-content {
+  position: relative; z-index: 2;
+  text-align: left; color: #fff;
+  max-width: 500px;
+}
+.header-badge {
+  display: inline-block;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 6px 16px; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 12px;
+}
+.header-title {
+  font-size: 2.8rem; font-weight: 900; line-height: 1.15;
+  margin: 0 0 12px; text-transform: uppercase; letter-spacing: 1.5px;
+}
+.header-subtitle {
+  font-size: 1.05rem; line-height: 1.5; opacity: 0.95;
+  margin: 0; font-family: Arial, sans-serif;
+}
+@media (max-width: 600px) {
+  .page-header-section {
+    padding: 20px 20px;
+    min-height: 180px;
+  }
+  .header-title { font-size: 1.8rem; }
+  .header-subtitle { font-size: 0.9rem; }
+}
+
 .profile-shell {
   min-height: calc(100vh - 140px);
 }

@@ -931,15 +931,18 @@ function formatLabel(format) {
 /* Page Header Banner */
 .page-header-section {
   position: relative;
-  border-radius: 24px;
+  border-radius: 0;
   overflow: hidden;
-  min-height: 420px;
+  min-height: 250px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  box-shadow: 0 15px 35px rgba(89,55,22,0.15);
+  box-shadow: 0 10px 25px rgba(89,55,22,0.1);
+  margin-top: 0;
   margin-bottom: 24px;
-  padding: 40px 60px;
+  margin-left: -20px;
+  width: calc(100% + 40px);
+  padding: 30px 40px;
 }
 .header-bg {
   position: absolute; inset: 0; z-index: 1;
@@ -991,8 +994,8 @@ function formatLabel(format) {
 
 @media (max-width: 600px) {
   .page-header-section {
-    padding: 30px 20px;
-    min-height: 200px;
+    padding: 20px 20px;
+    min-height: 180px;
   }
   .header-title {
     font-size: 1.8rem;
