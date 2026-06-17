@@ -1372,6 +1372,27 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     flex-direction: row;
     text-align: left;
     justify-content: flex-start;
+    align-items: center;
+  }
+  /* Ajustement de la taille du logo dans le footer pour mobile */
+  .footer-logo .logo-badge {
+    width: 65px; height: 65px;
+    border-width: 1.5px;
+  }
+  .footer-logo .logo-badge img {
+    width: 58px; height: 58px;
+  }
+  .footer-logo .logo-pre {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+  .footer-logo .logo-title-wrap h1 {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+  .footer-logo .logo-text span {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
   }
 }
 
