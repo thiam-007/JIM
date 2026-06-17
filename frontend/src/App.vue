@@ -1352,14 +1352,26 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   /* Footer Responsive */
   .footer-container {
     grid-template-columns: 1fr;
-    text-align: center;
+    text-align: left;
     gap: 30px;
   }
   .footer-logo img {
-    align-self: center;
+    align-self: flex-start;
   }
   .footer-col {
-    align-items: center !important;
+    align-items: flex-start !important;
+  }
+  .footer-links h3 {
+    text-align: left;
+  }
+  .footer-links ul {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .footer-logo .header-branding {
+    flex-direction: row;
+    text-align: left;
+    justify-content: flex-start;
   }
 }
 

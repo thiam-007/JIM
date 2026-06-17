@@ -2233,7 +2233,10 @@ function formatTimeAgo(dateStr) {
     height: 45vh;
     min-height: 280px;
     max-height: 400px;
-    border-radius: 16px;
+    border-radius: 0;
+    margin-left: -20px;
+    width: calc(100% + 40px);
+    margin-top: -10px; /* Colle un peu plus à la nav */
   }
   .hero-img {
     object-position: center 25%;
