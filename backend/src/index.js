@@ -15,6 +15,7 @@ import checkinRouter from './routes/checkin.js'
 import actualitesRouter from './routes/actualites.js'
 import contactRouter from './routes/contact.js'
 import newsletterRouter from './routes/newsletter.js'
+import shareRouter from './routes/share.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
@@ -126,6 +127,9 @@ app.use('/api/contact', contactRouter)
 
 // Newsletter subscription: public endpoint
 app.use('/api/newsletter', newsletterRouter)
+
+// Dynamic Open Graph sharing endpoint
+app.use('/api/share', shareRouter)
 
 // QR code PNG — public so that email clients can embed the image directly.
 // This must be registered BEFORE the auth-protected /api/invitations mount.

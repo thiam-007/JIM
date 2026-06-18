@@ -26,8 +26,13 @@
         </div>
 
         <div class="article-body">
-          <h1 class="article-title">{{ currentNews.titre }}</h1>
-          <p class="article-lead">{{ currentNews.description }}</p>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+            <h1 class="article-title" style="margin: 0;">{{ currentNews.titre }}</h1>
+            <button class="btn-primary-custom" @click="shareNews" style="padding: 8px 14px; font-size: 0.85rem; width: auto; flex-shrink: 0;">
+              <AppIcon name="share-2" :size="14" /> Partager
+            </button>
+          </div>
+          <p class="article-lead mt-3">{{ currentNews.description }}</p>
           <div class="article-divider"></div>
           <div class="article-content markdown-body" v-html="renderMarkdown(currentNews.contenu)"></div>
         </div>
@@ -116,6 +121,31 @@ function formatShortDate(dateStr) {
       day: 'numeric', month: 'short', year: 'numeric'
     }).format(new Date(dateStr))
   } catch { return dateStr }
+}
+
+async function shareNews() {
+  if (!currentNews.value) return
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const shareLink = `${backendUrl}/api/share/actualite/${currentNews.value.id}`
+  
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: currentNews.value.titre,
+        text: currentNews.value.description ? currentNews.value.description.slice(0, 100) + '...' : 'Lisez cet article du Musée Virtuel de Guinée',
+        url: shareLink
+      })
+    } catch (err) {
+      console.error('Erreur lors du partage', err)
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      alert("Lien de partage copié dans le presse-papier !")
+    } catch (err) {
+      alert("Impossible de copier le lien.")
+    }
+  }
 }
 </script>
 

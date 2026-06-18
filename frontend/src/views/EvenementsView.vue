@@ -346,8 +346,11 @@
                 <p v-else>Aucune description disponible pour cet événement.</p>
               </div>
 
-              <div class="ev-form-actions mt-4">
+              <div class="ev-form-actions mt-4" style="justify-content: space-between;">
                 <button class="btn-cancel" @click="closeDetailModal">Fermer</button>
+                <button class="btn-primary-custom" @click="shareEvent" style="padding: 10px 16px; width: auto; font-size: 0.9rem;">
+                  <AppIcon name="share-2" :size="16" /> Partager
+                </button>
               </div>
             </div>
           </div>
@@ -385,6 +388,35 @@ const detailEvt = ref(null)
 function closeDetailModal() {
   showDetailModal.value = false
   detailEvt.value = null
+  // Retirer l'ID de l'URL si on ferme le modal pour nettoyer l'adresse
+  if (route.query.id) {
+    router.replace({ query: { ...route.query, id: undefined } })
+  }
+}
+
+async function shareEvent() {
+  if (!detailEvt.value) return
+  const backendUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const shareLink = `${backendUrl}/api/share/evenement/${detailEvt.value.id}`
+  
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: detailEvt.value.titre,
+        text: detailEvt.value.description ? detailEvt.value.description.slice(0, 100) + '...' : 'Découvrez cet événement du Musée Virtuel de Guinée',
+        url: shareLink
+      })
+    } catch (err) {
+      console.error('Erreur lors du partage', err)
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      alert("Lien de partage copié dans le presse-papier !")
+    } catch (err) {
+      alert("Impossible de copier le lien.")
+    }
+  }
 }
 
 const form = ref({
@@ -468,6 +500,14 @@ onMounted(async () => {
   await api.fetchEvenements()
   if (route.query.create === 'true') {
     openCreate()
+  }
+  // Si un visiteur arrive depuis un lien de partage (ex: /evenements?id=123)
+  if (route.query.id) {
+    const evt = api.evenements.find(e => e.id === route.query.id)
+    if (evt) {
+      detailEvt.value = evt
+      showDetailModal.value = true
+    }
   }
 })
 
