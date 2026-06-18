@@ -329,7 +329,7 @@
               <span class="focus-pre"><AppIcon name="globe" :size="12" /> Immersion</span>
               <h3 class="focus-main-title">Participez à nos événements</h3>
               <p>
-                Le Musée Virtuel de Guinée organise régulièrement des vernissages, des expositions physiques et hybrides au Centre Culturel Franco-Guinéen (CCFG) ainsi que des diffusions en réalité virtuelle.
+                L’immersion du Musée Virtuel de Guinée aux 72 Heures du Livre a offert aux visiteurs une expérience numérique innovante au cœur du patrimoine culturel guinéen. À travers des contenus interactifs et des découvertes virtuelles, le public a pu explorer l’histoire, les traditions, les objets patrimoniaux et la richesse culturelle de la Guinée, créant ainsi un pont entre mémoire, technologie et transmission du savoir.
               </p>
               <button v-if="isAdminDomain" @click="triggerLogin" class="btn-focus-action inline-flex">
                 <AppIcon name="calendar" :size="16" /> Accès administrateur d'événements
