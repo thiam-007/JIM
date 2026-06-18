@@ -31,14 +31,33 @@ function generateHtml(title, description, imageUrl, redirectUrl) {
     <meta name="twitter:image" content="${safeImg}" />
 
     <script>
-        // Redirection immédiate pour les visiteurs humains
+        // Redirection de secours au cas où (normalement géré par le serveur)
         window.location.replace("${safeUrl}");
     </script>
+    <style>
+        body { background-color: #fcfaf8; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; color: #593716; }
+        .loader { text-align: center; }
+    </style>
 </head>
 <body>
-    <p>Redirection vers l'application... Si vous n'êtes pas redirigé, <a href="${safeUrl}">cliquez ici</a>.</p>
+    <div class="loader">
+        <p>Chargement du Musée Virtuel de Guinée...</p>
+        <a href="${safeUrl}" style="color: #F9B233; text-decoration: none;">Continuer vers le site</a>
+    </div>
 </body>
 </html>`
+}
+
+const botUserAgents = [
+  'facebookexternalhit', 'WhatsApp', 'Twitterbot', 'LinkedInBot', 
+  'Pinterest', 'Slackbot', 'TelegramBot', 'Discordbot', 'SkypeUriPreview', 
+  'Googlebot', 'bingbot', 'yandexbot', 'duckduckbot'
+]
+
+function isBot(userAgent) {
+  if (!userAgent) return false
+  const ua = userAgent.toLowerCase()
+  return botUserAgents.some(bot => ua.includes(bot.toLowerCase()))
 }
 
 router.get('/:type/:id', async (req, res, next) => {
@@ -81,9 +100,17 @@ router.get('/:type/:id', async (req, res, next) => {
       return res.status(404).send('Type non reconnu.')
     }
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8')
-    res.setHeader('Cache-Control', 'public, max-age=86400') // Cache for 1 day
-    res.send(generateHtml(title, description, imageUrl, redirectUrl))
+    // Détection de bot
+    const userAgent = req.headers['user-agent'] || ''
+    if (isBot(userAgent)) {
+      // C'est un robot (WhatsApp, Facebook, etc.) : on lui donne le HTML avec les balises OG
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.setHeader('Cache-Control', 'public, max-age=86400')
+      return res.send(generateHtml(title, description, imageUrl, redirectUrl))
+    } else {
+      // C'est un humain : on le redirige immédiatement sans lui montrer la page blanche
+      return res.redirect(302, redirectUrl)
+    }
   } catch (err) {
     next(err)
   }
