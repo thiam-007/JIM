@@ -2292,8 +2292,14 @@ function formatTimeAgo(dateStr) {
     justify-content: flex-start;
   }
   .btn-primary-custom, .btn-secondary-custom {
-    width: 100%;
+    width: max-content;
+    padding: 10px 20px;
+    font-size: 0.85rem;
     justify-content: center;
+    align-self: flex-start; /* ou flex-end selon ce qui est le mieux */
+  }
+  .hero-ctas-bottom {
+    align-items: flex-end; /* Pour aligner les boutons à droite comme sur desktop */
   }
   
   /* Newsletter Mobile Fix */
