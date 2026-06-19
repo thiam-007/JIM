@@ -68,22 +68,38 @@ export const useApiStore = defineStore('api', {
     },
     async get(path) {
       const res = await fetch(`${BASE_URL}${path}`, { headers: this.headers })
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`) }
+      if (!res.ok) { 
+        if (res.status === 401) { this.logout(); window.location.reload(); }
+        const e = await res.json().catch(() => ({})); 
+        throw new Error(e.error || `HTTP ${res.status}`) 
+      }
       return res.json()
     },
     async post(path, body) {
       const res = await fetch(`${BASE_URL}${path}`, { method: 'POST', headers: this.headers, body: JSON.stringify(body) })
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`) }
+      if (!res.ok) { 
+        if (res.status === 401) { this.logout(); window.location.reload(); }
+        const e = await res.json().catch(() => ({})); 
+        throw new Error(e.error || `HTTP ${res.status}`) 
+      }
       return res.json()
     },
     async put(path, body) {
       const res = await fetch(`${BASE_URL}${path}`, { method: 'PUT', headers: this.headers, body: JSON.stringify(body) })
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`) }
+      if (!res.ok) { 
+        if (res.status === 401) { this.logout(); window.location.reload(); }
+        const e = await res.json().catch(() => ({})); 
+        throw new Error(e.error || `HTTP ${res.status}`) 
+      }
       return res.json()
     },
     async del(path) {
       const res = await fetch(`${BASE_URL}${path}`, { method: 'DELETE', headers: this.headers })
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || `HTTP ${res.status}`) }
+      if (!res.ok) { 
+        if (res.status === 401) { this.logout(); window.location.reload(); }
+        const e = await res.json().catch(() => ({})); 
+        throw new Error(e.error || `HTTP ${res.status}`) 
+      }
       if (res.status === 204) return null
       return res.json().catch(() => null)
     },
