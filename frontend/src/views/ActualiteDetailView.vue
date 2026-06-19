@@ -19,7 +19,8 @@
       <!-- Article Content -->
       <article class="article-main form-card">
         <div class="article-banner">
-          <img :src="currentNews.imageDetailUrl" :alt="currentNews.titre" class="banner-img" @error="($event.target.src = '/images/side-photo.jpeg')" />
+          <img :src="currentNews.imageDetailUrl || currentNews.imageUrl" alt="" class="banner-img-blur" />
+          <img :src="currentNews.imageDetailUrl || currentNews.imageUrl" :alt="currentNews.titre" class="banner-img-contain" @error="($event.target.src = '/images/side-photo.jpeg')" />
           <div class="article-meta-overlay">
             <span class="date-badge"><AppIcon name="calendar" :size="12" /> {{ currentNews.date_evenement ? formatDate(currentNews.date_evenement) : 'À venir' }}</span>
           </div>
@@ -181,11 +182,24 @@ async function shareNews() {
   width: 100%;
   overflow: hidden;
   border-bottom: 1.5px solid rgba(132, 89, 54, 0.12);
+  background-color: #1a1008;
 }
-.banner-img {
+.banner-img-blur {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: blur(20px);
+  transform: scale(1.1);
+  opacity: 0.6;
+}
+.banner-img-contain {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
 }
 .article-meta-overlay {
   position: absolute;
