@@ -36,6 +36,14 @@
           <p class="article-lead mt-3">{{ currentNews.description }}</p>
           <div class="article-divider"></div>
           <div class="article-content markdown-body" v-html="renderMarkdown(currentNews.contenu)"></div>
+          
+          <div v-if="currentNews.auteur" class="article-author mt-4">
+            <AppIcon name="edit" :size="20" class="author-icon" />
+            <div class="author-details">
+              <span class="author-label">Écrit par</span>
+              <strong class="author-name">{{ currentNews.auteur }}</strong>
+            </div>
+          </div>
         </div>
       </article>
 
@@ -266,6 +274,42 @@ async function shareNews() {
 .markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3) { color: var(--brun); margin-top: 1.5em; margin-bottom: 0.5em; }
 .markdown-body :deep(blockquote) { border-left: 4px solid var(--or); padding-left: 16px; color: #555; font-style: italic; background: rgba(249, 178, 51, 0.05); margin: 1em 0; padding: 10px 16px; border-radius: 0 8px 8px 0; }
 .markdown-body :deep(a) { color: var(--rouge); text-decoration: underline; font-weight: 600; }
+
+.article-author {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(132, 89, 54, 0.06);
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(132, 89, 54, 0.1);
+  margin-top: 30px;
+}
+.author-icon {
+  color: var(--or);
+  background: white;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(89, 55, 22, 0.1);
+  width: 36px;
+  height: 36px;
+}
+.author-details {
+  display: flex;
+  flex-direction: column;
+}
+.author-label {
+  font-size: 0.75rem;
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.author-name {
+  font-size: 1rem;
+  color: var(--brun-fonce);
+  font-weight: 800;
+}
 
 /* Sidebar block */
 .article-sidebar {

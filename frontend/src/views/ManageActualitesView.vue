@@ -134,6 +134,11 @@
               </div>
 
               <div class="fg">
+                <label>Auteur de l'article (Optionnel)</label>
+                <input type="text" v-model="form.auteur" placeholder="Ex: Jean Dupont" />
+              </div>
+
+              <div class="fg">
                 <label>Contenu complet <span class="req">*</span></label>
                 <textarea v-model="form.contenu" required placeholder="Le corps complet de l'article avec tous les détails..." rows="8"></textarea>
                 <div style="font-size: 0.8rem; color: #6a5040; margin-top: 6px; opacity: 0.8;">
@@ -314,6 +319,7 @@ const deletingActu = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
+const showDeleteModal = ref(false)
 const isCoverLoadError = ref(false)
 const isDetailLoadError = ref(false)
 const imagePlaceholder = '/images/side-photo.jpeg'
@@ -322,6 +328,7 @@ const form = ref({
   titre: '',
   description: '',
   contenu: '',
+  auteur: '',
   image_url: '',
   image_detail_url: '',
   date_evenement: ''
@@ -467,7 +474,7 @@ function removeFile(type) {
 
 function openCreate() {
   editingActu.value = null
-  form.value = { titre: '', description: '', contenu: '', image_url: '', image_detail_url: '' }
+  form.value = { titre: '', description: '', contenu: '', auteur: '', image_url: '', image_detail_url: '' }
   coverFile.value = null
   detailFile.value = null
   coverMode.value = 'file'
@@ -482,6 +489,7 @@ function openEdit(actu) {
     titre: actu.titre || '',
     description: actu.description || '',
     contenu: actu.contenu || '',
+    auteur: actu.auteur || '',
     image_url: actu.imageUrl === '/images/side-photo.jpeg' ? '' : (actu.imageUrl || ''),
     image_detail_url: actu.imageDetailUrl === '/images/side-photo.jpeg' ? '' : (actu.imageDetailUrl || ''),
     date_evenement: actu.publieLe ? new Date(actu.publieLe).toISOString().slice(0, 16) : ''
@@ -532,6 +540,7 @@ async function saveActu() {
       titre: form.value.titre.trim(),
       description: form.value.description.trim(),
       contenu: form.value.contenu.trim(),
+      auteur: form.value.auteur ? form.value.auteur.trim() : null,
       image_url: finalImageUrl,
       image_detail_url: finalImageDetailUrl,
       date_evenement: form.value.date_evenement || null
@@ -546,6 +555,7 @@ async function saveActu() {
           titre: updated.titre,
           description: updated.description,
           contenu: updated.contenu,
+          auteur: updated.auteur,
           publieLe: updated.created_at,
           imageUrl: updated.image_url || '/images/side-photo.jpeg',
           imageDetailUrl: updated.image_detail_url || updated.image_url || '/images/side-photo.jpeg'
@@ -558,6 +568,7 @@ async function saveActu() {
         titre: created.titre,
         description: created.description,
         contenu: created.contenu,
+        auteur: created.auteur,
         publieLe: created.created_at,
         imageUrl: created.image_url || '/images/side-photo.jpeg',
         imageDetailUrl: created.image_detail_url || created.image_url || '/images/side-photo.jpeg'

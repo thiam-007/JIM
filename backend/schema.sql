@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS actualites (
   titre VARCHAR NOT NULL,
   description TEXT,
   contenu TEXT,
+  auteur VARCHAR,
   image_url TEXT,
   image_detail_url TEXT,
   date_evenement TIMESTAMPTZ DEFAULT NOW(),
