@@ -1,7 +1,8 @@
 import express from 'express'
 import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
-import { sendNewsletterWelcome } from '../services/emailService.js'
+import { sendNewsletterWelcome, sendNewsletterCampaign, generateNewsletterHtml } from '../services/emailService.js'
+import { authMiddleware } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -13,7 +14,7 @@ const newsletterLimiter = rateLimit({
   legacyHeaders: false
 })
 
-// POST /api/newsletter/subscribe
+// POST /api/newsletter/subscribe (Public)
 router.post('/subscribe', newsletterLimiter, async (req, res) => {
   const { email } = req.body;
   
@@ -23,14 +24,12 @@ router.post('/subscribe', newsletterLimiter, async (req, res) => {
 
   const trimmedEmail = email.trim().toLowerCase();
 
-  // Basic regex validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(trimmedEmail)) {
     return res.status(400).json({ error: "Format d'adresse e-mail invalide." });
   }
 
   try {
-    // Check if the email is already subscribed
     const { data: existing, error: checkError } = await supabase
       .from('newsletter_subscribers')
       .select('id')
@@ -41,11 +40,10 @@ router.post('/subscribe', newsletterLimiter, async (req, res) => {
       return res.status(400).json({ error: "Cette adresse e-mail est déjà inscrite à la newsletter." });
     }
 
-    if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+    if (checkError && checkError.code !== 'PGRST116') {
       throw checkError;
     }
 
-    // Insert the new subscriber
     const { data, error } = await supabase
       .from('newsletter_subscribers')
       .insert([{ email: trimmedEmail }])
@@ -53,25 +51,213 @@ router.post('/subscribe', newsletterLimiter, async (req, res) => {
       .single();
 
     if (error) {
-      // Supabase unique constraint violation error code is usually '23505'
       if (error.code === '23505') {
         return res.status(400).json({ error: "Cette adresse e-mail est déjà inscrite à la newsletter." });
       }
       throw error;
     }
 
-    // Send the welcome email
     try {
       await sendNewsletterWelcome({ email: trimmedEmail });
     } catch (emailErr) {
       console.error('Erreur lors de l\'envoi de l\'email de bienvenue:', emailErr.message);
-      // We don't fail the request since the subscription itself was successful
     }
 
     res.status(201).json({ message: "Inscription réussie !", subscriber: data });
   } catch (err) {
     console.error('Erreur inscription newsletter:', err.message);
     res.status(500).json({ error: "Erreur serveur lors de l'inscription." });
+  }
+});
+
+// GET /api/newsletter/subscribers (Admin)
+router.get('/subscribers', authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur récupération abonnés:', err.message);
+    res.status(500).json({ error: "Erreur lors de la récupération des abonnés." });
+  }
+});
+
+// DELETE /api/newsletter/subscribers/:id (Admin)
+router.delete('/subscribers/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('newsletter_subscribers')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ message: "Abonné supprimé avec succès." });
+  } catch (err) {
+    console.error('Erreur suppression abonné:', err.message);
+    res.status(500).json({ error: "Erreur lors de la suppression de l'abonné." });
+  }
+});
+
+// GET /api/newsletter/campaigns (Admin)
+router.get('/campaigns', authMiddleware, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('newsletter_campaigns')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('Erreur récupération campagnes:', err.message);
+    res.status(500).json({ error: "Erreur lors de la récupération des campagnes." });
+  }
+});
+
+// POST /api/newsletter/preview (Admin)
+router.post('/preview', authMiddleware, async (req, res) => {
+  try {
+    const { type_source, source_id, contenu_personnalise, sujet_email } = req.body;
+    let titre = sujet_email || 'Sujet de l\'email';
+    let description = contenu_personnalise || '';
+    let imageUrl = null;
+    let linkUrl = null;
+
+    if (type_source === 'actualite' && source_id) {
+      const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
+      if (!actErr) {
+        titre = act.titre;
+        description = act.description || (act.contenu ? act.contenu.substring(0, 150) + '...' : '');
+        imageUrl = act.image_url;
+        linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
+      }
+    } else if (type_source === 'evenement' && source_id) {
+      const { data: ev, error: evErr } = await supabase.from('evenements').select('*').eq('id', source_id).single();
+      if (!evErr) {
+        titre = ev.titre;
+        description = ev.description || ev.lieu || '';
+        imageUrl = ev.image_url;
+        linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/evenements/' + ev.id;
+      }
+    } else {
+      linkUrl = req.body.linkUrl || null;
+    }
+
+    const html = generateNewsletterHtml({ titre, description, imageUrl, linkUrl, contenuPersonnalise: type_source === 'manuel' ? contenu_personnalise : null });
+    res.json({ html });
+  } catch (err) {
+    console.error('Erreur previsualisation campagne:', err.message);
+    res.status(500).json({ error: "Erreur lors de la prévisualisation." });
+  }
+});
+
+// POST /api/newsletter/campaigns (Admin)
+router.post('/campaigns', authMiddleware, async (req, res) => {
+  try {
+    const { 
+      titre_interne, sujet_email, type_source, source_id, 
+      contenu_personnalise, ciblage, destinataires 
+    } = req.body;
+
+    if (!titre_interne || !sujet_email) {
+      return res.status(400).json({ error: "Le titre interne et le sujet sont requis." });
+    }
+
+    // 1. Fetch emails to send to
+    let emailsToSend = [];
+    if (ciblage === 'tous') {
+      const { data: subs, error: subsError } = await supabase
+        .from('newsletter_subscribers')
+        .select('email')
+        .eq('statut', 'actif');
+      if (subsError) throw subsError;
+      emailsToSend = subs.map(s => s.email);
+    } else if (ciblage === 'specifique' && destinataires && destinataires.length > 0) {
+      const { data: subs, error: subsError } = await supabase
+        .from('newsletter_subscribers')
+        .select('email')
+        .in('id', destinataires)
+        .eq('statut', 'actif');
+      if (subsError) throw subsError;
+      emailsToSend = subs.map(s => s.email);
+    }
+
+    if (emailsToSend.length === 0) {
+      return res.status(400).json({ error: "Aucun destinataire sélectionné ou trouvé." });
+    }
+
+    // 2. Prepare content based on type
+    let titre = sujet_email;
+    let description = contenu_personnalise;
+    let imageUrl = null;
+    let linkUrl = null;
+
+    if (type_source === 'actualite' && source_id) {
+      const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
+      if (actErr) throw actErr;
+      titre = act.titre;
+      description = act.description || act.contenu?.substring(0, 150) + '...';
+      imageUrl = act.image_url;
+      linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
+    } else if (type_source === 'evenement' && source_id) {
+      const { data: ev, error: evErr } = await supabase.from('evenements').select('*').eq('id', source_id).single();
+      if (evErr) throw evErr;
+      titre = ev.titre;
+      description = ev.description || ev.lieu || '';
+      imageUrl = ev.image_url;
+      linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/evenements/' + ev.id;
+    } else {
+      // type_source === 'manuel'
+      linkUrl = req.body.linkUrl || null;
+    }
+
+    // 3. Save campaign as drafting/sending
+    const { data: campaign, error: campErr } = await supabase
+      .from('newsletter_campaigns')
+      .insert([{
+        titre_interne,
+        sujet_email,
+        type_source,
+        source_id: source_id || null,
+        contenu_personnalise,
+        ciblage,
+        destinataires: destinataires || [],
+        statut: 'en_cours'
+      }])
+      .select()
+      .single();
+
+    if (campErr) throw campErr;
+
+    // 4. Send emails asynchronously to not block the request
+    sendNewsletterCampaign({
+      emails: emailsToSend,
+      subject: sujet_email,
+      titre,
+      description,
+      imageUrl,
+      linkUrl,
+      contenuPersonnalise: type_source === 'manuel' ? contenu_personnalise : null
+    }).then(async ({ successCount, failCount }) => {
+      // Update campaign status
+      await supabase
+        .from('newsletter_campaigns')
+        .update({ statut: 'envoye', date_envoi: new Date().toISOString() })
+        .eq('id', campaign.id);
+      console.log(`Campaign sent: ${successCount} success, ${failCount} failed.`);
+    }).catch(err => {
+      console.error('Campaign background error:', err);
+    });
+
+    res.status(201).json({ message: "Campagne créée et envoi en cours.", campaign });
+  } catch (err) {
+    console.error('Erreur création campagne:', err.message);
+    res.status(500).json({ error: "Erreur serveur lors de la création de la campagne." });
   }
 });
 

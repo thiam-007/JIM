@@ -149,9 +149,30 @@ CREATE INDEX IF NOT EXISTS idx_checkins_invitation_id ON checkins(invitation_id)
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR UNIQUE NOT NULL,
+  statut VARCHAR DEFAULT 'actif' CHECK (statut IN ('actif', 'desabonne')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- newsletter_campaigns
+CREATE TABLE IF NOT EXISTS newsletter_campaigns (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titre_interne VARCHAR NOT NULL,
+  sujet_email VARCHAR NOT NULL,
+  type_source VARCHAR DEFAULT 'manuel' CHECK (type_source IN ('manuel', 'actualite', 'evenement')),
+  source_id UUID, -- References actualites(id) or evenements(id) if applicable
+  contenu_personnalise TEXT,
+  ciblage VARCHAR DEFAULT 'tous' CHECK (ciblage IN ('tous', 'specifique')),
+  destinataires UUID[], -- Array of subscriber IDs if ciblage is 'specifique'
+  statut VARCHAR DEFAULT 'brouillon' CHECK (statut IN ('brouillon', 'en_cours', 'envoye')),
+  date_envoi TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_newsletter_campaigns_updated
+  BEFORE UPDATE ON newsletter_campaigns
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER trg_newsletter_subscribers_updated
   BEFORE UPDATE ON newsletter_subscribers

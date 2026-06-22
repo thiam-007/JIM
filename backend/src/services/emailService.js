@@ -514,3 +514,83 @@ export async function sendNewsletterWelcome({ email }) {
     throw new Error(`Erreur d'envoi d'e-mail : ${error.message}`)
   }
 }
+
+// ─── sendNewsletterCampaign ───────────────────────────────────────────────────
+
+export function generateNewsletterHtml({ titre, description, imageUrl, linkUrl, contenuPersonnalise }) {
+  let body = '';
+
+  if (contenuPersonnalise) {
+    // Manual newsletter
+    body = `
+      <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
+        ${titre}
+      </h2>
+      <div style="margin:0 0 16px;color:#4a3020;font-size:15px;line-height:1.7;">
+        ${contenuPersonnalise.replace(/\n/g, '<br />')}
+      </div>
+    `;
+    if (linkUrl) {
+      body += `
+        <div style="text-align:center;margin:32px 0;">
+          <a href="${linkUrl}" style="display:inline-block;background:linear-gradient(135deg,#f9b233,#e09820);color:#3a2010;text-decoration:none;font-family:'Arial',sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
+            Découvrir
+          </a>
+        </div>
+      `;
+    }
+  } else {
+    // Actualite or Event
+    body = `
+      ${imageUrl ? `
+        <div style="text-align:center;margin-bottom:24px;">
+          <img src="${imageUrl}" alt="${titre}" style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+        </div>
+      ` : ''}
+      <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
+        ${titre}
+      </h2>
+      <p style="margin:0 0 24px;color:#4a3020;font-size:15px;line-height:1.7;">
+        ${description}
+      </p>
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${linkUrl}" style="display:inline-block;background:linear-gradient(135deg,#f9b233,#e09820);color:#3a2010;text-decoration:none;font-family:'Arial',sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
+          Lire la suite
+        </a>
+      </div>
+    `;
+  }
+  return emailShell(body, 'NEWSLETTER');
+}
+
+/**
+ * Send a newsletter campaign to multiple emails.
+ */
+export async function sendNewsletterCampaign({ emails, subject, titre, description, imageUrl, linkUrl, contenuPersonnalise }) {
+  const htmlContent = generateNewsletterHtml({ titre, description, imageUrl, linkUrl, contenuPersonnalise });
+
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+
+  // Send individually to protect privacy (BCC or loop, loop is safer to ensure individual tracking if needed)
+  for (const email of emails) {
+    try {
+      await transporter.sendMail({
+        from: getFromAddress(),
+        to: email,
+        subject: subject,
+        html: htmlContent
+      });
+      successCount++;
+    } catch (error) {
+      console.error(`Erreur d'envoi newsletter à ${email}:`, error.message);
+      failCount++;
+    }
+  }
+
+  return { successCount, failCount };
+}

@@ -11,6 +11,7 @@ import ActualitesView from '../views/ActualitesView.vue'
 import ActualiteDetailView from '../views/ActualiteDetailView.vue'
 import ManageActualitesView from '../views/ManageActualitesView.vue'
 import ManageAdminsView from '../views/ManageAdminsView.vue'
+import ManageNewslettersView from '../views/ManageNewslettersView.vue'
 import ContactView from '../views/ContactView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import { useApiStore } from '../store/api.js'
@@ -29,6 +30,7 @@ const routes = [
   { path: '/checkin/:eventId', name: 'Checkin', component: CheckinView },
   { path: '/admin/actualites', name: 'ManageActualites', component: ManageActualitesView },
   { path: '/admin/utilisateurs', name: 'ManageAdmins', component: ManageAdminsView },
+  { path: '/admin/newsletters', name: 'ManageNewsletters', component: ManageNewslettersView },
   { path: '/profil', name: 'Profile', component: ProfileView }
 ]
 
@@ -46,7 +48,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const apiStore = useApiStore()
-  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile']
+  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters']
   if (protectedRoutes.includes(to.name) && !apiStore.isConnected) {
     next({ name: 'Home' })
   } else {

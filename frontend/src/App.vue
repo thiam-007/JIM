@@ -82,6 +82,9 @@
           <RouterLink v-if="apiStore.isConnected && apiStore.isSuperAdmin" class="nav-tab" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs">
             <AppIcon name="users" :size="16" /> Gérer Admins
           </RouterLink>
+          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageNewsletters' }" to="/admin/newsletters">
+            <AppIcon name="mail" :size="16" /> Newsletters
+          </RouterLink>
           <RouterLink v-if="!apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
             <AppIcon name="mail" :size="16" /> Contact
           </RouterLink>
