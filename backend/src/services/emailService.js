@@ -97,11 +97,11 @@ function emailShell(bodyContent, options = {}) {
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lato:wght@300;400;700&display=swap');
     body { background-color: #E8DDD3; font-family: 'Lato', sans-serif; padding: 30px 0; margin: 0; }
     .wrapper { max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,55,22,0.18); }
-    .header { position: relative; background-color: #382116; min-height: 190px; overflow: hidden; }
-    .header-pattern { position: absolute; inset: 0; background-image: url('https://mcusercontent.com/20375c77497dbd92614349f3f/images/3c823659-7605-a932-50cf-176ef59d42f7.png'); background-size: 260px auto; background-repeat: repeat; opacity: 0.40; }
-    .header-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(89,55,22,0.82) 0%, rgba(26,15,10,0.65) 60%, rgba(177,34,42,0.45) 100%); }
+    .header { position: relative; background-color: #593716; min-height: 190px; overflow: hidden; }
+    .header-pattern { position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 260px auto; background-repeat: repeat; opacity: 0.15; }
+    .header-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(89,55,22,0.85) 0%, rgba(132,89,54,0.7) 100%); }
     .header-content { position: relative; z-index: 2; padding: 36px 40px 32px; display: flex; align-items: center; gap: 28px; }
-    .header-logo img { width: 150px; height: auto; filter: brightness(1.1); }
+    .header-logo img { width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; }
     .header-text { border-left: 3px solid #F9B233; padding-left: 24px; }
     .header-text .label { font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 6px; }
     .header-text h1 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0; }
@@ -110,15 +110,16 @@ function emailShell(bodyContent, options = {}) {
     .gold-band { background: #F9B233; height: 8px; }
     
     /* Footer */
-    .footer { background: #382116; padding: 32px 40px 24px; position: relative; overflow: hidden; }
-    .footer::after { content: ''; position: absolute; inset: 0; background-image: url('https://mcusercontent.com/20375c77497dbd92614349f3f/images/3c823659-7605-a932-50cf-176ef59d42f7.png'); background-size: 180px; opacity: 0.05; }
+    .footer { background: #593716; padding: 32px 40px 24px; position: relative; overflow: hidden; }
+    .footer::after { content: ''; position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 180px; opacity: 0.15; }
     .footer-inner { position: relative; z-index: 1; }
     .footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid rgba(249,178,51,0.2); margin-bottom: 18px; }
     .footer-brand img { width: 120px; opacity: 0.9; }
     .footer-brand p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 8px; max-width: 200px; line-height: 1.5; }
     .footer-suivez h4 { font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 10px; }
     .social-links { display: flex; gap: 8px; }
-    .social-links a { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid rgba(249,178,51,0.3); border-radius: 50%; color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; font-weight: 700; }
+    .social-links a { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid rgba(249,178,51,0.3); border-radius: 50%; color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; font-weight: 700; text-align: center; line-height: 32px; }
+    .social-links img { vertical-align: middle; width: 16px; height: 16px; }
     .footer-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: rgba(255,255,255,0.3); flex-wrap: wrap; gap: 6px; }
     .footer-bottom a { color: rgba(255,255,255,0.4); text-decoration: none; }
     .or-bar-bottom { height: 5px; background: linear-gradient(to right, #593716, #F9B233, #B1222A, #F9B233, #593716); }
@@ -137,7 +138,7 @@ function emailShell(bodyContent, options = {}) {
     .edito h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: #593716; line-height: 1.2; margin-bottom: 14px; margin-top: 0; }
     .edito p { font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; }
     .edito-author { margin-top: 18px; display: flex; align-items: center; gap: 10px; }
-    .edito-author-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #845936, #B1222A); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; }
+    .edito-author-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #845936, #B1222A); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; line-height: 38px; text-align: center; }
     .edito-author-info strong { display: block; font-size: 12px; font-weight: 700; color: #593716; }
     .edito-author-info span { font-size: 11px; color: #845936; }
     .edito-aside { background: #593716; border-radius: 2px; padding: 20px 18px; margin-top: 24px; }
@@ -174,7 +175,7 @@ function emailShell(bodyContent, options = {}) {
     .nextstep h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 20px; margin-top: 0; }
     .steps-list { display: flex; flex-direction: column; gap: 12px; }
     .step-item { display: flex; gap: 14px; align-items: flex-start; }
-    .step-num { flex-shrink: 0; width: 30px; height: 30px; background: #B1222A; color: #FFFFFF; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .step-num { flex-shrink: 0; width: 30px; height: 30px; background: #B1222A; color: #FFFFFF; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 50%; line-height: 30px; text-align: center; }
     .step-text strong { display: block; font-size: 13px; font-weight: 700; color: #593716; margin-bottom: 2px; }
     .step-text span { font-size: 12px; color: #6A4830; line-height: 1.55; }
     
@@ -194,7 +195,7 @@ function emailShell(bodyContent, options = {}) {
     <div class="header-overlay"></div>
     <div class="header-content">
       <div class="header-logo">
-        <img src="https://mcusercontent.com/20375c77497dbd92614349f3f/images/bd352ec4-f91b-2b65-462d-c6fb18f292fa.png" alt="Musée Virtuel de Guinée">
+        <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée">
       </div>
       <div class="header-text">
         <p class="label">${label}</p>
@@ -213,15 +214,15 @@ function emailShell(bodyContent, options = {}) {
     <div class="footer-inner">
       <div class="footer-top">
         <div class="footer-brand">
-          <img src="https://mcusercontent.com/20375c77497dbd92614349f3f/images/bd352ec4-f91b-2b65-462d-c6fb18f292fa.png" alt="MVG">
-          <p style="margin-top: 8px;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
+          <img src="${frontendUrl}/images/logo.jpeg" alt="MVG" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #F9B233; object-fit: cover;">
+          <p style="margin-top: 12px;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
         </div>
         <div class="footer-suivez">
           <h4>Suivez-nous</h4>
           <div class="social-links">
-            <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none;">f</a>
-            <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none;">in</a>
-            <a href="${frontendUrl}" style="text-decoration:none;">▶</a>
+            <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/facebook-new.png" alt="f"></a>
+            <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/instagram-new.png" alt="in"></a>
+            <a href="${frontendUrl}" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/domain.png" alt="w"></a>
           </div>
         </div>
       </div>

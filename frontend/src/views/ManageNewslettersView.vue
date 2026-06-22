@@ -85,6 +85,7 @@
               <th>Type</th>
               <th>Date d'envoi</th>
               <th>Statut</th>
+              <th class="text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -97,6 +98,14 @@
                 <span class="status-badge" :class="camp.statut === 'envoye' ? 'status-valide' : 'status-attente'">
                   {{ formatStatut(camp.statut) }}
                 </span>
+              </td>
+              <td class="actions-cell text-right">
+                <button class="btn-icon" @click="viewCampaignPreview(camp)" title="Aperçu de la campagne" style="background: rgba(132,89,54,0.08); color: var(--brun);">
+                  <AppIcon name="eye" :size="16" />
+                </button>
+                <button class="btn-icon" @click="duplicateCampaign(camp)" title="Dupliquer / Renvoyer" style="background: rgba(132,89,54,0.08); color: var(--brun);">
+                  <AppIcon name="copy" :size="16" />
+                </button>
               </td>
             </tr>
           </tbody>
@@ -255,10 +264,13 @@
               </div>
 
               <div class="fg" v-if="form.ciblage === 'specifique'">
-                <label>Sélectionnez les destinataires (Maintenez Ctrl/Cmd pour sélection multiple) <span class="req">*</span></label>
-                <select v-model="form.destinataires" multiple required style="height: 120px;">
-                  <option v-for="sub in activeSubscribers" :key="sub.id" :value="sub.id">{{ sub.email }}</option>
-                </select>
+                <label>Sélectionnez les destinataires <span class="req">*</span></label>
+                <div class="checkbox-list">
+                  <label v-for="sub in activeSubscribers" :key="sub.id" class="checkbox-label">
+                    <input type="checkbox" :value="sub.id" v-model="form.destinataires" />
+                    <span>{{ sub.email }}</span>
+                  </label>
+                </div>
               </div>
 
               <div v-if="formError" class="ev-form-error">
@@ -531,13 +543,84 @@ async function previewCampaign() {
   }
 }
 
+async function viewCampaignPreview(camp) {
+  previewing.value = true
+  try {
+    const res = await api.post('/api/newsletter/preview', {
+      type_source: camp.type_source,
+      source_id: camp.source_id,
+      contenu_personnalise: camp.contenu_personnalise,
+      sujet_email: camp.sujet_email
+    })
+    previewHtml.value = res.html
+    showPreviewModal.value = true
+  } catch (err) {
+    console.error("Erreur aperçu campagne:", err)
+    alert("Impossible d'afficher l'aperçu.")
+  } finally {
+    previewing.value = false
+  }
+}
+
+function duplicateCampaign(camp) {
+  formError.value = ''
+  form.value = {
+    titre_interne: camp.titre_interne + ' (Copie)',
+    sujet_email: camp.sujet_email,
+    type_source: camp.type_source,
+    source_id: camp.source_id || '',
+    contenu_personnalise: '',
+    linkUrl: '',
+    ciblage: camp.ciblage,
+    destinataires: camp.destinataires || [],
+    bulletin: {
+      edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
+      editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
+      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '', etapesText: ''
+    }
+  }
+
+  if (camp.type_source === 'manuel') {
+    form.value.contenu_personnalise = camp.contenu_personnalise || ''
+  } else if (camp.type_source === 'bulletin' && camp.contenu_personnalise) {
+    try {
+      const bData = JSON.parse(camp.contenu_personnalise)
+      form.value.bulletin.edition = bData.edition || ''
+      form.value.bulletin.editoTitre = bData.editoTitre || ''
+      form.value.bulletin.editoTexte = bData.editoTexte || ''
+      form.value.bulletin.editoAuteurNom = bData.editoAuteurNom || ''
+      form.value.bulletin.editoAuteurRole = bData.editoAuteurRole || ''
+      form.value.bulletin.editoAuteurInitiales = bData.editoAuteurInitiales || ''
+      if (bData.editoBref && bData.editoBref.length) {
+        form.value.bulletin.editoBrefText = bData.editoBref.map(i => '- ' + i).join('\n')
+      }
+      if (bData.actus_ids && bData.actus_ids.length) {
+        form.value.bulletin.actus = [
+          bData.actus_ids[0] || '',
+          bData.actus_ids[1] || '',
+          bData.actus_ids[2] || ''
+        ]
+      }
+      form.value.bulletin.zoomTitre = bData.zoomTitre || ''
+      form.value.bulletin.zoomTexte = bData.zoomTexte || ''
+      if (bData.etapes && bData.etapes.length) {
+        form.value.bulletin.etapesText = bData.etapes.map(e => `${e.titre} | ${e.desc}`).join('\n')
+      }
+    } catch (e) {
+      console.error("Erreur parsing bulletin pour duplication", e)
+    }
+  }
+
+  showCampaignModal.value = true
+}
+
 function packBulletinData() {
   const b = form.value.bulletin;
-  const etapes = b.etapesText.split('\\n').filter(Boolean).map(line => {
+  const etapes = b.etapesText.split('\n').filter(Boolean).map(line => {
     const parts = line.split('|');
     return { titre: parts[0] ? parts[0].trim() : '', desc: parts[1] ? parts[1].trim() : '' };
   });
-  const editoBref = b.editoBrefText.split('\\n').map(l => l.replace(/^-/, '').trim()).filter(Boolean);
+  const editoBref = b.editoBrefText.split('\n').map(l => l.replace(/^-/, '').trim()).filter(Boolean);
   
   const bulletinData = {
     edition: b.edition,
@@ -666,4 +749,32 @@ async function submitAddSubscribers() {
 .btn-cancel { padding: 12px 22px; background: none; border: 2px solid rgba(132,89,54,.2); border-radius: 12px; color: var(--brun); font-weight: 700; cursor: pointer; transition: all .2s; }
 .btn-cancel:hover { border-color: var(--brun); background: rgba(132,89,54,.06); }
 .ev-form-error { display: flex; align-items: center; gap: 8px; background: #ffeaea; border: 1.5px solid var(--rouge); border-radius: 12px; padding: 10px 14px; color: var(--rouge); font-size: .84rem; font-weight: 600; margin-top: 12px; }
+
+.checkbox-list {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid rgba(132, 89, 54, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--brun-fonce);
+  margin: 0;
+}
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--brun);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+}
 </style>
