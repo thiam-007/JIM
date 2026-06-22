@@ -319,7 +319,6 @@ const deletingActu = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
-const showDeleteModal = ref(false)
 const isCoverLoadError = ref(false)
 const isDetailLoadError = ref(false)
 const imagePlaceholder = '/images/side-photo.jpeg'
