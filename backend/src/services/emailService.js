@@ -164,6 +164,13 @@ function emailShell(bodyContent, options = {}) {
     
     @media (max-width: 600px) {
       .actu-grid { display: block; }
+      .wrapper { width: 100% !important; max-width: 100% !important; box-shadow: none !important; border-radius: 0 !important; }
+      .mobile-padding { padding: 24px 20px !important; }
+      .mobile-stack { display: block !important; width: 100% !important; box-sizing: border-box !important; }
+      .mobile-center { text-align: center !important; }
+      .header-logo-container { padding-right: 0 !important; margin-bottom: 16px !important; }
+      .header-text-container { border-left: none !important; padding-left: 0 !important; }
+      .hide-mobile { display: none !important; }
     }
   </style>
 </head>
@@ -173,13 +180,13 @@ function emailShell(bodyContent, options = {}) {
   <div class="header">
     <div class="header-pattern"></div>
     <div class="header-overlay"></div>
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2; padding: 36px 40px 32px;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2; padding: 36px 40px 32px;" class="mobile-padding">
       <tr>
-        <td width="90" valign="top" align="center" style="width:90px;">
-          <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; display: block;" />
+        <td width="90" valign="top" align="center" style="width:90px;" class="mobile-stack header-logo-container">
+          <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; display: block; margin: 0 auto;" />
         </td>
-        <td width="24" style="width: 24px;"></td>
-        <td valign="middle" style="border-left: 3px solid #F9B233; padding-left: 24px;">
+        <td width="24" style="width: 24px;" class="hide-mobile"></td>
+        <td valign="middle" style="border-left: 3px solid #F9B233; padding-left: 24px;" class="mobile-stack header-text-container mobile-center">
           <p style="font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin: 0 0 6px 0;">${label}</p>
           <h1 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0;">${title.replace('N°', 'N°&nbsp;')}</h1>
           <p style="font-size: 12px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin: 8px 0 0 0;">${edition}</p>
@@ -190,10 +197,10 @@ function emailShell(bodyContent, options = {}) {
   <div class="gold-band"></div>
 
   <!-- BODY -->
-  ${isFullWidth ? bodyContent : '<div style="padding: 40px; background: #FAF6F1; color: #4A3020; line-height: 1.7; font-size: 15px;">' + bodyContent + '</div>'}
+  ${isFullWidth ? bodyContent : '<div class="mobile-padding" style="padding: 40px; background: #FAF6F1; color: #4A3020; line-height: 1.7; font-size: 15px;">' + bodyContent + '</div>'}
 
   <!-- FOOTER -->
-  <div class="footer">
+  <div class="footer mobile-padding">
     <div class="footer-inner">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid rgba(249,178,51,0.2); padding-bottom: 20px; margin-bottom: 18px;">
         <tr>
@@ -691,7 +698,7 @@ export function generateBulletinHtml(data) {
 
   const body = `
   <!-- ████ SOMMAIRE ████ -->
-  <div class="sommaire" style="background: #593716; padding: 18px 40px; text-align: center;">
+  <div class="sommaire mobile-padding" style="background: #593716; padding: 18px 40px; text-align: center;">
     <p style="font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #F9B233; margin: 0 0 12px 0;">Sommaire</p>
     <div style="font-family: 'Lato', sans-serif; font-size: 13px; line-height: 2;">
       <a href="#edito" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">L'Édito</a>
@@ -705,7 +712,7 @@ export function generateBulletinHtml(data) {
   </div>
 
   <!-- ████ EDITO ████ -->
-  <div class="edito" id="edito">
+  <div class="edito mobile-padding" id="edito">
     <div class="section-label">L'Édito</div>
     <div class="edito-inner">
       <div style="margin-bottom: 24px;">
@@ -742,7 +749,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ ACTUALITES ████ -->
   ${actus.length > 0 ? `
-  <div class="actualites" id="actualites">
+  <div class="actualites mobile-padding" id="actualites">
     <div class="section-label">Actualités du projet</div>
     <h2>Ce qui s'est passé ce mois-ci</h2>
     <div class="actu-grid" style="display: block;">
@@ -764,7 +771,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ ZOOM SUR ████ -->
   ${zoomTitre ? `
-  <div class="zoom" id="zoom">
+  <div class="zoom mobile-padding" id="zoom">
     <div class="zoom-inner">
       <div class="section-label">Zoom sur…</div>
       <h2>${zoomTitre}</h2>
@@ -775,7 +782,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ NEXT STEP ████ -->
   ${etapes.length > 0 ? `
-  <div class="nextstep" id="nextstep">
+  <div class="nextstep mobile-padding" id="nextstep">
     <div class="section-label">Prochaines étapes</div>
     <h2>Au programme du mois prochain</h2>
     <table cellpadding="0" cellspacing="0" border="0" width="100%">

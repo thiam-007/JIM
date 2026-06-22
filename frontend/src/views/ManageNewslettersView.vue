@@ -45,7 +45,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="sub in subscribers" :key="sub.id">
+            <tr v-for="sub in paginatedSubscribers" :key="sub.id">
               <td><strong>{{ sub.email }}</strong></td>
               <td>
                 <span class="status-badge" :class="sub.statut === 'actif' ? 'status-valide' : 'status-annule'">
@@ -61,6 +61,13 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- Pagination Abonnés -->
+        <div class="pagination" v-if="totalPagesSubscribers > 1">
+          <button @click="currentPageSubscribers--" :disabled="currentPageSubscribers === 1" class="page-btn"><AppIcon name="chevron-left" :size="16" /></button>
+          <span class="page-info">Page {{ currentPageSubscribers }} sur {{ totalPagesSubscribers }}</span>
+          <button @click="currentPageSubscribers++" :disabled="currentPageSubscribers === totalPagesSubscribers" class="page-btn"><AppIcon name="chevron-right" :size="16" /></button>
+        </div>
       </div>
     </div>
 
@@ -89,7 +96,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="camp in campaigns" :key="camp.id">
+            <tr v-for="camp in paginatedCampaigns" :key="camp.id">
               <td><strong>{{ camp.titre_interne }}</strong></td>
               <td>{{ camp.sujet_email }}</td>
               <td><span class="jim-badge" style="color: #000;">{{ camp.type_source }}</span></td>
@@ -113,6 +120,13 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- Pagination Campagnes -->
+        <div class="pagination" v-if="totalPagesCampaigns > 1">
+          <button @click="currentPageCampaigns--" :disabled="currentPageCampaigns === 1" class="page-btn"><AppIcon name="chevron-left" :size="16" /></button>
+          <span class="page-info">Page {{ currentPageCampaigns }} sur {{ totalPagesCampaigns }}</span>
+          <button @click="currentPageCampaigns++" :disabled="currentPageCampaigns === totalPagesCampaigns" class="page-btn"><AppIcon name="chevron-right" :size="16" /></button>
+        </div>
       </div>
     </div>
 
@@ -430,6 +444,22 @@ const deletingCampaign = ref(null)
 const newEmailsText = ref('')
 const addSubscriberError = ref('')
 const addSubscriberSuccess = ref('')
+
+const itemsPerPage = 25
+const currentPageSubscribers = ref(1)
+const currentPageCampaigns = ref(1)
+
+const paginatedSubscribers = computed(() => {
+  const start = (currentPageSubscribers.value - 1) * itemsPerPage
+  return subscribers.value.slice(start, start + itemsPerPage)
+})
+const totalPagesSubscribers = computed(() => Math.ceil(subscribers.value.length / itemsPerPage) || 1)
+
+const paginatedCampaigns = computed(() => {
+  const start = (currentPageCampaigns.value - 1) * itemsPerPage
+  return campaigns.value.slice(start, start + itemsPerPage)
+})
+const totalPagesCampaigns = computed(() => Math.ceil(campaigns.value.length / itemsPerPage) || 1)
 
 const form = ref({
   titre_interne: '',
@@ -824,5 +854,40 @@ async function submitAddSubscribers() {
   height: 18px;
   cursor: pointer;
   margin: 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px;
+  border-top: 1px solid rgba(132, 89, 54, 0.1);
+}
+.page-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(132, 89, 54, 0.2);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--brun);
+  transition: all 0.2s;
+}
+.page-btn:hover:not(:disabled) {
+  background: rgba(132, 89, 54, 0.05);
+  border-color: var(--brun);
+}
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.page-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brun-fonce);
 }
 </style>
