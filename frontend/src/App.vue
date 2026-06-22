@@ -1639,11 +1639,14 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   border-color: rgba(132, 89, 54, 0.1);
 }
 .page-info {
+  display: inline-flex;
+  align-items: center;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--brun);
   background: rgba(132, 89, 54, 0.08);
-  padding: 6px 14px;
+  padding: 8px 18px;
   border-radius: 999px;
+  white-space: nowrap;
 }
 </style>
