@@ -135,6 +135,7 @@ export const useApiStore = defineStore('api', {
           titre: item.titre || '',
           description: item.description || '',
           contenu: item.contenu || '',
+          auteur: item.auteur || '',
           date_evenement: item.date_evenement || null,
           publieLe: item.date_evenement || item.created_at || new Date().toISOString(),
           imageUrl: item.image_url || '/images/side-photo.jpeg',
