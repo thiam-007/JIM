@@ -6,6 +6,19 @@ import { authMiddleware } from '../middleware/auth.js'
 
 const router = express.Router()
 
+// Fonction utilitaire pour nettoyer le markdown avant l'envoi en email
+function stripMarkdown(text) {
+  if (!text) return '';
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1') // bold
+    .replace(/\*(.*?)\*/g, '$1') // italic
+    .replace(/__(.*?)__/g, '$1') // bold
+    .replace(/_(.*?)_/g, '$1') // italic
+    .replace(/#(.*?)\n/g, '$1\n') // headers
+    .replace(/\[(.*?)\]\(.*?\)/g, '$1') // links
+    .replace(/<[^>]*>?/gm, ''); // html tags
+}
+
 const newsletterLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 5, // Limite chaque IP à 5 inscriptions par minute
@@ -131,8 +144,9 @@ router.post('/preview', authMiddleware, async (req, res) => {
     if (type_source === 'actualite' && source_id) {
       const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
       if (!actErr) {
+        const cleanContenu = act.contenu ? stripMarkdown(act.contenu) : '';
         titre = act.titre;
-        description = act.description || (act.contenu ? act.contenu.substring(0, 150) + '...' : '');
+        description = act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : ''));
         imageUrl = act.image_url;
         linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
       }
@@ -200,8 +214,9 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
     if (type_source === 'actualite' && source_id) {
       const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
       if (actErr) throw actErr;
+      const cleanContenu = act.contenu ? stripMarkdown(act.contenu) : '';
       titre = act.titre;
-      description = act.description || act.contenu?.substring(0, 150) + '...';
+      description = act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : ''));
       imageUrl = act.image_url;
       linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
     } else if (type_source === 'evenement' && source_id) {
@@ -256,8 +271,8 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
 
     res.status(201).json({ message: "Campagne créée et envoi en cours.", campaign });
   } catch (err) {
-    console.error('Erreur création campagne:', err.message);
-    res.status(500).json({ error: "Erreur serveur lors de la création de la campagne." });
+    console.error('Erreur création campagne:', err);
+    res.status(500).json({ error: "Erreur serveur lors de la création de la campagne. Détails : " + (err.message || err.details || JSON.stringify(err)) });
   }
 });
 
