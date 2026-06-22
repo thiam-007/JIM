@@ -132,6 +132,23 @@ router.get('/campaigns', authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE /api/newsletter/campaigns/:id (Admin)
+router.delete('/campaigns/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('newsletter_campaigns')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ message: "Campagne supprimée avec succès." });
+  } catch (err) {
+    console.error('Erreur suppression campagne:', err.message);
+    res.status(500).json({ error: "Erreur lors de la suppression de la campagne." });
+  }
+});
+
 // POST /api/newsletter/admin/add-subscribers (Admin)
 router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
   try {

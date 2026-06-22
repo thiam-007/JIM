@@ -106,6 +106,9 @@
                 <button class="btn-icon" @click="duplicateCampaign(camp)" title="Dupliquer / Renvoyer" style="background: rgba(132,89,54,0.08); color: var(--brun);">
                   <AppIcon name="copy" :size="16" />
                 </button>
+                <button class="btn-icon delete" @click="confirmDeleteCampaign(camp)" title="Supprimer">
+                  <AppIcon name="trash" :size="16" />
+                </button>
               </td>
             </tr>
           </tbody>
@@ -312,7 +315,30 @@
       </div>
     </Teleport>
 
-    <!-- Delete Confirm -->
+    <!-- Delete Campaign Modal -->
+    <Teleport to="body">
+      <div v-if="showDeleteCampaignModal" class="modal-backdrop" @click.self="showDeleteCampaignModal = false">
+        <div class="modal-box modal-confirm form-card">
+          <div class="fh fh-a">
+            <div class="fh-icon" style="background: rgba(177,34,42,0.1); color: var(--rouge);"><AppIcon name="trash" :size="24" /></div>
+            <div class="fh-title" style="color: var(--rouge);">Supprimer la campagne</div>
+          </div>
+          <div class="fb">
+            <p>Êtes-vous sûr de vouloir supprimer définitivement la campagne <strong>{{ deletingCampaign?.titre_interne }}</strong> ?</p>
+            <p style="font-size: 13px; color: #666;">Cette action ne supprimera pas l'e-mail des boîtes de réception de vos abonnés, mais elle effacera l'historique ici.</p>
+            <div class="ev-form-actions">
+              <button type="button" class="btn-cancel" @click="showDeleteCampaignModal = false">Annuler</button>
+              <button type="button" class="bsub bsub-a" style="background: linear-gradient(135deg, var(--rouge), #ff4d4d); box-shadow: 0 4px 12px rgba(177,34,42,0.3);" @click="deleteCampaign" :disabled="saving">
+                <AppIcon :name="saving ? 'loader' : 'trash'" :size="16" />
+                {{ saving ? 'Suppression…' : 'Oui, supprimer' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Delete Subscriber Modal -->
     <Teleport to="body">
       <div v-if="showDeleteModal" class="modal-backdrop" @click.self="showDeleteModal = false">
         <div class="modal-box modal-confirm form-card">
@@ -395,10 +421,12 @@ const evenements = ref([])
 
 const showCampaignModal = ref(false)
 const showDeleteModal = ref(false)
+const showDeleteCampaignModal = ref(false)
 const showPreviewModal = ref(false)
 const showAddSubscriberModal = ref(false)
 const previewHtml = ref('')
 const deletingSubscriber = ref(null)
+const deletingCampaign = ref(null)
 const newEmailsText = ref('')
 const addSubscriberError = ref('')
 const addSubscriberSuccess = ref('')
@@ -655,6 +683,26 @@ async function doDeleteSubscriber() {
   } finally {
     saving.value = false
     deletingSubscriber.value = null
+  }
+}
+
+function confirmDeleteCampaign(camp) {
+  deletingCampaign.value = camp
+  showDeleteCampaignModal.value = true
+}
+
+async function deleteCampaign() {
+  if (!deletingCampaign.value) return
+  saving.value = true
+  try {
+    await api.del(`/api/newsletter/campaigns/${deletingCampaign.value.id}`)
+    campaigns.value = campaigns.value.filter(c => c.id !== deletingCampaign.value.id)
+    showDeleteCampaignModal.value = false
+  } catch (err) {
+    console.error(err)
+  } finally {
+    saving.value = false
+    deletingCampaign.value = null
   }
 }
 
