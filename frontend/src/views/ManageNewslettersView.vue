@@ -89,7 +89,7 @@
               <td>{{ formatDate(camp.date_envoi || camp.created_at) }}</td>
               <td>
                 <span class="status-badge" :class="camp.statut === 'envoye' ? 'status-valide' : 'status-attente'">
-                  {{ camp.statut }}
+                  {{ formatStatut(camp.statut) }}
                 </span>
               </td>
             </tr>
@@ -124,6 +124,7 @@
                     <option value="manuel">Manuel (Texte libre)</option>
                     <option value="actualite">Actualité existante</option>
                     <option value="evenement">Événement existant</option>
+                    <option value="bulletin">Bulletin Mensuel (Complet)</option>
                   </select>
                 </div>
                 
@@ -141,6 +142,89 @@
                     <option disabled value="">Choisir un événement...</option>
                     <option v-for="ev in evenements" :key="ev.id" :value="ev.id">{{ ev.titre }}</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- BULLETIN BUILDER -->
+              <div v-if="form.type_source === 'bulletin'" style="background: rgba(132,89,54,0.03); padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(132,89,54,0.1);">
+                <h3 style="margin: 0 0 15px; color: var(--brun);">Paramètres du Bulletin</h3>
+                
+                <div class="fg">
+                  <label>Mention d'Édition</label>
+                  <input type="text" v-model="form.bulletin.edition" placeholder="Ex: Édition N°01 — Avril 2026" />
+                </div>
+
+                <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
+                <h4 style="margin: 0 0 10px; color: var(--brun-fonce);">L'Édito</h4>
+                <div class="fg">
+                  <label>Titre de l'édito</label>
+                  <input type="text" v-model="form.bulletin.editoTitre" placeholder="Ex: Valoriser notre héritage..." />
+                </div>
+                <div class="fg">
+                  <label>Texte de l'édito</label>
+                  <textarea v-model="form.bulletin.editoTexte" rows="4"></textarea>
+                </div>
+                <div class="fr">
+                  <div class="fg">
+                    <label>Auteur (Nom)</label>
+                    <input type="text" v-model="form.bulletin.editoAuteurNom" placeholder="Nom Prénom" />
+                  </div>
+                  <div class="fg">
+                    <label>Auteur (Rôle)</label>
+                    <input type="text" v-model="form.bulletin.editoAuteurRole" placeholder="Ex: Cheffe de projet" />
+                  </div>
+                  <div class="fg">
+                    <label>Initiales (Avatar)</label>
+                    <input type="text" v-model="form.bulletin.editoAuteurInitiales" placeholder="Ex: CP" maxlength="3" />
+                  </div>
+                </div>
+                <div class="fg">
+                  <label>En bref ce mois-ci (Une ligne par puce)</label>
+                  <textarea v-model="form.bulletin.editoBrefText" rows="3" placeholder="- Lancement de la newsletter&#10;- Finalisation de la charte"></textarea>
+                </div>
+
+                <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
+                <h4 style="margin: 0 0 10px; color: var(--brun-fonce);">Les 3 Actualités</h4>
+                <div class="fr">
+                  <div class="fg">
+                    <label>Actualité 1 (À la une)</label>
+                    <select v-model="form.bulletin.actus[0]">
+                      <option value="">Aucune</option>
+                      <option v-for="act in actualites" :key="act.id" :value="act.id">{{ act.titre }}</option>
+                    </select>
+                  </div>
+                  <div class="fg">
+                    <label>Actualité 2</label>
+                    <select v-model="form.bulletin.actus[1]">
+                      <option value="">Aucune</option>
+                      <option v-for="act in actualites" :key="act.id" :value="act.id">{{ act.titre }}</option>
+                    </select>
+                  </div>
+                  <div class="fg">
+                    <label>Actualité 3</label>
+                    <select v-model="form.bulletin.actus[2]">
+                      <option value="">Aucune</option>
+                      <option v-for="act in actualites" :key="act.id" :value="act.id">{{ act.titre }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
+                <h4 style="margin: 0 0 10px; color: var(--brun-fonce);">Zoom sur...</h4>
+                <div class="fg">
+                  <label>Titre du Zoom</label>
+                  <input type="text" v-model="form.bulletin.zoomTitre" placeholder="Ex: Incub'Action" />
+                </div>
+                <div class="fg">
+                  <label>Texte du Zoom</label>
+                  <textarea v-model="form.bulletin.zoomTexte" rows="4"></textarea>
+                </div>
+
+                <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
+                <h4 style="margin: 0 0 10px; color: var(--brun-fonce);">Prochaines Étapes</h4>
+                <div class="fg">
+                  <label>Livrables ou événements (Format: Titre | Description, une par ligne)</label>
+                  <textarea v-model="form.bulletin.etapesText" rows="3" placeholder="Atelier de collecte | Avec les communautés locales...&#10;Réunion | Réunion de coordination..."></textarea>
                 </div>
               </div>
 
@@ -268,7 +352,20 @@ const form = ref({
   contenu_personnalise: '',
   linkUrl: '',
   ciblage: 'tous',
-  destinataires: []
+  destinataires: [],
+  bulletin: {
+    edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
+    editoTitre: '',
+    editoTexte: '',
+    editoAuteurNom: '',
+    editoAuteurRole: '',
+    editoAuteurInitiales: '',
+    editoBrefText: '',
+    actus: ['', '', ''],
+    zoomTitre: '',
+    zoomTexte: '',
+    etapesText: ''
+  }
 })
 
 const activeSubscribers = computed(() => subscribers.value.filter(s => s.statut === 'actif'))
@@ -305,11 +402,23 @@ function formatDate(dateStr) {
   }).format(new Date(dateStr))
 }
 
+function formatStatut(statut) {
+  if (statut === 'en_cours') return 'En cours';
+  if (statut === 'envoye') return 'Envoyé';
+  if (statut === 'brouillon') return 'Brouillon';
+  return statut;
+}
+
 function openCreateCampaign() {
   formError.value = ''
   form.value = {
     titre_interne: '', sujet_email: '', type_source: 'manuel', source_id: '',
-    contenu_personnalise: '', linkUrl: '', ciblage: 'tous', destinataires: []
+    contenu_personnalise: '', linkUrl: '', ciblage: 'tous', destinataires: [],
+    bulletin: {
+      edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
+      editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
+      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '', etapesText: ''
+    }
   }
   showCampaignModal.value = true
 }
@@ -324,11 +433,15 @@ async function submitCampaign() {
     formError.value = "Veuillez sélectionner au moins un destinataire."
     return
   }
-  if (form.value.type_source !== 'manuel' && !form.value.source_id) {
+  if (form.value.type_source !== 'manuel' && form.value.type_source !== 'bulletin' && !form.value.source_id) {
     formError.value = "Veuillez sélectionner l'actualité ou l'événement."
     return
   }
   
+  if (form.value.type_source === 'bulletin') {
+    packBulletinData();
+  }
+
   saving.value = true
   try {
     const res = await api.post('/api/newsletter/campaigns', form.value)
@@ -345,9 +458,13 @@ async function submitCampaign() {
 
 async function previewCampaign() {
   formError.value = ''
-  if (form.value.type_source !== 'manuel' && !form.value.source_id) {
+  if (form.value.type_source !== 'manuel' && form.value.type_source !== 'bulletin' && !form.value.source_id) {
     formError.value = "Veuillez sélectionner l'actualité ou l'événement pour la prévisualisation."
     return
+  }
+
+  if (form.value.type_source === 'bulletin') {
+    packBulletinData();
   }
 
   previewing.value = true
@@ -365,6 +482,30 @@ async function previewCampaign() {
   } finally {
     previewing.value = false
   }
+}
+
+function packBulletinData() {
+  const b = form.value.bulletin;
+  const etapes = b.etapesText.split('\\n').filter(Boolean).map(line => {
+    const parts = line.split('|');
+    return { titre: parts[0] ? parts[0].trim() : '', desc: parts[1] ? parts[1].trim() : '' };
+  });
+  const editoBref = b.editoBrefText.split('\\n').map(l => l.replace(/^-/, '').trim()).filter(Boolean);
+  
+  const bulletinData = {
+    edition: b.edition,
+    editoTitre: b.editoTitre,
+    editoTexte: b.editoTexte,
+    editoAuteurNom: b.editoAuteurNom,
+    editoAuteurRole: b.editoAuteurRole,
+    editoAuteurInitiales: b.editoAuteurInitiales,
+    editoBref,
+    actus_ids: b.actus.filter(Boolean),
+    zoomTitre: b.zoomTitre,
+    zoomTexte: b.zoomTexte,
+    etapes
+  };
+  form.value.contenu_personnalise = JSON.stringify(bulletinData);
 }
 
 function confirmDeleteSubscriber(sub) {

@@ -159,7 +159,7 @@ CREATE TABLE IF NOT EXISTS newsletter_campaigns (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   titre_interne VARCHAR NOT NULL,
   sujet_email VARCHAR NOT NULL,
-  type_source VARCHAR DEFAULT 'manuel' CHECK (type_source IN ('manuel', 'actualite', 'evenement')),
+  type_source VARCHAR DEFAULT 'manuel' CHECK (type_source IN ('manuel', 'actualite', 'evenement', 'bulletin')),
   source_id UUID, -- References actualites(id) or evenements(id) if applicable
   contenu_personnalise TEXT,
   ciblage VARCHAR DEFAULT 'tous' CHECK (ciblage IN ('tous', 'specifique')),

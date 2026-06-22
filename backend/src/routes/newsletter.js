@@ -141,6 +141,40 @@ router.post('/preview', authMiddleware, async (req, res) => {
     let imageUrl = null;
     let linkUrl = null;
 
+    let isBulletin = false;
+    let bulletinData = null;
+
+    if (type_source === 'bulletin') {
+      isBulletin = true;
+      try {
+        bulletinData = JSON.parse(contenu_personnalise);
+      } catch (e) {
+        return res.status(400).json({ error: "Format de bulletin invalide." });
+      }
+
+      if (bulletinData.actus_ids && bulletinData.actus_ids.length > 0) {
+        const { data: actusData, error: actusErr } = await supabase.from('actualites').select('*').in('id', bulletinData.actus_ids);
+        if (!actusErr && actusData) {
+          bulletinData.actus = bulletinData.actus_ids.map(id => {
+            const act = actusData.find(a => a.id === id);
+            if (!act) return null;
+            const cleanContenu = act.contenu ? stripMarkdown(act.contenu) : '';
+            return {
+              tag: act.tags && act.tags.length > 0 ? act.tags[0] : 'Actualité',
+              titre: act.titre,
+              description: act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : '')),
+              linkUrl: (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id,
+              imageUrl: act.image_url
+            };
+          }).filter(Boolean);
+        }
+      }
+      // HTML generation for preview
+      const { generateBulletinHtml } = await import('../services/emailService.js');
+      const html = generateBulletinHtml(bulletinData);
+      return res.json({ html });
+    }
+
     if (type_source === 'actualite' && source_id) {
       const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
       if (!actErr) {
@@ -210,8 +244,35 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
     let description = contenu_personnalise;
     let imageUrl = null;
     let linkUrl = null;
+    let isBulletin = false;
+    let bulletinData = null;
 
-    if (type_source === 'actualite' && source_id) {
+    if (type_source === 'bulletin') {
+      isBulletin = true;
+      try {
+        bulletinData = JSON.parse(contenu_personnalise);
+      } catch (e) {
+        return res.status(400).json({ error: "Format de bulletin invalide." });
+      }
+
+      if (bulletinData.actus_ids && bulletinData.actus_ids.length > 0) {
+        const { data: actusData, error: actusErr } = await supabase.from('actualites').select('*').in('id', bulletinData.actus_ids);
+        if (!actusErr && actusData) {
+          bulletinData.actus = bulletinData.actus_ids.map(id => {
+            const act = actusData.find(a => a.id === id);
+            if (!act) return null;
+            const cleanContenu = act.contenu ? stripMarkdown(act.contenu) : '';
+            return {
+              tag: act.tags && act.tags.length > 0 ? act.tags[0] : 'Actualité',
+              titre: act.titre,
+              description: act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : '')),
+              linkUrl: (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id,
+              imageUrl: act.image_url
+            };
+          }).filter(Boolean);
+        }
+      }
+    } else if (type_source === 'actualite' && source_id) {
       const { data: act, error: actErr } = await supabase.from('actualites').select('*').eq('id', source_id).single();
       if (actErr) throw actErr;
       const cleanContenu = act.contenu ? stripMarkdown(act.contenu) : '';
@@ -257,7 +318,9 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
       description,
       imageUrl,
       linkUrl,
-      contenuPersonnalise: type_source === 'manuel' ? contenu_personnalise : null
+      contenuPersonnalise: type_source === 'manuel' ? contenu_personnalise : null,
+      isBulletin,
+      bulletinData
     }).then(async ({ successCount, failCount }) => {
       // Update campaign status
       await supabase

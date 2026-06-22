@@ -78,8 +78,14 @@ function formatDateFr(iso) {
 /**
  * Shared HTML email shell with brand colours.
  */
-function emailShell(bodyContent, title = 'NOTIFICATION') {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+function emailShell(bodyContent, options = {}) {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  
+  // Handle retro-compatibility where options was just a string title
+  const title = typeof options === 'string' ? options : (options.title || 'NOTIFICATION');
+  const edition = options.edition || 'Musée Virtuel de Guinée';
+  const label = options.label || 'NOTIFICATION';
+  const isFullWidth = options.isFullWidth || false;
   
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -87,83 +93,147 @@ function emailShell(bodyContent, title = 'NOTIFICATION') {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Musée Virtuel de Guinée</title>
+  <style type="text/css">
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lato:wght@300;400;700&display=swap');
+    body { background-color: #E8DDD3; font-family: 'Lato', sans-serif; padding: 30px 0; margin: 0; }
+    .wrapper { max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,55,22,0.18); }
+    .header { position: relative; background-color: #382116; min-height: 190px; overflow: hidden; }
+    .header-pattern { position: absolute; inset: 0; background-image: url('https://mcusercontent.com/20375c77497dbd92614349f3f/images/3c823659-7605-a932-50cf-176ef59d42f7.png'); background-size: 260px auto; background-repeat: repeat; opacity: 0.40; }
+    .header-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(89,55,22,0.82) 0%, rgba(26,15,10,0.65) 60%, rgba(177,34,42,0.45) 100%); }
+    .header-content { position: relative; z-index: 2; padding: 36px 40px 32px; display: flex; align-items: center; gap: 28px; }
+    .header-logo img { width: 150px; height: auto; filter: brightness(1.1); }
+    .header-text { border-left: 3px solid #F9B233; padding-left: 24px; }
+    .header-text .label { font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 6px; }
+    .header-text h1 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0; }
+    .header-text h1 em { color: #F9B233; font-style: italic; }
+    .header-text .edition { font-size: 11px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin-top: 8px; }
+    .gold-band { background: #F9B233; height: 8px; }
+    
+    /* Footer */
+    .footer { background: #382116; padding: 32px 40px 24px; position: relative; overflow: hidden; }
+    .footer::after { content: ''; position: absolute; inset: 0; background-image: url('https://mcusercontent.com/20375c77497dbd92614349f3f/images/3c823659-7605-a932-50cf-176ef59d42f7.png'); background-size: 180px; opacity: 0.05; }
+    .footer-inner { position: relative; z-index: 1; }
+    .footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid rgba(249,178,51,0.2); margin-bottom: 18px; }
+    .footer-brand img { width: 120px; opacity: 0.9; }
+    .footer-brand p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 8px; max-width: 200px; line-height: 1.5; }
+    .footer-suivez h4 { font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 10px; }
+    .social-links { display: flex; gap: 8px; }
+    .social-links a { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid rgba(249,178,51,0.3); border-radius: 50%; color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; font-weight: 700; }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: rgba(255,255,255,0.3); flex-wrap: wrap; gap: 6px; }
+    .footer-bottom a { color: rgba(255,255,255,0.4); text-decoration: none; }
+    .or-bar-bottom { height: 5px; background: linear-gradient(to right, #593716, #F9B233, #B1222A, #F9B233, #593716); }
+    
+    /* Bulletin specific styles */
+    .sommaire { background: #593716; padding: 18px 40px; }
+    .sommaire-label { font-size: 9px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #F9B233; margin-bottom: 10px; }
+    .sommaire-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
+    .sommaire-links a { font-family: 'Lato', sans-serif; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.80); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px; }
+    .sommaire-links .sep { color: rgba(255,255,255,0.2); font-size: 11px; }
+    
+    .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #B1222A; margin-bottom: 14px; }
+    .section-label::before { content: ''; display: block; width: 22px; height: 2px; background: #F9B233; }
+    
+    .edito { padding: 40px 40px 32px; background: #FAF6F1; border-top: 1px solid rgba(132,89,54,0.12); }
+    .edito h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: #593716; line-height: 1.2; margin-bottom: 14px; margin-top: 0; }
+    .edito p { font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; }
+    .edito-author { margin-top: 18px; display: flex; align-items: center; gap: 10px; }
+    .edito-author-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #845936, #B1222A); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; }
+    .edito-author-info strong { display: block; font-size: 12px; font-weight: 700; color: #593716; }
+    .edito-author-info span { font-size: 11px; color: #845936; }
+    .edito-aside { background: #593716; border-radius: 2px; padding: 20px 18px; margin-top: 24px; }
+    .edito-aside .aside-title { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: #F9B233; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(249,178,51,0.25); margin-top: 0; }
+    .edito-aside ul { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; }
+    .edito-aside ul li { font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5; padding-left: 12px; position: relative; }
+    .edito-aside ul li::before { content: '▸'; position: absolute; left: 0; color: #F9B233; font-size: 10px; }
+    
+    .actualites { padding: 36px 40px; background: #FFFFFF; }
+    .actualites h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 24px; margin-top: 0; }
+    .actu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .actu-card { border: 1px solid rgba(132,89,54,0.15); border-radius: 2px; overflow: hidden; }
+    .actu-card-top { height: 8px; background: #B1222A; }
+    .actu-card.secondary .actu-card-top { background: #845936; }
+    .actu-card.tertiary .actu-card-top { background: #F9B233; }
+    .actu-card-body { padding: 16px; }
+    .actu-tag { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #B1222A; margin-bottom: 6px; margin-top: 0; }
+    .actu-card.secondary .actu-tag { color: #845936; }
+    .actu-card.tertiary .actu-tag { color: #8C3B2A; }
+    .actu-card h3 { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin-bottom: 8px; margin-top: 0; line-height: 1.3; }
+    .actu-card p { font-size: 12px; color: #5A3E28; line-height: 1.6; margin: 0; }
+    .actu-card-full { grid-column: 1 / -1; }
+    .actu-card-img { width: 100%; height: 140px; object-fit: cover; }
+    
+    .zoom { background: linear-gradient(135deg, #593716 0%, #382116 100%); padding: 36px 40px; position: relative; overflow: hidden; }
+    .zoom-inner { position: relative; z-index: 1; }
+    .zoom-inner .section-label { color: #F9B233; }
+    .zoom-inner .section-label::before { background: #F9B233; }
+    .zoom h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; margin-bottom: 12px; margin-top: 0; }
+    .zoom p { font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.75; margin-bottom: 14px; margin-top: 0; }
+    .zoom-cta { display: inline-block; margin-top: 8px; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 10px 22px; border-radius: 1px; }
+    
+    .nextstep { background: #FAF6F1; padding: 36px 40px; }
+    .nextstep h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 20px; margin-top: 0; }
+    .steps-list { display: flex; flex-direction: column; gap: 12px; }
+    .step-item { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num { flex-shrink: 0; width: 30px; height: 30px; background: #B1222A; color: #FFFFFF; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .step-text strong { display: block; font-size: 13px; font-weight: 700; color: #593716; margin-bottom: 2px; }
+    .step-text span { font-size: 12px; color: #6A4830; line-height: 1.55; }
+    
+    @media (max-width: 600px) {
+      .header-content { flex-direction: column; gap: 16px; text-align: center; }
+      .header-text { border-left: none; padding-left: 0; }
+      .footer-top { flex-direction: column; align-items: center; text-align: center; }
+      .actu-grid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f5ede3;font-family:'Georgia',serif;">
+<body>
+<div class="wrapper">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-pattern"></div>
+    <div class="header-overlay"></div>
+    <div class="header-content">
+      <div class="header-logo">
+        <img src="https://mcusercontent.com/20375c77497dbd92614349f3f/images/bd352ec4-f91b-2b65-462d-c6fb18f292fa.png" alt="Musée Virtuel de Guinée">
+      </div>
+      <div class="header-text">
+        <p class="label">${label}</p>
+        <h1>${title}</h1>
+        <p class="edition">${edition}</p>
+      </div>
+    </div>
+  </div>
+  <div class="gold-band"></div>
 
-  <!-- Outer wrapper -->
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5ede3;padding:40px 0;">
-    <tr>
-      <td align="center">
+  <!-- BODY -->
+  ${isFullWidth ? bodyContent : '<div style="padding: 40px; background: #FAF6F1; color: #4A3020; line-height: 1.7; font-size: 15px;">' + bodyContent + '</div>'}
 
-        <!-- Card -->
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#fef9f2;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(92,53,25,0.12);">
-
-          <!-- Header banner -->
-          <tr>
-            <td style="background:linear-gradient(135deg,#5c3519 0%,#8b5a2b 60%,#f9b233 100%);padding:36px 40px;text-align:center;">
-              <img src="${frontendUrl}/images/logo.jpeg" alt="Logo MVG" style="width:70px; height:70px; border-radius:50%; border:2px solid #f9b233; margin-bottom:16px;" />
-              <p style="margin:0 0 6px 0;color:#f9b233;font-size:12px;letter-spacing:3px;text-transform:uppercase;font-family:'Arial',sans-serif;">
-                Musée Virtuel de Guinée
-              </p>
-              <h1 style="margin:0;color:#fef9f2;font-size:28px;font-weight:normal;letter-spacing:1px;">
-                ${title}
-              </h1>
-              <div style="margin-top:16px;width:60px;height:3px;background:#f9b233;margin-left:auto;margin-right:auto;border-radius:2px;"></div>
-            </td>
-          </tr>
-
-          <!-- Body -->
-          <tr>
-            <td style="padding:40px;">
-              ${bodyContent}
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background-color:#5c3519;padding:24px 40px;text-align:center;">
-              <p style="margin:0;color:#f9b233;font-size:12px;font-family:'Arial',sans-serif;letter-spacing:1px;">
-                MUSÉE VIRTUEL DE GUINÉE
-              </p>
-              <p style="margin:6px 0 0;color:#c9956a;font-size:11px;font-family:'Arial',sans-serif;">
-                Préserver la mémoire, célébrer la culture
-              </p>
-              <div style="margin-top: 16px; display:inline-block;">
-                <a href="${frontendUrl}" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
-                  <img src="https://img.icons8.com/ios-filled/24/f9b233/domain.png" alt="Site Web" style="vertical-align:middle;" />
-                </a>
-                <span style="color:#c9956a; vertical-align:middle; margin:0 4px;">|</span>
-                <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
-                  <img src="https://img.icons8.com/ios-filled/24/f9b233/facebook-new.png" alt="Facebook" style="vertical-align:middle;" />
-                </a>
-                <span style="color:#c9956a; vertical-align:middle; margin:0 4px;">|</span>
-                <a href="https://www.instagram.com/museevirtuelguinee?igsh=MWNsbmlrcGV6bnM3Nw==" style="text-decoration:none; margin: 0 8px; display:inline-block; vertical-align:middle;">
-                  <img src="https://img.icons8.com/ios-filled/24/f9b233/instagram-new.png" alt="Instagram" style="vertical-align:middle;" />
-                </a>
-              </div>
-            </td>
-          </tr>
-
-        </table>
-
-        <!-- Legal note -->
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;margin-top:16px;">
-          <tr>
-            <td style="text-align:center;padding:0 20px;">
-              <p style="margin:0;color:#a08060;font-size:11px;font-family:'Arial',sans-serif;line-height:1.6;">
-                Vous recevez cet e-mail car vous avez été invité(e) à un événement du Musée Virtuel de Guinée.<br />
-                Si vous pensez avoir reçu cet e-mail par erreur, veuillez l'ignorer.
-              </p>
-            </td>
-          </tr>
-        </table>
-
-      </td>
-    </tr>
-  </table>
-
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <img src="https://mcusercontent.com/20375c77497dbd92614349f3f/images/bd352ec4-f91b-2b65-462d-c6fb18f292fa.png" alt="MVG">
+          <p style="margin-top: 8px;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
+        </div>
+        <div class="footer-suivez">
+          <h4>Suivez-nous</h4>
+          <div class="social-links">
+            <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none;">f</a>
+            <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none;">in</a>
+            <a href="${frontendUrl}" style="text-decoration:none;">▶</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© ${new Date().getFullYear()} Musée Virtuel de Guinée — Tous droits réservés</span>
+      </div>
+    </div>
+  </div>
+  <div class="or-bar-bottom"></div>
+</div>
 </body>
-</html>`
+</html>`;
 }
 
 // ─── Event detail block ────────────────────────────────────────────────────────
@@ -566,8 +636,14 @@ export function generateNewsletterHtml({ titre, description, imageUrl, linkUrl, 
 /**
  * Send a newsletter campaign to multiple emails.
  */
-export async function sendNewsletterCampaign({ emails, subject, titre, description, imageUrl, linkUrl, contenuPersonnalise }) {
-  const htmlContent = generateNewsletterHtml({ titre, description, imageUrl, linkUrl, contenuPersonnalise });
+export async function sendNewsletterCampaign({ emails, subject, titre, description, imageUrl, linkUrl, contenuPersonnalise, isBulletin, bulletinData }) {
+  let htmlContent = '';
+  
+  if (isBulletin && bulletinData) {
+    htmlContent = generateBulletinHtml(bulletinData);
+  } else {
+    htmlContent = generateNewsletterHtml({ titre, description, imageUrl, linkUrl, contenuPersonnalise });
+  }
 
   if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
     throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
@@ -576,7 +652,6 @@ export async function sendNewsletterCampaign({ emails, subject, titre, descripti
   let successCount = 0;
   let failCount = 0;
 
-  // Send individually to protect privacy (BCC or loop, loop is safer to ensure individual tracking if needed)
   for (const email of emails) {
     try {
       await transporter.sendMail({
@@ -594,3 +669,126 @@ export async function sendNewsletterCampaign({ emails, subject, titre, descripti
 
   return { successCount, failCount };
 }
+
+// ─── generateBulletinHtml ───────────────────────────────────────────────────
+
+export function generateBulletinHtml(data) {
+  const {
+    edition = '',
+    editoTitre = '',
+    editoTexte = '',
+    editoAuteurNom = '',
+    editoAuteurRole = '',
+    editoAuteurInitiales = '',
+    editoBref = [],
+    actus = [], // array of { tag, titre, description, linkUrl, imageUrl }
+    zoomTitre = '',
+    zoomTexte = '',
+    etapes = [] // array of { titre, desc }
+  } = data;
+
+  const body = `
+  <!-- ████ SOMMAIRE ████ -->
+  <div class="sommaire">
+    <p class="sommaire-label">Sommaire</p>
+    <div class="sommaire-links">
+      <a href="#edito">L'Édito</a>
+      <span class="sep">·</span>
+      <a href="#actualites">Actualités du projet</a>
+      <span class="sep">·</span>
+      <a href="#zoom">Zoom sur…</a>
+      <span class="sep">·</span>
+      <a href="#nextstep">Prochaines étapes</a>
+    </div>
+  </div>
+
+  <!-- ████ EDITO ████ -->
+  <div class="edito" id="edito">
+    <div class="section-label">L'Édito</div>
+    <div class="edito-inner">
+      <div style="margin-bottom: 24px;">
+        <h2>${editoTitre}</h2>
+        <p>${editoTexte.replace(/\n/g, '<br />')}</p>
+        <div class="edito-author">
+          <div class="edito-author-avatar">${editoAuteurInitiales}</div>
+          <div class="edito-author-info">
+            <strong>${editoAuteurNom}</strong>
+            <span>${editoAuteurRole}</span>
+          </div>
+        </div>
+      </div>
+      ${editoBref.length > 0 ? `
+      <div class="edito-aside">
+        <p class="aside-title">📌 En bref ce mois-ci</p>
+        <ul>
+          ${editoBref.map(item => `<li>${item}</li>`).join('')}
+        </ul>
+      </div>
+      ` : ''}
+    </div>
+  </div>
+
+  <!-- ████ ACTUALITES ████ -->
+  ${actus.length > 0 ? `
+  <div class="actualites" id="actualites">
+    <div class="section-label">Actualités du projet</div>
+    <h2>Ce qui s'est passé ce mois-ci</h2>
+    <div class="actu-grid">
+      ${actus.map((actu, index) => `
+      <div class="actu-card ${index === 0 ? 'actu-card-full' : (index === 1 ? 'secondary' : 'tertiary')}">
+        <div class="actu-card-top"></div>
+        ${index === 0 && actu.imageUrl ? `<img src="${actu.imageUrl}" class="actu-card-img" alt="Actualité principale" />` : ''}
+        <div class="actu-card-body">
+          <p class="actu-tag">${actu.tag || 'Actualité'}</p>
+          <h3>${actu.titre}</h3>
+          <p>${actu.description}</p>
+          <div style="margin-top: 12px;">
+            <a href="${actu.linkUrl}" style="color:#B1222A; font-size:11px; font-weight:bold; text-decoration:none;">Lire la suite →</a>
+          </div>
+        </div>
+      </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- ████ ZOOM SUR ████ -->
+  ${zoomTitre ? `
+  <div class="zoom" id="zoom">
+    <div class="zoom-inner">
+      <div class="section-label">Zoom sur…</div>
+      <h2>${zoomTitre}</h2>
+      <p>${zoomTexte.replace(/\n/g, '<br />')}</p>
+    </div>
+  </div>
+  ` : ''}
+
+  <!-- ████ NEXT STEP ████ -->
+  ${etapes.length > 0 ? `
+  <div class="nextstep" id="nextstep">
+    <div class="section-label">Prochaines étapes</div>
+    <h2>Au programme du mois prochain</h2>
+    <div class="steps-list">
+      ${etapes.map((etape, index) => `
+      <div class="step-item">
+        <div class="step-num">${index + 1}</div>
+        <div class="step-text">
+          <strong>${etape.titre}</strong>
+          <span>${etape.desc}</span>
+        </div>
+      </div>
+      `).join('')}
+    </div>
+  </div>
+  ` : ''}
+  `;
+
+  // Wrap in the shell with isFullWidth = true
+  return emailShell(body, {
+    title: "Le Patrimoine Guinéen à l'ère Numérique",
+    label: "NEWSLETTER MENSUELLE",
+    edition: edition || "Édition",
+    isFullWidth: true
+  });
+}
+
