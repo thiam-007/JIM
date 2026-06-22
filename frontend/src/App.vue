@@ -1403,17 +1403,6 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 .profile-menu-container {
   position: relative;
 }
-.profile-tab {
-  background: rgba(255, 127, 80, 0.1);
-  color: var(--prim-orange) !important;
-  font-weight: 600;
-  border-radius: 20px;
-  padding: 6px 14px;
-}
-.profile-tab:hover, .profile-tab.active {
-  background: var(--prim-orange);
-  color: white !important;
-}
 .profile-dropdown {
   position: absolute;
   top: 100%;

@@ -233,6 +233,9 @@ function handleLogout() {
 .profile-shell {
   min-height: calc(100vh - 140px);
 }
+.main-content-section {
+  margin-top: 40px;
+}
 .profile-container {
   max-width: 1000px;
   margin: 0 auto;
