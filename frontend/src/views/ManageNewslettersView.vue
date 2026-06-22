@@ -150,8 +150,8 @@
               </div>
 
               <div class="fg" v-if="form.type_source === 'manuel'">
-                <label>Lien du bouton d'action (Optionnel)</label>
-                <input type="url" v-model="form.linkUrl" placeholder="https://..." />
+                <label>Lien du bouton (Optionnel, si vous voulez ajouter un bouton qui redirige vers une page)</label>
+                <input type="url" v-model="form.linkUrl" placeholder="Ex: https://museevirtuelguinee.com/page-speciale" />
               </div>
 
               <div class="fr" style="margin-top: 15px;">
@@ -280,11 +280,12 @@ onMounted(async () => {
 async function fetchData() {
   loading.value = true
   try {
+    // Les appels sont faits séparément pour éviter qu'une erreur sur l'un (ex: table manquante) ne bloque tout
     const [subs, camps, acts, evs] = await Promise.all([
-      api.get('/api/newsletter/subscribers'),
-      api.get('/api/newsletter/campaigns'),
-      api.get('/api/actualites'),
-      api.get('/api/evenements')
+      api.get('/api/newsletter/subscribers').catch(e => { console.error('Subscribers error:', e); return []; }),
+      api.get('/api/newsletter/campaigns').catch(e => { console.error('Campaigns error:', e); return []; }),
+      api.get('/api/actualites').catch(e => { console.error('Actualites error:', e); return []; }),
+      api.get('/api/evenements').catch(e => { console.error('Evenements error:', e); return []; })
     ])
     subscribers.value = subs || []
     campaigns.value = camps || []
