@@ -24,6 +24,12 @@
 
     <!-- TAB: SUBSCRIBERS -->
     <div v-else-if="currentTab === 'subscribers'">
+      <div class="campaign-actions" style="margin-bottom: 20px; text-align: right;">
+        <button class="btn-create" @click="openAddSubscriberModal">
+          <AppIcon name="user-plus" :size="16" /> Ajouter des abonnés
+        </button>
+      </div>
+
       <div v-if="subscribers.length === 0" class="actus-empty">
         <div class="actus-empty-icon"><AppIcon name="users" :size="40" /></div>
         <p>Aucun abonné pour le moment.</p>
@@ -317,6 +323,43 @@
       </div>
     </Teleport>
 
+    <!-- Add Subscribers Modal -->
+    <Teleport to="body">
+      <div v-if="showAddSubscriberModal" class="modal-backdrop" @click.self="showAddSubscriberModal = false">
+        <div class="modal-box form-card" style="max-width: 500px;">
+          <div class="fh fh-a">
+            <div class="fh-icon"><AppIcon name="user-plus" :size="22" /></div>
+            <div class="fh-title">Ajouter des abonnés</div>
+          </div>
+          <div class="fb">
+            <p style="margin-bottom: 15px; font-size: 13px; color: var(--brun);">
+              Collez les adresses e-mail de vos contacts (séparées par des virgules ou des retours à la ligne).
+            </p>
+            <form @submit.prevent="submitAddSubscribers" class="ev-form">
+              <div class="fg">
+                <textarea v-model="newEmailsText" required rows="6" placeholder="email1@exemple.com&#10;email2@exemple.com"></textarea>
+              </div>
+              
+              <div v-if="addSubscriberError" class="ev-form-error">
+                <AppIcon name="alert-triangle" :size="15" /> {{ addSubscriberError }}
+              </div>
+              <div v-if="addSubscriberSuccess" class="ev-form-success" style="color: #2e7d32; background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px;">
+                {{ addSubscriberSuccess }}
+              </div>
+
+              <div class="ev-form-actions">
+                <button type="button" class="btn-cancel" @click="showAddSubscriberModal = false">Fermer</button>
+                <button type="submit" class="bsub bsub-a" :disabled="saving">
+                  <AppIcon :name="saving ? 'loader' : 'check'" :size="16" />
+                  {{ saving ? 'Ajout en cours…' : 'Ajouter' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -341,8 +384,12 @@ const evenements = ref([])
 const showCampaignModal = ref(false)
 const showDeleteModal = ref(false)
 const showPreviewModal = ref(false)
+const showAddSubscriberModal = ref(false)
 const previewHtml = ref('')
 const deletingSubscriber = ref(null)
+const newEmailsText = ref('')
+const addSubscriberError = ref('')
+const addSubscriberSuccess = ref('')
 
 const form = ref({
   titre_interne: '',
@@ -525,6 +572,42 @@ async function doDeleteSubscriber() {
   } finally {
     saving.value = false
     deletingSubscriber.value = null
+  }
+}
+
+function openAddSubscriberModal() {
+  newEmailsText.value = ''
+  addSubscriberError.value = ''
+  addSubscriberSuccess.value = ''
+  showAddSubscriberModal.value = true
+}
+
+async function submitAddSubscribers() {
+  addSubscriberError.value = ''
+  addSubscriberSuccess.value = ''
+  
+  if (!newEmailsText.value.trim()) {
+    addSubscriberError.value = "Veuillez entrer au moins un e-mail."
+    return
+  }
+
+  // Split by comma, semicolon, space, or newline
+  const emails = newEmailsText.value.split(/[\n,; ]+/).map(e => e.trim()).filter(Boolean)
+  
+  if (emails.length === 0) return
+
+  saving.value = true
+  try {
+    const res = await api.post('/api/newsletter/admin/add-subscribers', { emails })
+    addSubscriberSuccess.value = res.message
+    if (res.newSubscribers && res.newSubscribers.length > 0) {
+      subscribers.value.unshift(...res.newSubscribers)
+    }
+    newEmailsText.value = ''
+  } catch (err) {
+    addSubscriberError.value = err.message || "Erreur lors de l'ajout des abonnés."
+  } finally {
+    saving.value = false
   }
 }
 </script>

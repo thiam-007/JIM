@@ -132,6 +132,50 @@ router.get('/campaigns', authMiddleware, async (req, res) => {
   }
 });
 
+// POST /api/newsletter/admin/add-subscribers (Admin)
+router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
+  try {
+    const { emails } = req.body;
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return res.status(400).json({ error: "Aucun email fourni." });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validEmails = emails.map(e => e.trim().toLowerCase()).filter(e => emailRegex.test(e));
+
+    if (validEmails.length === 0) {
+      return res.status(400).json({ error: "Aucun email valide fourni." });
+    }
+
+    // Fetch existing
+    const { data: existing, error: fetchErr } = await supabase
+      .from('newsletter_subscribers')
+      .select('email')
+      .in('email', validEmails);
+
+    if (fetchErr) throw fetchErr;
+
+    const existingEmails = existing.map(e => e.email);
+    const uniqueValidEmails = [...new Set(validEmails)];
+    const toInsert = uniqueValidEmails.filter(e => !existingEmails.includes(e)).map(email => ({ email, statut: 'actif' }));
+
+    if (toInsert.length > 0) {
+      const { data, error: insertErr } = await supabase
+        .from('newsletter_subscribers')
+        .insert(toInsert)
+        .select();
+      if (insertErr) throw insertErr;
+      
+      return res.json({ message: `${toInsert.length} abonné(s) ajouté(s).`, newSubscribers: data });
+    }
+
+    res.json({ message: "Tous ces emails étaient déjà inscrits.", newSubscribers: [] });
+  } catch (err) {
+    console.error('Erreur admin/add-subscribers:', err.message);
+    res.status(500).json({ error: "Erreur lors de l'ajout." });
+  }
+});
+
 // POST /api/newsletter/preview (Admin)
 router.post('/preview', authMiddleware, async (req, res) => {
   try {
