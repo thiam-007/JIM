@@ -14,46 +14,50 @@ function getFromAddress() {
 
 const originalSendMail = transporter.sendMail.bind(transporter)
 transporter.sendMail = async (mailOptions) => {
-  // Si une clé Brevo est fournie, on utilise l'API HTTP au lieu du SMTP (contourne le blocage Render)
   if (process.env.BREVO_API_KEY) {
-    const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'musee@expertisefrance.fr'
-    const payload = {
-      sender: { name: "Musée Virtuel de Guinée", email: senderEmail },
-      to: [{ email: mailOptions.to }],
-      subject: mailOptions.subject,
-      htmlContent: mailOptions.html
-    }
-    if (mailOptions.replyTo) {
-      payload.replyTo = { email: mailOptions.replyTo }
-    }
-    if (mailOptions.attachments && mailOptions.attachments.length > 0) {
-      payload.attachment = mailOptions.attachments.map(att => {
-        // L'API Brevo requiert simplement le nom et le contenu en base64
-        return {
-          name: att.filename,
-          content: att.content
-        }
+    try {
+      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'musee@expertisefrance.fr'
+      const payload = {
+        sender: { name: "Musée Virtuel de Guinée", email: senderEmail },
+        to: [{ email: mailOptions.to }],
+        subject: mailOptions.subject,
+        htmlContent: mailOptions.html
+      }
+      if (mailOptions.replyTo) {
+        payload.replyTo = { email: mailOptions.replyTo }
+      }
+      if (mailOptions.attachments && mailOptions.attachments.length > 0) {
+        payload.attachment = mailOptions.attachments.map(att => {
+          return {
+            name: att.filename,
+            content: att.content
+          }
+        })
+      }
+
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       })
-    }
 
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(errorData)}`)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(errorData)}`)
+      }
+      return await response.json()
+    } catch (brevoErr) {
+      console.warn("Échec de l'envoi via Brevo, tentative de fallback via Gmail...", brevoErr.message)
+      // Si on échoue ici, on ne fait pas de 'return', on laisse le code continuer 
+      // pour utiliser le fallback Nodemailer / Gmail en dessous.
     }
-    return await response.json()
   }
 
-  // Fallback classique sur Nodemailer / Gmail si pas de clé Brevo
+  // Fallback classique sur Nodemailer / Gmail si pas de clé Brevo OU si Brevo a échoué
   return await originalSendMail(mailOptions)
 }
 

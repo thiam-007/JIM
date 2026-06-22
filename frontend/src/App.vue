@@ -1601,4 +1601,49 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   from { opacity: 0; transform: scale(0.95) translateY(10px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
+
+/* ─── Pagination Globale ─── */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+  margin-bottom: 24px;
+}
+.page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--creme);
+  border: 1.5px solid rgba(132, 89, 54, 0.2);
+  color: var(--brun);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.page-btn:hover:not(:disabled) {
+  background: var(--or);
+  border-color: var(--or);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(249, 178, 51, 0.25);
+}
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: transparent;
+  border-color: rgba(132, 89, 54, 0.1);
+}
+.page-info {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brun);
+  background: rgba(132, 89, 54, 0.08);
+  padding: 6px 14px;
+  border-radius: 999px;
+}
 </style>
