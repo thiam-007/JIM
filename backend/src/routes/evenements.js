@@ -52,6 +52,16 @@ router.get('/dashboard/stats', async (req, res, next) => {
       .select('id, statut')
     if (invError) throw invError
 
+    const { count: total_abonnes, error: abnError } = await supabase
+      .from('newsletter_subscribers')
+      .select('*', { count: 'exact', head: true })
+    if (abnError && abnError.code !== 'PGRST116') console.error(abnError)
+
+    const { count: total_campagnes, error: cmpError } = await supabase
+      .from('newsletter_campaigns')
+      .select('*', { count: 'exact', head: true })
+    if (cmpError && cmpError.code !== 'PGRST116') console.error(cmpError)
+
     const total_evenements = events.length
     const total_invites = invitations.length
     const total_presents = invitations.filter(i => i.statut === 'present').length
@@ -74,7 +84,9 @@ router.get('/dashboard/stats', async (req, res, next) => {
       total_evenements,
       taux_presence_moyen,
       formats_distribution,
-      cumul_participants: total_presents
+      cumul_participants: total_presents,
+      total_abonnes: total_abonnes || 0,
+      total_campagnes: total_campagnes || 0
     })
   } catch (err) {
     next(err)

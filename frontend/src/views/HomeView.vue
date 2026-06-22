@@ -71,31 +71,28 @@
             </div>
           </div>
 
-          <!-- Card 2: Taux de présence -->
+          <!-- Card 2: Abonnés Newsletter -->
           <div class="kpi-card glass">
             <div class="kpi-header">
-              <span class="kpi-title">Taux de Présence</span>
+              <span class="kpi-title">Abonnés</span>
               <div class="kpi-icon-wrap vert"><AppIcon name="users" :size="20" /></div>
             </div>
             <div class="kpi-value-wrap">
-              <span class="kpi-value">{{ kpiStats.taux_presence_moyen }}%</span>
-              <div class="kpi-progress">
-                <div class="kpi-progress-bar bg-vert" :style="`width: ${kpiStats.taux_presence_moyen}%`"></div>
-              </div>
-              <span class="kpi-sub">Ratio invités vs émargés</span>
+              <span class="kpi-value">{{ kpiStats.total_abonnes }}</span>
+              <span class="kpi-sub">À la newsletter</span>
             </div>
           </div>
 
 
-          <!-- Card 4: Cumul des participants -->
+          <!-- Card 4: Campagnes envoyées -->
           <div class="kpi-card glass">
             <div class="kpi-header">
-              <span class="kpi-title">Cumul Visiteurs</span>
-              <div class="kpi-icon-wrap rouge"><AppIcon name="check-circle" :size="20" /></div>
+              <span class="kpi-title">Campagnes</span>
+              <div class="kpi-icon-wrap rouge"><AppIcon name="mail" :size="20" /></div>
             </div>
             <div class="kpi-value-wrap">
-              <span class="kpi-value">{{ kpiStats.cumul_participants }}</span>
-              <span class="kpi-sub">Personnes ayant émargé</span>
+              <span class="kpi-value">{{ kpiStats.total_campagnes }}</span>
+              <span class="kpi-sub">Newsletters expédiées</span>
             </div>
           </div>
         </div>
@@ -583,7 +580,9 @@ const kpiStats = ref({
   total_evenements: 0,
   taux_presence_moyen: 0,
   formats_distribution: { presentiel: 0, virtuel: 0, hybride: 0 },
-  cumul_participants: 0
+  cumul_participants: 0,
+  total_abonnes: 0,
+  total_campagnes: 0
 })
 const activities = ref([])
 const loading = ref(false)
@@ -695,7 +694,9 @@ watch(() => api.isConnected, (newVal) => {
       total_evenements: 0,
       taux_presence_moyen: 0,
       formats_distribution: { presentiel: 0, virtuel: 0, hybride: 0 },
-      cumul_participants: 0
+      cumul_participants: 0,
+      total_abonnes: 0,
+      total_campagnes: 0
     }
     activities.value = []
     activeEventStats.value = null
