@@ -67,9 +67,6 @@
           <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
             <AppIcon name="info" :size="16" /> Projet
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'RevuePresse' }" to="/revue-presse">
-            <AppIcon name="award" :size="16" /> Revue de Presse
-          </RouterLink>
           <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
             <AppIcon name="file-text" :size="16" /> Actualité
           </RouterLink>
