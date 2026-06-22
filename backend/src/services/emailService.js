@@ -100,11 +100,6 @@ function emailShell(bodyContent, options = {}) {
     .header { position: relative; background-color: #593716; min-height: 190px; overflow: hidden; }
     .header-pattern { position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 260px auto; background-repeat: repeat; opacity: 0.15; }
     .header-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(89,55,22,0.85) 0%, rgba(132,89,54,0.7) 100%); }
-    .header-content { position: relative; z-index: 2; padding: 36px 40px 32px; display: flex; align-items: center; gap: 28px; }
-    .header-logo img { width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; }
-    .header-text { border-left: 3px solid #F9B233; padding-left: 24px; }
-    .header-text .label { font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 6px; }
-    .header-text h1 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0; }
     .header-text h1 em { color: #F9B233; font-style: italic; }
     .header-text .edition { font-size: 11px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin-top: 8px; }
     .gold-band { background: #F9B233; height: 8px; }
@@ -113,14 +108,7 @@ function emailShell(bodyContent, options = {}) {
     .footer { background: #593716; padding: 32px 40px 24px; position: relative; overflow: hidden; }
     .footer::after { content: ''; position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 180px; opacity: 0.15; }
     .footer-inner { position: relative; z-index: 1; }
-    .footer-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid rgba(249,178,51,0.2); margin-bottom: 18px; }
-    .footer-brand img { width: 120px; opacity: 0.9; }
-    .footer-brand p { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 8px; max-width: 200px; line-height: 1.5; }
-    .footer-suivez h4 { font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #F9B233; margin-bottom: 10px; }
-    .social-links { display: flex; gap: 8px; }
-    .social-links a { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid rgba(249,178,51,0.3); border-radius: 50%; color: rgba(255,255,255,0.7); font-size: 12px; text-decoration: none; font-weight: 700; text-align: center; line-height: 32px; }
-    .social-links img { vertical-align: middle; width: 16px; height: 16px; }
-    .footer-bottom { display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: rgba(255,255,255,0.3); flex-wrap: wrap; gap: 6px; }
+    .footer-bottom { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 16px; }
     .footer-bottom a { color: rgba(255,255,255,0.4); text-decoration: none; }
     .or-bar-bottom { height: 5px; background: linear-gradient(to right, #593716, #F9B233, #B1222A, #F9B233, #593716); }
     
@@ -173,17 +161,9 @@ function emailShell(bodyContent, options = {}) {
     
     .nextstep { background: #FAF6F1; padding: 36px 40px; }
     .nextstep h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 20px; margin-top: 0; }
-    .steps-list { display: flex; flex-direction: column; gap: 12px; }
-    .step-item { display: flex; gap: 14px; align-items: flex-start; }
-    .step-num { flex-shrink: 0; width: 30px; height: 30px; background: #B1222A; color: #FFFFFF; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; justify-content: center; border-radius: 50%; line-height: 30px; text-align: center; }
-    .step-text strong { display: block; font-size: 13px; font-weight: 700; color: #593716; margin-bottom: 2px; }
-    .step-text span { font-size: 12px; color: #6A4830; line-height: 1.55; }
     
     @media (max-width: 600px) {
-      .header-content { flex-direction: column; gap: 16px; text-align: center; }
-      .header-text { border-left: none; padding-left: 0; }
-      .footer-top { flex-direction: column; align-items: center; text-align: center; }
-      .actu-grid { grid-template-columns: 1fr; }
+      .actu-grid { display: block; }
     }
   </style>
 </head>
@@ -193,16 +173,19 @@ function emailShell(bodyContent, options = {}) {
   <div class="header">
     <div class="header-pattern"></div>
     <div class="header-overlay"></div>
-    <div class="header-content">
-      <div class="header-logo">
-        <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée">
-      </div>
-      <div class="header-text">
-        <p class="label">${label}</p>
-        <h1>${title}</h1>
-        <p class="edition">${edition}</p>
-      </div>
-    </div>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2; padding: 36px 40px 32px;">
+      <tr>
+        <td width="90" valign="top" align="center" style="width:90px;">
+          <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; display: block;" />
+        </td>
+        <td width="24" style="width: 24px;"></td>
+        <td valign="middle" style="border-left: 3px solid #F9B233; padding-left: 24px;">
+          <p style="font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin: 0 0 6px 0;">${label}</p>
+          <h1 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0;">${title.replace('N°', 'N°&nbsp;')}</h1>
+          <p style="font-size: 12px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin: 8px 0 0 0;">${edition}</p>
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="gold-band"></div>
 
@@ -212,22 +195,40 @@ function emailShell(bodyContent, options = {}) {
   <!-- FOOTER -->
   <div class="footer">
     <div class="footer-inner">
-      <div class="footer-top">
-        <div class="footer-brand">
-          <img src="${frontendUrl}/images/logo.jpeg" alt="MVG" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #F9B233; object-fit: cover;">
-          <p style="margin-top: 12px;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
-        </div>
-        <div class="footer-suivez">
-          <h4>Suivez-nous</h4>
-          <div class="social-links">
-            <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/facebook-new.png" alt="f"></a>
-            <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/instagram-new.png" alt="in"></a>
-            <a href="${frontendUrl}" style="text-decoration:none;"><img src="https://img.icons8.com/ios-filled/16/F9B233/domain.png" alt="w"></a>
-          </div>
-        </div>
-      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid rgba(249,178,51,0.2); padding-bottom: 20px; margin-bottom: 18px;">
+        <tr>
+          <td valign="top" align="center" style="padding-bottom: 16px;">
+            <img src="${frontendUrl}/images/logo.jpeg" alt="MVG" width="70" height="70" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #F9B233; display: block; margin: 0 auto; object-fit: cover;">
+            <p style="margin: 12px auto 0; font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.5; max-width: 240px; text-align: center;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
+          </td>
+        </tr>
+        <tr>
+          <td valign="top" align="center">
+            <h4 style="font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #F9B233; margin: 0 0 12px 0;">Suivez-nous</h4>
+            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+              <tr>
+                <td align="center" style="padding: 0 6px;">
+                  <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; display:block;">
+                    <img src="https://img.icons8.com/ios-filled/36/F9B233/facebook-new.png" alt="Facebook" width="36" height="36" style="display:block; border:none;" />
+                  </a>
+                </td>
+                <td align="center" style="padding: 0 6px;">
+                  <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none; display:block;">
+                    <img src="https://img.icons8.com/ios-filled/36/F9B233/instagram-new.png" alt="Instagram" width="36" height="36" style="display:block; border:none;" />
+                  </a>
+                </td>
+                <td align="center" style="padding: 0 6px;">
+                  <a href="${frontendUrl}" style="text-decoration:none; display:block;">
+                    <img src="https://img.icons8.com/ios-filled/36/F9B233/domain.png" alt="Web" width="36" height="36" style="display:block; border:none;" />
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
       <div class="footer-bottom">
-        <span>© ${new Date().getFullYear()} Musée Virtuel de Guinée — Tous droits réservés</span>
+        <span style="display:block; text-align:center;">© ${new Date().getFullYear()} Musée Virtuel de Guinée — Tous droits réservés</span>
       </div>
     </div>
   </div>
@@ -690,16 +691,16 @@ export function generateBulletinHtml(data) {
 
   const body = `
   <!-- ████ SOMMAIRE ████ -->
-  <div class="sommaire">
-    <p class="sommaire-label">Sommaire</p>
-    <div class="sommaire-links">
-      <a href="#edito">L'Édito</a>
-      <span class="sep">·</span>
-      <a href="#actualites">Actualités du projet</a>
-      <span class="sep">·</span>
-      <a href="#zoom">Zoom sur…</a>
-      <span class="sep">·</span>
-      <a href="#nextstep">Prochaines étapes</a>
+  <div class="sommaire" style="background: #593716; padding: 18px 40px; text-align: center;">
+    <p style="font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #F9B233; margin: 0 0 12px 0;">Sommaire</p>
+    <div style="font-family: 'Lato', sans-serif; font-size: 13px; line-height: 2;">
+      <a href="#edito" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">L'Édito</a>
+      &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
+      <a href="#actualites" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">Actualités du projet</a>
+      &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
+      <a href="#zoom" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">Zoom sur…</a>
+      &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
+      <a href="#nextstep" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">Prochaines étapes</a>
     </div>
   </div>
 
@@ -710,20 +711,30 @@ export function generateBulletinHtml(data) {
       <div style="margin-bottom: 24px;">
         <h2>${editoTitre}</h2>
         <p>${editoTexte.replace(/\n/g, '<br />')}</p>
-        <div class="edito-author">
-          <div class="edito-author-avatar">${editoAuteurInitiales}</div>
-          <div class="edito-author-info">
-            <strong>${editoAuteurNom}</strong>
-            <span>${editoAuteurRole}</span>
-          </div>
-        </div>
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 18px;">
+          <tr>
+            <td width="38" height="38" align="center" valign="middle" style="width: 38px; height: 38px; border-radius: 50%; background: #B1222A; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; text-align: center; mso-line-height-rule: exactly;">
+              <span style="line-height: 38px; display: block; margin: 0; padding: 0;">${editoAuteurInitiales}</span>
+            </td>
+            <td width="12"></td>
+            <td valign="middle">
+              <strong style="display: block; font-size: 12px; font-weight: 700; color: #593716; margin: 0;">${editoAuteurNom}</strong>
+              <span style="font-size: 11px; color: #845936; margin: 0;">${editoAuteurRole}</span>
+            </td>
+          </tr>
+        </table>
       </div>
       ${editoBref.length > 0 ? `
       <div class="edito-aside">
         <p class="aside-title">📌 En bref ce mois-ci</p>
-        <ul>
-          ${editoBref.map(item => `<li>${item}</li>`).join('')}
-        </ul>
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          ${editoBref.map(item => `
+          <tr>
+            <td width="16" valign="top" style="color: #F9B233; font-size: 12px; padding-top: 1px;">▸</td>
+            <td valign="top" style="font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5; padding-bottom: 10px;">${item}</td>
+          </tr>
+          `).join('')}
+        </table>
       </div>
       ` : ''}
     </div>
@@ -734,18 +745,16 @@ export function generateBulletinHtml(data) {
   <div class="actualites" id="actualites">
     <div class="section-label">Actualités du projet</div>
     <h2>Ce qui s'est passé ce mois-ci</h2>
-    <div class="actu-grid">
+    <div class="actu-grid" style="display: block;">
       ${actus.map((actu, index) => `
-      <div class="actu-card ${index === 0 ? 'actu-card-full' : (index === 1 ? 'secondary' : 'tertiary')}">
-        <div class="actu-card-top"></div>
-        ${index === 0 && actu.imageUrl ? `<img src="${actu.imageUrl}" class="actu-card-img" alt="Actualité principale" />` : ''}
-        <div class="actu-card-body">
-          <p class="actu-tag">${actu.tag || 'Actualité'}</p>
-          <h3>${actu.titre}</h3>
-          <p>${actu.description}</p>
-          <div style="margin-top: 12px;">
-            <a href="${actu.linkUrl}" style="color:#B1222A; font-size:11px; font-weight:bold; text-decoration:none;">Lire la suite →</a>
-          </div>
+      <div style="border: 1px solid rgba(132,89,54,0.15); border-radius: 2px; overflow: hidden; margin-bottom: 16px; background: #ffffff;">
+        <div style="height: 8px; background: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#F9B233')};"></div>
+        ${actu.imageUrl ? `<img src="${actu.imageUrl}" style="width: 100%; max-height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
+        <div style="padding: 16px;">
+          <p style="font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#8C3B2A')}; margin: 0 0 6px 0;">${actu.tag || 'Actualité'}</p>
+          <h3 style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: #593716; margin: 0 0 8px 0; line-height: 1.3;">${actu.titre}</h3>
+          <p style="font-size: 13px; color: #5A3E28; line-height: 1.6; margin: 0 0 12px 0;">${actu.description}</p>
+          <a href="${actu.linkUrl}" style="color:#B1222A; font-size:12px; font-weight:bold; text-decoration:none;">Lire la suite →</a>
         </div>
       </div>
       `).join('')}
@@ -769,17 +778,26 @@ export function generateBulletinHtml(data) {
   <div class="nextstep" id="nextstep">
     <div class="section-label">Prochaines étapes</div>
     <h2>Au programme du mois prochain</h2>
-    <div class="steps-list">
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
       ${etapes.map((etape, index) => `
-      <div class="step-item">
-        <div class="step-num">${index + 1}</div>
-        <div class="step-text">
-          <strong>${etape.titre}</strong>
-          <span>${etape.desc}</span>
-        </div>
-      </div>
+      <tr>
+        <td width="30" valign="top" style="padding-bottom: 16px;">
+          <table cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="30" height="30" align="center" valign="middle" style="background: #B1222A; color: #FFFFFF; font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; border-radius: 50%; text-align: center; mso-line-height-rule: exactly;">
+                <span style="line-height: 30px; display: block; margin: 0; padding: 0;">${index + 1}</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td width="14" style="padding-bottom: 16px;"></td>
+        <td valign="top" style="padding-bottom: 16px; padding-top: 4px;">
+          <strong style="display: block; font-size: 14px; font-weight: 700; color: #593716; margin: 0 0 4px 0;">${etape.titre}</strong>
+          <span style="display: block; font-size: 13px; color: #6A4830; line-height: 1.55; margin: 0;">${etape.desc}</span>
+        </td>
+      </tr>
       `).join('')}
-    </div>
+    </table>
   </div>
   ` : ''}
   `;
