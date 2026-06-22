@@ -14,6 +14,8 @@ import ManageAdminsView from '../views/ManageAdminsView.vue'
 import ManageNewslettersView from '../views/ManageNewslettersView.vue'
 import ContactView from '../views/ContactView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import RevuePresseView from '../views/RevuePresseView.vue'
+import ManageRevuePresseView from '../views/ManageRevuePresseView.vue'
 import { useApiStore } from '../store/api.js'
 
 const routes = [
@@ -22,6 +24,7 @@ const routes = [
   { path: '/a-propos', name: 'Apropos', component: AproposView },
   { path: '/actualites', name: 'Actualites', component: ActualitesView },
   { path: '/contact', name: 'Contact', component: ContactView },
+  { path: '/revue-presse', name: 'RevuePresse', component: RevuePresseView },
   { path: '/actualites/:id', name: 'ActualiteDetail', component: ActualiteDetailView },
 
   { path: '/evenements', name: 'Evenements', component: EvenementsView },
@@ -31,6 +34,7 @@ const routes = [
   { path: '/admin/actualites', name: 'ManageActualites', component: ManageActualitesView },
   { path: '/admin/utilisateurs', name: 'ManageAdmins', component: ManageAdminsView },
   { path: '/admin/newsletters', name: 'ManageNewsletters', component: ManageNewslettersView },
+  { path: '/admin/revue-presse', name: 'ManageRevuePresse', component: ManageRevuePresseView },
   { path: '/profil', name: 'Profile', component: ProfileView }
 ]
 
@@ -48,7 +52,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const apiStore = useApiStore()
-  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters']
+  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters', 'ManageRevuePresse']
   if (protectedRoutes.includes(to.name) && !apiStore.isConnected) {
     next({ name: 'Home' })
   } else {

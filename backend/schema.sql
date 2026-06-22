@@ -177,3 +177,23 @@ CREATE TRIGGER trg_newsletter_campaigns_updated
 CREATE TRIGGER trg_newsletter_subscribers_updated
   BEFORE UPDATE ON newsletter_subscribers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- Revue de Presse
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS revue_presse (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titre VARCHAR NOT NULL,
+  media_nom VARCHAR NOT NULL,
+  description TEXT,
+  url_lien TEXT,
+  date_publication TIMESTAMPTZ DEFAULT NOW(),
+  image_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_revue_presse_updated
+  BEFORE UPDATE ON revue_presse
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();

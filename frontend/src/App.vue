@@ -67,6 +67,9 @@
           <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
             <AppIcon name="info" :size="16" /> Projet
           </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'RevuePresse' }" to="/revue-presse">
+            <AppIcon name="award" :size="16" /> Revue de Presse
+          </RouterLink>
           <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
             <AppIcon name="file-text" :size="16" /> Actualité
           </RouterLink>
@@ -84,6 +87,9 @@
           </RouterLink>
           <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageNewsletters' }" to="/admin/newsletters">
             <AppIcon name="mail" :size="16" /> Newsletters
+          </RouterLink>
+          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageRevuePresse' }" to="/admin/revue-presse">
+            <AppIcon name="award" :size="16" /> Revue Presse
           </RouterLink>
           <RouterLink v-if="!apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
             <AppIcon name="mail" :size="16" /> Contact

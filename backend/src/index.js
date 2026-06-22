@@ -16,6 +16,7 @@ import actualitesRouter from './routes/actualites.js'
 import contactRouter from './routes/contact.js'
 import newsletterRouter from './routes/newsletter.js'
 import shareRouter from './routes/share.js'
+import revuePresseRouter from './routes/revuePresse.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
@@ -124,6 +125,9 @@ app.use('/api/actualites', actualitesRouter)
 
 // Contact form: public endpoint for website enquiries
 app.use('/api/contact', contactRouter)
+
+// Revue de presse: public endpoints (admin protected inside router)
+app.use('/api/revue-presse', revuePresseRouter)
 
 // Newsletter subscription: public endpoint
 app.use('/api/newsletter', newsletterRouter)
