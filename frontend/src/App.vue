@@ -64,9 +64,20 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
             <AppIcon name="home" :size="16" /> Accueil
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
-            <AppIcon name="info" :size="16" /> Projet
-          </RouterLink>
+          <div v-if="!isAdminDomain" class="nav-dropdown-wrapper">
+            <div class="nav-tab nav-tab-dropdown" :class="{ active: route.name === 'Apropos' || route.name === 'RevuePresse' }">
+              <AppIcon name="info" :size="16" /> Le Projet
+              <AppIcon name="chevron-down" :size="14" class="dropdown-icon" />
+            </div>
+            <div class="nav-dropdown-menu">
+              <RouterLink class="nav-dropdown-item" :class="{ active: route.name === 'Apropos' }" to="/a-propos">
+                <AppIcon name="info" :size="14" /> À propos
+              </RouterLink>
+              <RouterLink class="nav-dropdown-item" :class="{ active: route.name === 'RevuePresse' }" to="/revue-presse">
+                <AppIcon name="award" :size="14" /> Revue de Presse
+              </RouterLink>
+            </div>
+          </div>
           <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Actualites' || route.name === 'ActualiteDetail' }" to="/actualites">
             <AppIcon name="file-text" :size="16" /> Actualité
           </RouterLink>
@@ -556,6 +567,63 @@ header:hover .logo-text span {
   background: linear-gradient(135deg, var(--brun), var(--or));
   border-color: transparent;
   box-shadow: 0 12px 28px rgba(132, 89, 54, .2);
+}
+
+/* Nav Dropdown */
+.nav-dropdown-wrapper {
+  position: relative;
+  display: flex;
+}
+.nav-tab-dropdown {
+  cursor: pointer;
+}
+.dropdown-icon {
+  margin-left: 2px;
+  transition: transform 0.2s;
+}
+.nav-dropdown-wrapper:hover .dropdown-icon {
+  transform: rotate(180deg);
+}
+.nav-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  margin-top: 8px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(89, 55, 22, 0.15);
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 100;
+  border: 1px solid rgba(132, 89, 54, 0.1);
+}
+.nav-dropdown-wrapper:hover .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  color: var(--brun-fonce);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+.nav-dropdown-item:hover, .nav-dropdown-item.active {
+  background: rgba(132, 89, 54, 0.08);
+  color: var(--brun);
 }
 
 /* ─── Partenaires Marquee ─── */

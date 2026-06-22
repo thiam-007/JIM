@@ -129,8 +129,56 @@
               </div>
 
               <div class="fg">
-                <label>Logo du média ou image d'illustration (URL) (Optionnel)</label>
-                <input type="text" v-model="form.image_url" placeholder="https://..." />
+                <div class="image-upload-section">
+                  <div class="upload-label-row">
+                    <label>Logo du média ou image d'illustration <span class="req">*</span></label>
+                    <div class="mode-tabs">
+                      <button type="button" class="tab-btn" :class="{ active: imageMode === 'file' }" @click="imageMode = 'file'">Téléverser</button>
+                      <button type="button" class="tab-btn" :class="{ active: imageMode === 'url' }" @click="imageMode = 'url'">Lien URL</button>
+                    </div>
+                  </div>
+                  
+                  <div v-show="imageMode === 'file'">
+                    <div class="file-upload-zone">
+                      <input type="file" id="image-file-input" accept="image/*" @change="onFileChange" />
+                      
+                      <div v-if="!imageFile && !form.image_url" class="upload-prompt">
+                        <AppIcon name="upload" :size="24" />
+                        <span>Choisir depuis l’appareil ou la galerie</span>
+                      </div>
+                      
+                      <div v-else class="preview-inside-zone">
+                        <div class="preview-img-wrap">
+                          <img :src="getPreviewSrc(imageFile ? imageFile.base64 : form.image_url)" class="preview-img" @error="onImageError" />
+                        </div>
+                        <div class="preview-details">
+                          <div class="preview-filename">{{ imageFile ? imageFile.name : 'Image existante (cliquez pour remplacer)' }}</div>
+                        </div>
+                        <button type="button" class="btn-remove-file-absolute" @click.stop.prevent="removeFile" title="Supprimer l'image">
+                          <AppIcon name="trash" :size="16" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div v-show="imageMode === 'url'">
+                    <input type="text" v-model="form.image_url" placeholder="https://..." @input="isCoverLoadError = false" />
+                    <div v-if="form.image_url" class="preview-container flex-col align-start gap-2">
+                      <div class="preview-row">
+                        <div class="preview-img-wrap">
+                          <img :src="getPreviewSrc(form.image_url)" class="preview-img" @error="isCoverLoadError = true" @load="isCoverLoadError = false" />
+                        </div>
+                        <div class="preview-details">
+                          <div class="preview-filename">Aperçu du lien</div>
+                        </div>
+                      </div>
+                      <div v-if="isCoverLoadError" class="url-error-warning">
+                        <AppIcon name="alert-circle" :size="14" />
+                        <span>Ce lien n'est pas valide ou bloqué. Téléversez plutôt l'image.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div v-if="formError" class="ev-form-error">
@@ -194,6 +242,8 @@ const deletingItem = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
+const isCoverLoadError = ref(false)
+const imagePlaceholder = '/images/side-photo.jpeg'
 
 const form = ref({
   titre: '',
@@ -203,6 +253,9 @@ const form = ref({
   date_publication: '',
   image_url: ''
 })
+
+const imageFile = ref(null)
+const imageMode = ref('file')
 
 onMounted(async () => {
   await fetchRevuePresse()
@@ -273,6 +326,71 @@ function toLocalISOString(date) {
     ':' + pad(date.getMinutes())
 }
 
+function isValidUrl(string) {
+  if (!string) return false
+  try {
+    const url = new URL(string)
+    return url.protocol === "http:" || url.protocol === "https:"
+  } catch (_) {
+    return false
+  }
+}
+
+function normalizeImageSource(value) {
+  if (typeof value !== 'string') return ''
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (trimmed.startsWith('data:image/') || trimmed.startsWith('/') || trimmed.startsWith('blob:')) return trimmed
+  if (/^(https?:\/\/|\/\/)/i.test(trimmed)) return trimmed
+  if (trimmed.includes('unsplash.com') || trimmed.includes('images.unsplash.com')) return `https://${trimmed}`
+  return `https://${trimmed}`
+}
+
+function getPreviewSrc(value) {
+  const normalized = normalizeImageSource(value)
+  if (!normalized) return imagePlaceholder
+  if (normalized.startsWith('data:') || normalized.startsWith('/') || normalized.startsWith('blob:')) {
+    return normalized
+  }
+  if (isValidUrl(normalized)) {
+    if (normalized.includes('supabase.co')) {
+      return normalized
+    }
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    return `${apiUrl}/api/proxy-image?url=${encodeURIComponent(normalized)}`
+  }
+  return imagePlaceholder
+}
+
+function onImageError(event) {
+  event.target.src = imagePlaceholder
+}
+
+function onFileChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    imageFile.value = {
+      base64: e.target.result,
+      name: file.name,
+      mimeType: file.type
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeFile() {
+  if (imageFile.value) {
+    imageFile.value = null
+    const input = document.getElementById('image-file-input')
+    if (input) input.value = ''
+  } else {
+    form.value.image_url = ''
+  }
+}
+
 function openCreate() {
   formError.value = ''
   editingItem.value = null
@@ -284,6 +402,8 @@ function openCreate() {
     date_publication: toLocalISOString(new Date()),
     image_url: ''
   }
+  imageFile.value = null
+  imageMode.value = 'file'
   showModal.value = true
 }
 
@@ -305,6 +425,8 @@ function openEdit(item) {
     date_publication: d,
     image_url: item.image_url || ''
   }
+  imageFile.value = null
+  imageMode.value = (item.image_url && !item.image_url.startsWith('data:') && !item.image_url.includes('supabase.co') && item.image_url !== imagePlaceholder) ? 'url' : 'file'
   showModal.value = true
 }
 
@@ -316,7 +438,17 @@ async function saveItem() {
   formError.value = ''
   saving.value = true
   try {
-    const payload = { ...form.value }
+    let finalImageUrl = normalizeImageSource(form.value.image_url) || null
+    if (imageMode.value === 'file' && imageFile.value) {
+      const uploadRes = await api.post('/api/actualites/upload', {
+        file: imageFile.value.base64,
+        fileName: imageFile.value.name,
+        mimeType: imageFile.value.mimeType
+      })
+      finalImageUrl = uploadRes.url
+    }
+
+    const payload = { ...form.value, image_url: finalImageUrl }
     if (!payload.date_publication) payload.date_publication = new Date().toISOString()
     else payload.date_publication = new Date(payload.date_publication).toISOString()
 
@@ -407,4 +539,24 @@ async function doDelete() {
 .btn-cancel { padding: 12px 22px; background: none; border: 2px solid rgba(132,89,54,.2); border-radius: 12px; color: var(--brun); font-weight: 700; cursor: pointer; transition: all .2s; }
 .btn-cancel:hover { border-color: var(--brun); background: rgba(132,89,54,.06); }
 .ev-form-error { display: flex; align-items: center; gap: 8px; background: #ffeaea; border: 1.5px solid var(--rouge); border-radius: 12px; padding: 10px 14px; color: var(--rouge); font-size: .84rem; font-weight: 600; margin-top: 12px; }
+
+.image-upload-section { display: flex; flex-direction: column; gap: 12px; }
+.upload-label-row { display: flex; align-items: center; justify-content: space-between; }
+.mode-tabs { display: flex; background: rgba(132,89,54,0.08); border-radius: 8px; padding: 3px; }
+.tab-btn { padding: 4px 12px; border: none; background: transparent; font-size: 0.8rem; font-weight: 600; border-radius: 6px; cursor: pointer; color: rgba(132,89,54,0.6); transition: all 0.2s; }
+.tab-btn.active { background: white; color: var(--brun-fonce); box-shadow: 0 2px 5px rgba(132,89,54,0.1); }
+.file-upload-zone { position: relative; border: 2px dashed rgba(132,89,54,0.2); border-radius: 12px; min-height: 120px; display: flex; align-items: center; justify-content: center; background: rgba(132,89,54,0.02); transition: all 0.2s; overflow: hidden; cursor: pointer; }
+.file-upload-zone:hover { border-color: rgba(132,89,54,0.4); background: rgba(132,89,54,0.05); }
+.file-upload-zone input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
+.upload-prompt { display: flex; flex-direction: column; align-items: center; gap: 8px; color: rgba(132,89,54,0.5); font-size: 0.85rem; font-weight: 600; pointer-events: none; }
+.preview-inside-zone { display: flex; align-items: center; gap: 16px; padding: 12px; width: 100%; height: 100%; background: white; pointer-events: none; }
+.preview-img-wrap { width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(132,89,54,0.1); flex-shrink: 0; background: #f5f5f5; }
+.preview-img { width: 100%; height: 100%; object-fit: cover; }
+.preview-details { display: flex; flex-direction: column; flex-grow: 1; }
+.preview-filename { font-size: 0.85rem; font-weight: 700; color: var(--brun-fonce); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+.btn-remove-file-absolute { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: white; border: 1px solid rgba(177,34,42,0.2); color: var(--rouge); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; pointer-events: auto; box-shadow: 0 4px 12px rgba(177,34,42,0.1); transition: all 0.2s; }
+.btn-remove-file-absolute:hover { background: rgba(177,34,42,0.05); border-color: rgba(177,34,42,0.4); transform: scale(1.05); }
+.preview-container { padding: 12px; border: 1px solid rgba(132,89,54,0.15); border-radius: 12px; background: rgba(132,89,54,0.03); margin-top: 10px; }
+.preview-row { display: flex; gap: 12px; align-items: center; }
+.url-error-warning { display: flex; align-items: center; gap: 6px; color: var(--rouge); font-size: 0.8rem; background: rgba(177,34,42,0.05); padding: 8px 12px; border-radius: 6px; }
 </style>
