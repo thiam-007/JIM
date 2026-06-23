@@ -338,36 +338,78 @@
 
 
 
-      <!-- ─── Actualités Récentes ─── -->
-      <section class="visitor-showcase-section" v-reveal="230">
-        <div class="section-title-wrap text-center mt-4">
-          <h2>Dernières Actualités</h2>
-          <div class="section-divider mx-auto"></div>
-        </div>
-        <div class="news-cards-grid mt-4">
-          <div 
-            v-for="news in latestNews" 
-            :key="news.id" 
-            class="news-card glass"
-            @click="readNews(news.id)"
-          >
-            <div class="news-img-wrap">
-              <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" loading="lazy" />
-              <div class="news-date-badge">{{ news.date_evenement ? formatShortDate(news.date_evenement) : 'À venir' }}</div>
+      <!-- ─── Actualités & Revue de Presse ─── -->
+      <section class="news-and-press-section" v-reveal="230">
+        <div class="news-press-grid">
+          
+          <!-- MAIN : Dernières Actualités -->
+          <div class="news-main-column">
+            <div class="section-title-wrap text-left">
+              <h2>Dernières Actualités</h2>
+              <div class="section-divider"></div>
             </div>
-            <div class="news-content-wrap">
-              <h3 class="news-card-title">{{ news.titre }}</h3>
-              <p class="news-card-desc">{{ news.description }}</p>
-              <span class="news-link">
-                Lire l'article <AppIcon name="chevron-right" :size="14" />
-              </span>
+            
+            <div class="news-cards-grid mt-4">
+              <div 
+                v-for="news in latestNews" 
+                :key="news.id" 
+                class="news-card glass"
+                @click="readNews(news.id)"
+              >
+                <div class="news-img-wrap">
+                  <img :src="news.imageUrl" :alt="news.titre" class="news-card-img" loading="lazy" />
+                  <div class="news-date-badge">{{ news.date_evenement ? formatShortDate(news.date_evenement) : 'À venir' }}</div>
+                </div>
+                <div class="news-content-wrap">
+                  <h3 class="news-card-title">{{ news.titre }}</h3>
+                  <p class="news-card-desc">{{ news.description }}</p>
+                  <span class="news-link">
+                    Lire l'article <AppIcon name="chevron-right" :size="14" />
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="text-left news-view-all-wrap" style="margin-top: 36px;">
+              <RouterLink to="/actualites" class="btn-primary-custom inline-flex">
+                <AppIcon name="file-text" :size="16" /> Voir toutes les actualités
+              </RouterLink>
             </div>
           </div>
-        </div>
-        <div class="text-center news-view-all-wrap">
-          <RouterLink to="/actualites" class="btn-primary-custom inline-flex">
-            <AppIcon name="file-text" :size="16" /> Voir toutes les actualités
-          </RouterLink>
+
+          <!-- SIDEBAR : Revue de Presse -->
+          <aside class="press-sidebar-column">
+            <div class="section-title-wrap text-left">
+              <h2>Dans la Presse</h2>
+              <div class="section-divider"></div>
+            </div>
+            
+            <div class="press-list mt-4">
+              <a 
+                v-for="article in revuePresseList" 
+                :key="article.id" 
+                :href="article.url_lien" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                class="press-sidebar-item glass"
+              >
+                <div class="press-media-badge">{{ article.media_nom }}</div>
+                <h4 class="press-title">{{ article.titre }}</h4>
+                <div class="press-date">{{ formatShortDate(article.date_publication) }}</div>
+              </a>
+              <div v-if="revuePresseList.length === 0" class="empty-press">
+                <AppIcon name="award" :size="24" style="opacity:0.5; margin-bottom:8px" />
+                <p>Aucun article de presse pour le moment</p>
+              </div>
+            </div>
+            
+            <div class="text-left" style="margin-top: 36px;" v-if="revuePresseList.length > 0">
+              <RouterLink to="/revue-presse" class="btn-sidebar-view-all inline-flex">
+                <AppIcon name="external-link" :size="16" /> Voir toute la revue de presse
+              </RouterLink>
+            </div>
+          </aside>
+
         </div>
       </section>
 
@@ -504,8 +546,10 @@ const router = useRouter()
 const api = useApiStore()
 
 const latestNews = computed(() => {
-  return (api.actualites || []).slice(0, 3)
+  return (api.actualites || []).slice(0, 4)
 })
+
+const revuePresseList = ref([])
 
 const heroSlides = [
   {
@@ -684,7 +728,7 @@ function stopMonitoring() {
 }
 
 // Watcher for connection status changes
-watch(() => api.isConnected, (newVal) => {
+watch(() => api.isConnected, async (newVal) => {
   if (newVal) {
     startMonitoring()
   } else {
@@ -701,6 +745,13 @@ watch(() => api.isConnected, (newVal) => {
     activities.value = []
     activeEventStats.value = null
     api.fetchActualites()
+    
+    try {
+      const data = await api.get('/api/revue-presse')
+      revuePresseList.value = (data || []).slice(0, 3)
+    } catch (e) {
+      console.error("Erreur chargement revue de presse sur la page d'accueil:", e)
+    }
   }
 }, { immediate: true })
 
@@ -1392,34 +1443,127 @@ function formatTimeAgo(dateStr) {
   color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   box-shadow: 0 6px 15px rgba(89, 55, 22, 0.2); flex-shrink: 0;
 }
-.newsletter-text {
-  flex: 1; min-width: 250px; text-align: left;
+.newsletter-input-group { display: flex; gap: 8px; width: 100%; max-width: 480px; position: relative; }
+.newsletter-input-group input { flex-grow: 1; padding: 12px 18px; border-radius: 999px; border: 2px solid rgba(132,89,54,0.15); font-family: 'Lato', sans-serif; font-size: 0.95rem; outline: none; transition: all 0.2s; background: rgba(255,255,255,0.8); }
+.newsletter-input-group input:focus { border-color: rgba(249,178,51,0.6); background: #ffffff; box-shadow: 0 0 0 4px rgba(249,178,51,0.1); }
+.btn-newsletter { padding: 12px 24px; background: var(--brun); color: #fff; border: none; border-radius: 999px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.btn-newsletter:hover:not(:disabled) { background: var(--brun-fonce); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(89,55,22,0.2); }
+.btn-newsletter:disabled { opacity: 0.7; cursor: not-allowed; }
+
+/* News & Press Section */
+.news-and-press-section {
+  padding: 40px 0;
 }
-.newsletter-text h3 {
-  margin: 0 0 6px; font-size: 1.3rem; font-weight: 800; color: var(--brun); text-transform: uppercase; letter-spacing: 1px;
+.news-press-grid {
+  display: grid;
+  grid-template-columns: 2.2fr 1fr;
+  gap: 40px;
+  align-items: start;
 }
-.newsletter-text p {
-  margin: 0; font-size: 0.9rem; color: #555; line-height: 1.4;
+.text-left {
+  text-align: left !important;
 }
-.newsletter-form {
-  flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 10px;
+
+/* Sidebar Revue de Presse */
+.press-sidebar-column {
+  background: var(--creme);
+  padding: 30px 24px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  box-shadow: 0 10px 30px rgba(89, 55, 22, 0.05);
 }
-.newsletter-input-group {
-  display: flex; gap: 10px; width: 100%;
+.press-sidebar-column .section-title-wrap h2 {
+  font-size: 1.5rem;
 }
-.newsletter-input-group input {
-  flex: 1; padding: 12px 18px; border-radius: 999px; border: 2px solid #e8ddd0; outline: none; background: var(--creme); transition: var(--trans); font-size: 0.95rem; color: var(--noir);
+.press-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.newsletter-input-group input:focus {
-  border-color: var(--or); background: var(--blanc); box-shadow: 0 0 0 4px rgba(249, 178, 51, 0.1);
+.press-sidebar-item {
+  display: block;
+  padding: 20px 16px;
+  border-radius: 12px;
+  background: var(--blanc);
+  border: 1px solid rgba(132, 89, 54, 0.08);
+  border-left: 4px solid var(--or);
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.btn-newsletter {
-  background: var(--brun); color: white; border: none; padding: 0 24px;
-  border-radius: 999px; font-weight: 700; cursor: pointer; transition: var(--trans);
-  display: flex; align-items: center; justify-content: center;
+.press-sidebar-item:hover {
+  transform: translateX(4px);
+  border-left-color: var(--rouge);
+  box-shadow: 0 8px 24px rgba(89, 55, 22, 0.08);
 }
-.btn-newsletter:hover { background: var(--or); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(249, 178, 51, 0.3); }
-.btn-newsletter:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+.press-media-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--brun);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+.press-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--noir);
+  margin: 0 0 10px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.press-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(132,89,54,0.6);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.press-date::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--rouge);
+  border-radius: 50%;
+  opacity: 0.5;
+}
+.empty-press {
+  padding: 30px 20px;
+  text-align: center;
+  border: 1px dashed rgba(132,89,54,0.2);
+  border-radius: var(--radius);
+  color: rgba(132,89,54,0.6);
+  font-size: 0.85rem;
+}
+
+.btn-sidebar-view-all {
+  width: 100%;
+  justify-content: center;
+  background: rgba(132, 89, 54, 0.08);
+  color: var(--brun-fonce);
+  border: 1px solid rgba(132, 89, 54, 0.2);
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.btn-sidebar-view-all:hover {
+  background: var(--brun);
+  color: var(--blanc);
+  border-color: var(--brun);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(89, 55, 22, 0.2);
+}
 
 .toast-enter-active, .toast-leave-active {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1456,12 +1600,22 @@ function formatTimeAgo(dateStr) {
   border-left-color: var(--rouge);
 }
 
+@media (max-width: 1024px) {
+  .news-press-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .newsletter-box { flex-direction: column; text-align: center; padding: 24px 20px; }
+  .newsletter-box { flex-direction: column; text-align: center; padding: 30px 20px; }
   .newsletter-text { text-align: center; }
   .newsletter-input-group { flex-direction: column; }
-  .btn-newsletter { padding: 14px; }
+  .btn-newsletter { padding: 14px; width: 100%; }
   .newsletter-msg { right: 20px; left: 20px; bottom: 20px; justify-content: center; }
+  .news-press-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
 }
 
 .focus-meta .meta-item {
@@ -1725,7 +1879,6 @@ function formatTimeAgo(dateStr) {
 .mb-4 { margin-bottom: 20px; }
 .mt-2 { margin-top: 8px; }
 .mt-3 { margin-top: 14px; }
-.py-4 { padding-top: 24px !important; padding-bottom: 24px !important; }
 .text-center { text-align: center; }
 .opacity-50 { opacity: 0.5; }
 .opacity-60 { opacity: 0.6; }
@@ -2237,7 +2390,7 @@ function formatTimeAgo(dateStr) {
     border-radius: 0;
     margin-left: -20px;
     width: calc(100% + 40px);
-    margin-top: -10px; /* Colle un peu plus à la nav */
+    margin-top: -10px;
   }
   .hero-img {
     object-position: center 25%;
@@ -2283,6 +2436,9 @@ function formatTimeAgo(dateStr) {
   .showcase-info {
     padding: 24px;
   }
+  .press-sidebar-column {
+    padding: 24px 20px;
+  }
   .showcase-image-wrap {
     min-height: 220px;
   }
@@ -2297,16 +2453,19 @@ function formatTimeAgo(dateStr) {
     padding: 10px 20px;
     font-size: 0.85rem;
     justify-content: center;
-    align-self: flex-start; /* ou flex-end selon ce qui est le mieux */
+    align-self: flex-start;
   }
   .hero-ctas-bottom {
-    align-items: flex-end; /* Pour aligner les boutons à droite comme sur desktop */
+    align-items: flex-end;
   }
   
   /* Newsletter Mobile Fix */
   .newsletter-box {
-    padding: 24px 20px;
-    gap: 16px;
+    padding: 30px 20px;
+  }
+  .news-press-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
   }
   .newsletter-form {
     min-width: 100%;
