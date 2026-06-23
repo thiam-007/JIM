@@ -129,7 +129,7 @@ const filteredRevue = computed(() => {
 
 // Pagination
 const currentPage = ref(1)
-const itemsPerPage = 9
+const itemsPerPage = 6
 
 const totalPages = computed(() => Math.ceil(filteredRevue.value.length / itemsPerPage) || 1)
 
