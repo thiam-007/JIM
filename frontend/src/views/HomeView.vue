@@ -4,8 +4,9 @@
     <section class="hero-section" v-reveal="0">
       <div class="hero-bg">
         <Transition name="hero-fade">
-          <div :key="activeHeroSlide.id" class="hero-slide">
-            <img :src="activeHeroSlide.image" :alt="activeHeroSlide.alt" class="hero-img" />
+          <div :key="activeHeroSlide.id || activeHeroSlide.ordre" class="hero-slide">
+            <img v-if="activeHeroSlide.media_type !== 'video'" :src="activeHeroSlide.media_url || activeHeroSlide.image" class="hero-img" />
+            <video v-else :src="activeHeroSlide.media_url" class="hero-img" autoplay loop muted playsinline></video>
             <div class="hero-overlay"></div>
           </div>
         </Transition>
@@ -14,13 +15,13 @@
         <div class="hero-badge">Musée Virtuel de Guinée</div>
         <div class="hero-text-wrapper">
           <Transition name="text-fade">
-            <div :key="activeHeroSlide.id" class="hero-copy-shell">
+            <div :key="activeHeroSlide.id || activeHeroSlide.ordre" class="hero-copy-shell">
               <h1 class="hero-title">
-                <span class="text-light">{{ activeHeroSlide.preTitle }}</span><br />
-                <span class="text-gold">{{ activeHeroSlide.mainTitle }}</span>
+                <span class="text-light">{{ activeHeroSlide.titre_secondaire || activeHeroSlide.preTitle }}</span><br />
+                <span class="text-gold">{{ activeHeroSlide.titre_principal || activeHeroSlide.mainTitle }}</span>
               </h1>
               <p class="hero-subtitle">
-                {{ activeHeroSlide.subtitle }}
+                {{ activeHeroSlide.sous_titre || activeHeroSlide.subtitle }}
               </p>
             </div>
           </Transition>
@@ -551,7 +552,7 @@ const latestNews = computed(() => {
 
 const revuePresseList = ref([])
 
-const heroSlides = [
+const fallbackHeroSlides = [
   {
     id: 1,
     image: '/images/banner-mvg.jpeg',
@@ -602,8 +603,13 @@ const heroSlides = [
   }
 ]
 
+const heroSlides = computed(() => {
+  const slides = api.heroSlides && api.heroSlides.length > 0 ? api.heroSlides : fallbackHeroSlides
+  return slides.slice(0, 6)
+})
+
 const currentHeroSlide = ref(0)
-const activeHeroSlide = computed(() => heroSlides[currentHeroSlide.value] || heroSlides[0])
+const activeHeroSlide = computed(() => heroSlides.value[currentHeroSlide.value] || heroSlides.value[0])
 let heroInterval = null
 
 function readNews(id) {
@@ -686,7 +692,7 @@ function triggerLogin() {
 function startHeroAutoplay() {
   stopHeroAutoplay()
   heroInterval = setInterval(() => {
-    currentHeroSlide.value = (currentHeroSlide.value + 1) % heroSlides.length
+    currentHeroSlide.value = (currentHeroSlide.value + 1) % heroSlides.value.length
   }, 6000)
 }
 
@@ -752,11 +758,14 @@ watch(() => api.isConnected, async (newVal) => {
     } catch (e) {
       console.error("Erreur chargement revue de presse sur la page d'accueil:", e)
     }
+    
+    api.fetchHeroSlides()
   }
 }, { immediate: true })
 
 // Lifecycle
 onMounted(() => {
+  api.fetchHeroSlides()
   startHeroAutoplay()
   if (api.isConnected) {
     startMonitoring()
@@ -1076,9 +1085,9 @@ function formatTimeAgo(dateStr) {
   position: relative;
   border-radius: 24px;
   overflow: hidden;
-  height: calc(100vh - 140px);
-  min-height: 420px;
-  max-height: 700px;
+  height: calc(100vh - 120px);
+  min-height: 550px;
+  max-height: 850px;
   width: 100%;
   display: flex;
   align-items: center;

@@ -716,6 +716,7 @@ export function generateBulletinHtml(data) {
   </div>
 
   <!-- ████ EDITO ████ -->
+  <a name="edito"></a>
   <div class="edito mobile-padding" id="edito">
     <div class="section-label">L'Édito</div>
     <div class="edito-inner">
@@ -753,6 +754,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ ACTUALITES ████ -->
   ${actus.length > 0 ? `
+  <a name="actualites"></a>
   <div class="actualites mobile-padding" id="actualites">
     <div class="section-label">Actualités du projet</div>
     <h2>Ce qui s'est passé ce mois-ci</h2>
@@ -775,6 +777,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ ZOOM SUR ████ -->
   ${zoomTitre ? `
+  <a name="zoom"></a>
   <div class="zoom mobile-padding" id="zoom">
     <div class="zoom-inner">
       <div class="section-label">Zoom sur…</div>
@@ -786,6 +789,7 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ NEXT STEP ████ -->
   ${etapes.length > 0 ? `
+  <a name="nextstep"></a>
   <div class="nextstep mobile-padding" id="nextstep">
     <div class="section-label">Prochaines étapes</div>
     <h2>Au programme du mois prochain</h2>

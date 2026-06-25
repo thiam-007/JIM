@@ -160,6 +160,38 @@
       </div>
     </section>
 
+    <!-- ─── Le Mot de la Cheffe de Projet (Vidéo) ─── -->
+    <section class="ap-video-section" v-reveal="280">
+      <div class="video-card form-card">
+        <div class="video-grid">
+          <div class="video-info-side">
+            <div class="fh fh-a" style="margin-bottom: 16px;">
+              <div class="fh-icon"><AppIcon name="play-circle" :size="24" /></div>
+              <div class="fh-title">Le Mot de la Cheffe de Projet</div>
+            </div>
+            <p class="vision-lead" style="margin-bottom: 16px;">
+              Découvrez la vision derrière le Musée Virtuel de Guinée à travers les mots de notre Cheffe de Projet, <strong>Ida El-Majdoubi Yassir</strong>.
+            </p>
+            <p class="vision-text">
+              Dans cette courte intervention, elle revient sur les origines du projet, les défis rencontrés sur le terrain et l'importance de la numérisation pour la préservation du patrimoine guinéen pour les générations futures.
+            </p>
+          </div>
+          <div class="video-player-side">
+            <!-- Remplacer le src="" par le lien réel de la vidéo (ex: Supabase, YouTube, Vimeo) -->
+            <video 
+              class="project-video" 
+              controls 
+              poster="/images/team/Ida.png"
+              preload="none"
+            >
+              <!-- <source src="VOTRE_LIEN_VIDEO.mp4" type="video/mp4" /> -->
+              Votre navigateur ne supporte pas la balise vidéo.
+            </video>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ─── Équipe du Projet ─── -->
     <section class="ap-team-section" v-reveal="300">
       <div class="section-title-wrap">
@@ -770,6 +802,45 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
 
 .illust-icon {
   animation: float 4s ease-in-out infinite;
+}
+
+/* Video Section */
+.ap-video-section {
+  margin-top: 20px;
+}
+.video-card {
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(132,89,54,0.15);
+  overflow: hidden;
+}
+.video-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  align-items: center;
+}
+@media (max-width: 780px) {
+  .video-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.video-info-side {
+  padding: 40px;
+}
+.video-player-side {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.project-video {
+  width: 100%;
+  height: 100%;
+  max-height: 400px;
+  object-fit: cover;
+  outline: none;
 }
 
 /* Team */

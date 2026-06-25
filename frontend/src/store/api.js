@@ -19,7 +19,8 @@ export const useApiStore = defineStore('api', {
     totalRegistrations: 0,
     loading: false,
     error: '',
-    actualites: []
+    actualites: [],
+    heroSlides: []
   }),
   getters: {
     isConnected: (state) => !!state.token,
@@ -144,6 +145,18 @@ export const useApiStore = defineStore('api', {
       } catch (err) {
         console.error('Erreur chargement Supabase actualites :', err)
         this.actualites = []
+      } finally {
+        this.loading = false
+      }
+    },
+    async fetchHeroSlides() {
+      this.loading = true
+      try {
+        const data = await this.get('/api/hero-slides')
+        this.heroSlides = data || []
+      } catch (err) {
+        console.error('Erreur chargement Supabase hero slides :', err)
+        this.heroSlides = []
       } finally {
         this.loading = false
       }

@@ -17,6 +17,7 @@ import contactRouter from './routes/contact.js'
 import newsletterRouter from './routes/newsletter.js'
 import shareRouter from './routes/share.js'
 import revuePresseRouter from './routes/revuePresse.js'
+import heroSlidesRouter from './routes/heroSlides.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
@@ -56,8 +57,8 @@ app.use(cors({
 }))
 
 // Body parsing
-app.use(express.json({ limit: '50mb' }))
-app.use(express.urlencoded({ limit: '50mb', extended: true }))
+app.use(express.json({ limit: '200mb' }))
+app.use(express.urlencoded({ limit: '200mb', extended: true }))
 
 // HTTP Parameter Pollution protection
 app.use(hpp())
@@ -131,6 +132,9 @@ app.use('/api/revue-presse', revuePresseRouter)
 
 // Newsletter subscription: public endpoint
 app.use('/api/newsletter', newsletterRouter)
+
+// Hero slides: public endpoint
+app.use('/api/hero-slides', heroSlidesRouter)
 
 // Dynamic Open Graph sharing endpoint
 app.use('/api/share', shareRouter)

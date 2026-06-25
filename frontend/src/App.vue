@@ -59,8 +59,56 @@
         </div>
       </header>
 
+      <!-- ─── Admin Sidebar (Option A: Left) ─── -->
+      <div v-if="isAdminSidebarOpen" class="sidebar-backdrop" @click="isAdminSidebarOpen = false"></div>
+      <aside class="admin-sidebar" :class="{ 'is-open': isAdminSidebarOpen }">
+        <div class="sidebar-header">
+          <div class="sidebar-title-wrap">
+            <div class="sidebar-title-icon"><AppIcon name="shield" :size="20" /></div>
+            <div class="sidebar-title-text">Administration</div>
+          </div>
+          <button class="close-sidebar-btn" @click="isAdminSidebarOpen = false">
+            <AppIcon name="x" :size="20" />
+          </button>
+        </div>
+        
+        <div class="sidebar-content">
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'Invites' }" to="/invites" @click="isAdminSidebarOpen = false">
+            <AppIcon name="users" :size="16" /> Invités
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageActualites' }" to="/admin/actualites" @click="isAdminSidebarOpen = false">
+            <AppIcon name="file-text" :size="16" /> Actualités
+          </RouterLink>
+          <RouterLink v-if="apiStore.isSuperAdmin" class="sidebar-link" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs" @click="isAdminSidebarOpen = false">
+            <AppIcon name="user-check" :size="16" /> Utilisateurs
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageNewsletters' }" to="/admin/newsletters" @click="isAdminSidebarOpen = false">
+            <AppIcon name="mail" :size="16" /> Newsletters
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageRevuePresse' }" to="/admin/revue-presse" @click="isAdminSidebarOpen = false">
+            <AppIcon name="award" :size="16" /> Revue Presse
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageHeroSlides' }" to="/admin/hero-slides" @click="isAdminSidebarOpen = false">
+            <AppIcon name="image" :size="16" /> Carrousel
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'Profile' }" to="/profil" @click="isAdminSidebarOpen = false">
+            <AppIcon name="user" :size="16" /> Mon Profil
+          </RouterLink>
+        </div>
+
+        <div class="sidebar-footer">
+          <button class="sidebar-logout-btn" @click="handleLogout">
+            <AppIcon name="log-out" :size="16" /> Déconnexion
+          </button>
+        </div>
+      </aside>
+
       <div class="app-shell">
-        <nav class="nav-tabs">
+        <div class="nav-wrapper" style="display: flex; align-items: center; justify-content: center; position: relative; width: 100%;">
+          <button v-if="apiStore.isConnected" class="admin-toggle-btn icon-only" style="position: absolute; left: 0; top: 50%; transform: translateY(calc(-50% + 10px));" @click="isAdminSidebarOpen = true" title="Menu Admin">
+            <AppIcon name="menu" :size="24" />
+          </button>
+          <nav class="nav-tabs">
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
             <AppIcon name="home" :size="16" /> Accueil
           </RouterLink>
@@ -84,28 +132,8 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
             <AppIcon name="calendar" :size="16" /> Événement
           </RouterLink>
-          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Invites' }" to="/invites">
-            <AppIcon name="users" :size="16" /> Invités
-          </RouterLink>
-          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageActualites' }" to="/admin/actualites">
-            <AppIcon name="file-text" :size="16" /> Gérer Actus
-          </RouterLink>
-          <RouterLink v-if="apiStore.isConnected && apiStore.isSuperAdmin" class="nav-tab" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs">
-            <AppIcon name="users" :size="16" /> Gérer Admins
-          </RouterLink>
-          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageNewsletters' }" to="/admin/newsletters">
-            <AppIcon name="mail" :size="16" /> Newsletters
-          </RouterLink>
-          <RouterLink v-if="apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'ManageRevuePresse' }" to="/admin/revue-presse">
-            <AppIcon name="award" :size="16" /> Revue Presse
-          </RouterLink>
-          <RouterLink v-if="!apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Contact' }" to="/contact">
-            <AppIcon name="mail" :size="16" /> Contact
-          </RouterLink>
-          <RouterLink v-if="apiStore.isConnected" class="nav-tab profile-tab" :class="{ active: route.name === 'Profile' }" to="/profil">
-            <AppIcon name="user" :size="16" /> Mon Profil
-          </RouterLink>
         </nav>
+        </div>
 
         <!-- Bannière mise à jour PWA -->
         <div v-if="needsRefresh" class="pwa-update-banner">
@@ -253,6 +281,8 @@ import { useApiStore } from './store/api.js'
 import AppIcon from './components/AppIcon.vue'
 import { animate } from 'animejs'
 
+const isAdminSidebarOpen = ref(false)
+
 function onPageEnter(el, done) {
   animate(el, {
     opacity: [0, 1],
@@ -339,6 +369,7 @@ async function handleLogin() {
 }
 
 function handleLogout() {
+  isAdminSidebarOpen.value = false
   apiStore.logout()
   router.push('/')
 }
@@ -429,13 +460,13 @@ header {
   transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 header:hover {
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  border-bottom-color: #ffffff;
-  background-position: center 30%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
+  position: relative;
+  z-index: 100;
 }
 .header-inner {
-  max-width: 1180px; margin: 0 auto; width: 100%;
-  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  max-width: 1180px; margin: 0 auto;
+  display: flex; justify-content: center; align-items: center;
 }
 .header-branding {
   display: flex; align-items: center; gap: 24px; flex: 1;
@@ -568,6 +599,24 @@ header:hover .logo-text span {
   border-color: transparent;
   box-shadow: 0 12px 28px rgba(132, 89, 54, .2);
 }
+.admin-toggle-btn.icon-only {
+  padding: 10px;
+  background: transparent;
+  color: var(--brun);
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.admin-toggle-btn.icon-only:hover {
+  background: rgba(132,89,54,0.08);
+  color: var(--rouge);
+}
 
 /* Nav Dropdown */
 .nav-dropdown-wrapper {
@@ -624,6 +673,97 @@ header:hover .logo-text span {
 .nav-dropdown-item:hover, .nav-dropdown-item.active {
   background: rgba(132, 89, 54, 0.08);
   color: var(--brun);
+}
+
+/* ─── Admin Sidebar ─── */
+.sidebar-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(26, 16, 8, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+.admin-sidebar {
+  position: fixed; top: 0; left: 0;
+  width: 280px; height: 100vh;
+  background: #fff;
+  box-shadow: 5px 0 25px rgba(0,0,0,0.1);
+  z-index: 1001;
+  display: flex; flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.admin-sidebar.is-open {
+  transform: translateX(0);
+}
+.sidebar-header {
+  padding: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid rgba(132,89,54,0.1);
+  background: #faf8f5;
+}
+.sidebar-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sidebar-title-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(132, 89, 54, 0.1);
+  color: var(--brun);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-title-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--brun);
+  margin: 0;
+}
+.close-sidebar-btn {
+  background: none; border: none; cursor: pointer;
+  color: #666; transition: color 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.close-sidebar-btn:hover { color: var(--rouge); }
+
+.sidebar-content {
+  flex: 1; padding: 20px 16px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sidebar-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 18px; border-radius: 12px;
+  color: var(--brun); text-decoration: none;
+  font-weight: 700; font-size: 0.9rem;
+  transition: all 0.2s;
+}
+.sidebar-link:hover {
+  background: rgba(132,89,54,0.06);
+}
+.sidebar-link.active {
+  background: linear-gradient(135deg, var(--brun), var(--or));
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(132,89,54,0.2);
+}
+.sidebar-footer {
+  padding: 20px;
+  border-top: 1px solid rgba(132,89,54,0.1);
+  background: #faf8f5;
+}
+.sidebar-logout-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px; border-radius: 10px;
+  background: rgba(177, 34, 42, 0.08); color: var(--rouge);
+  border: 1px solid rgba(177, 34, 42, 0.15);
+  font-weight: 700; cursor: pointer; transition: all 0.2s;
+}
+.sidebar-logout-btn:hover {
+  background: var(--rouge); color: #fff;
 }
 
 /* ─── Partenaires Marquee ─── */

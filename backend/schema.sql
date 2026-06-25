@@ -198,3 +198,25 @@ CREATE TABLE IF NOT EXISTS revue_presse (
 CREATE TRIGGER trg_revue_presse_updated
   BEFORE UPDATE ON revue_presse
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- Hero Slides
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS hero_slides (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  titre_principal VARCHAR,
+  titre_secondaire VARCHAR,
+  sous_titre TEXT,
+  media_url TEXT NOT NULL,
+  media_type VARCHAR DEFAULT 'image' CHECK (media_type IN ('image', 'video')),
+  ordre INTEGER DEFAULT 0,
+  actif BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_hero_slides_updated
+  BEFORE UPDATE ON hero_slides
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+

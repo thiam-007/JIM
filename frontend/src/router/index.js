@@ -16,6 +16,7 @@ import ContactView from '../views/ContactView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import RevuePresseView from '../views/RevuePresseView.vue'
 import ManageRevuePresseView from '../views/ManageRevuePresseView.vue'
+import ManageHeroSlidesView from '../views/ManageHeroSlidesView.vue'
 import { useApiStore } from '../store/api.js'
 
 const routes = [
@@ -35,6 +36,7 @@ const routes = [
   { path: '/admin/utilisateurs', name: 'ManageAdmins', component: ManageAdminsView },
   { path: '/admin/newsletters', name: 'ManageNewsletters', component: ManageNewslettersView },
   { path: '/admin/revue-presse', name: 'ManageRevuePresse', component: ManageRevuePresseView },
+  { path: '/admin/hero-slides', name: 'ManageHeroSlides', component: ManageHeroSlidesView },
   { path: '/profil', name: 'Profile', component: ProfileView }
 ]
 
@@ -52,7 +54,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const apiStore = useApiStore()
-  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters', 'ManageRevuePresse']
+  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters', 'ManageRevuePresse', 'ManageHeroSlides']
   if (protectedRoutes.includes(to.name) && !apiStore.isConnected) {
     next({ name: 'Home' })
   } else {
