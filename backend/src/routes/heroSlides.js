@@ -16,8 +16,8 @@ router.get('/', async (req, res, next) => {
       .order('ordre', { ascending: true })
 
     if (error) {
-      // Si la table n'existe pas encore (avant migration), on renvoie un tableau vide pour ne pas crasher
-      if (error.code === '42P01') {
+      // Si la table n'existe pas encore (avant migration) ou erreur de permission, on renvoie un tableau vide pour ne pas crasher
+      if (error.code === '42P01' || error.code === '42501') {
         return res.json([])
       }
       throw error
@@ -37,7 +37,7 @@ router.get('/admin/all', authMiddleware, async (req, res, next) => {
       .order('ordre', { ascending: true })
 
     if (error) {
-       if (error.code === '42P01') return res.json([])
+       if (error.code === '42P01' || error.code === '42501') return res.json([])
        throw error
     }
     res.json(data || [])

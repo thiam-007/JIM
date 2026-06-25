@@ -116,6 +116,33 @@ router.delete('/subscribers/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/newsletter/subscribers/:id (Admin)
+router.put('/subscribers/:id', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { prenom, nom, institution, fonction, email } = req.body;
+    
+    // On met à jour
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .update({ prenom, nom, institution, fonction, email })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === '23505') {
+        return res.status(400).json({ error: "Cet e-mail est déjà utilisé par un autre abonné." });
+      }
+      throw error;
+    }
+    res.json({ message: "Abonné mis à jour avec succès.", subscriber: data });
+  } catch (err) {
+    console.error('Erreur mise à jour abonné:', err);
+    res.status(500).json({ error: "Erreur lors de la mise à jour de l'abonné: " + (err.message || JSON.stringify(err)) });
+  }
+});
+
 // GET /api/newsletter/campaigns (Admin)
 router.get('/campaigns', authMiddleware, async (req, res) => {
   try {
@@ -152,13 +179,36 @@ router.delete('/campaigns/:id', authMiddleware, async (req, res) => {
 // POST /api/newsletter/admin/add-subscribers (Admin)
 router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
   try {
-    const { emails } = req.body;
-    if (!Array.isArray(emails) || emails.length === 0) {
-      return res.status(400).json({ error: "Aucun email fourni." });
+    const { emails, subscribers } = req.body;
+    let inputList = [];
+    
+    if (subscribers && Array.isArray(subscribers) && subscribers.length > 0) {
+      inputList = subscribers;
+    } else if (emails && Array.isArray(emails) && emails.length > 0) {
+      inputList = emails.map(e => ({ email: e }));
+    } else {
+      return res.status(400).json({ error: "Aucun abonné fourni." });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const validEmails = emails.map(e => e.trim().toLowerCase()).filter(e => emailRegex.test(e));
+    const validSubsMap = new Map();
+
+    for (const sub of inputList) {
+      if (!sub.email || typeof sub.email !== 'string') continue;
+      const cleanEmail = sub.email.trim().toLowerCase();
+      if (emailRegex.test(cleanEmail) && !validSubsMap.has(cleanEmail)) {
+        validSubsMap.set(cleanEmail, {
+          email: cleanEmail,
+          prenom: sub.prenom?.trim() || null,
+          nom: sub.nom?.trim() || null,
+          institution: sub.institution?.trim() || null,
+          fonction: sub.fonction?.trim() || null,
+          statut: 'actif'
+        });
+      }
+    }
+
+    const validEmails = Array.from(validSubsMap.keys());
 
     if (validEmails.length === 0) {
       return res.status(400).json({ error: "Aucun email valide fourni." });
@@ -173,8 +223,7 @@ router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
     if (fetchErr) throw fetchErr;
 
     const existingEmails = existing.map(e => e.email);
-    const uniqueValidEmails = [...new Set(validEmails)];
-    const toInsert = uniqueValidEmails.filter(e => !existingEmails.includes(e)).map(email => ({ email, statut: 'actif' }));
+    const toInsert = Array.from(validSubsMap.values()).filter(s => !existingEmails.includes(s.email));
 
     if (toInsert.length > 0) {
       const { data, error: insertErr } = await supabase
@@ -382,13 +431,24 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
       contenuPersonnalise: type_source === 'manuel' ? contenu_personnalise : null,
       isBulletin,
       bulletinData
-    }).then(async ({ successCount, failCount }) => {
+    }).then(async ({ successCount, failCount, failedEmails }) => {
       // Update campaign status
-      await supabase
+      const { error: updateErr } = await supabase
         .from('newsletter_campaigns')
-        .update({ statut: 'envoye', date_envoi: new Date().toISOString() })
+        .update({ 
+          statut: 'envoye', 
+          date_envoi: new Date().toISOString(),
+          success_count: successCount,
+          fail_count: failCount,
+          failed_emails: failedEmails || []
+        })
         .eq('id', campaign.id);
-      console.log(`Campaign sent: ${successCount} success, ${failCount} failed.`);
+        
+      if (updateErr) {
+        console.error('Erreur Supabase lors de la mise à jour du statut:', updateErr);
+      } else {
+        console.log(`Campaign sent: ${successCount} success, ${failCount} failed.`);
+      }
     }).catch(err => {
       console.error('Campaign background error:', err);
     });

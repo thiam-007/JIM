@@ -39,6 +39,8 @@
           <thead>
             <tr>
               <th>Email</th>
+              <th>Prénom & Nom</th>
+              <th>Institution</th>
               <th>Statut</th>
               <th>Date d'inscription</th>
               <th class="text-right">Actions</th>
@@ -47,6 +49,8 @@
           <tbody>
             <tr v-for="sub in paginatedSubscribers" :key="sub.id">
               <td><strong>{{ sub.email }}</strong></td>
+              <td>{{ sub.prenom || sub.nom ? `${sub.prenom || ''} ${sub.nom || ''}`.trim() : '-' }}</td>
+              <td>{{ sub.institution || '-' }}</td>
               <td>
                 <span class="status-badge" :class="sub.statut === 'actif' ? 'status-valide' : 'status-annule'">
                   {{ sub.statut }}
@@ -54,6 +58,9 @@
               </td>
               <td>{{ formatDate(sub.created_at) }}</td>
               <td class="actions-cell text-right">
+                <button class="btn-icon edit" @click="openEditSubscriberModal(sub)" title="Modifier" style="margin-right: 5px;">
+                  <AppIcon name="edit" :size="16" />
+                </button>
                 <button class="btn-icon delete" @click="confirmDeleteSubscriber(sub)" title="Supprimer">
                   <AppIcon name="trash" :size="16" />
                 </button>
@@ -91,6 +98,7 @@
               <th>Sujet</th>
               <th>Type</th>
               <th>Date d'envoi</th>
+              <th>Statistiques</th>
               <th>Statut</th>
               <th class="text-right">Actions</th>
             </tr>
@@ -101,6 +109,20 @@
               <td>{{ camp.sujet_email }}</td>
               <td><span class="jim-badge" style="color: #000;">{{ camp.type_source }}</span></td>
               <td>{{ formatDate(camp.date_envoi || camp.created_at) }}</td>
+              <td>
+                <div v-if="camp.statut === 'envoye'" style="display: flex; gap: 10px; align-items: center; font-size: 13px;">
+                  <span style="color: #2e7d32; display: flex; align-items: center; gap: 4px;">
+                    <AppIcon name="check-circle" :size="14" /> {{ camp.success_count || 0 }}
+                  </span>
+                  <span v-if="camp.fail_count > 0" @click="viewFailedEmails(camp)" style="color: #c62828; display: flex; align-items: center; gap: 4px; cursor: pointer; text-decoration: underline;" title="Voir les échecs">
+                    <AppIcon name="x-circle" :size="14" /> {{ camp.fail_count }}
+                  </span>
+                  <span v-else style="color: #9e9e9e; display: flex; align-items: center; gap: 4px;">
+                    <AppIcon name="x-circle" :size="14" /> 0
+                  </span>
+                </div>
+                <span v-else style="color: #757575; font-size: 13px;">—</span>
+              </td>
               <td>
                 <span class="status-badge" :class="camp.statut === 'envoye' ? 'status-valide' : 'status-attente'">
                   {{ formatStatut(camp.statut) }}
@@ -129,6 +151,34 @@
         </div>
       </div>
     </div>
+
+    <!-- Failed Emails Modal -->
+    <Teleport to="body">
+      <div v-if="showFailedEmailsModal" class="modal-backdrop" @click.self="showFailedEmailsModal = false">
+        <div class="modal-box form-card" style="max-width: 500px;">
+          <div class="fh fh-a">
+            <div class="fh-icon"><AppIcon name="alert-circle" :size="22" style="color: #c62828;" /></div>
+            <div class="fh-title">E-mails échoués</div>
+          </div>
+          <div class="fb" style="padding: 24px;">
+            <p style="margin: 0 0 16px; font-size: 14px; color: var(--text-color);">
+              Ces destinataires n'ont pas pu recevoir la campagne (probablement rejeté par le pare-feu de leur institution).
+            </p>
+            <textarea readonly rows="8" style="width: 100%; box-sizing: border-box; padding: 12px; font-family: monospace; font-size: 13px; border: 1px solid var(--border-color); border-radius: 4px; background: #fafafa; margin-bottom: 16px;">{{ failedEmailsList.join('\n') }}</textarea>
+            
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+              <button class="btn-cancel" @click="showFailedEmailsModal = false">Fermer</button>
+              <button class="btn-create" style="background: var(--brun); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;" @click="copyFailedEmails">
+                <AppIcon name="copy" :size="14" /> Copier la liste
+              </button>
+            </div>
+            <div v-if="copySuccess" style="text-align: right; color: #2e7d32; font-size: 12px; margin-top: 8px;">
+              Copié dans le presse-papier !
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Create Campaign Modal -->
     <Teleport to="body">
@@ -322,7 +372,10 @@
           <div class="fb" style="flex: 1; padding: 0; background: #fff;">
             <iframe :srcdoc="previewHtml" style="width: 100%; height: 100%; border: none;"></iframe>
           </div>
-          <div style="padding: 15px; border-top: 1px solid #eee; text-align: right; background: #fff;">
+          <div style="padding: 15px; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff;">
+            <button class="btn-create" style="background: #0078D4; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px;" @click="downloadForOutlook" title="Télécharger un fichier .eml pour l'ouvrir dans Outlook">
+              <AppIcon name="download" :size="16" /> Télécharger pour Outlook
+            </button>
             <button class="btn-cancel" @click="showPreviewModal = false">Fermer l'aperçu</button>
           </div>
         </div>
@@ -385,11 +438,20 @@
           </div>
           <div class="fb">
             <p style="margin-bottom: 15px; font-size: 13px; color: var(--brun);">
-              Collez les adresses e-mail de vos contacts (séparées par des virgules ou des retours à la ligne).
+              Collez les adresses e-mail de vos contacts (séparées par des virgules ou des retours à la ligne), ou importez un fichier Excel (.xlsx, .csv).
             </p>
             <form @submit.prevent="submitAddSubscribers" class="ev-form">
+              <div class="fg" style="margin-bottom: 20px;">
+                <label>Importer depuis un fichier Excel / CSV</label>
+                <input type="file" accept=".xlsx, .xls, .csv" @change="handleFileUpload" />
+                <div v-if="parsedSubscribers.length > 0" style="margin-top: 10px; font-size: 13px; color: #2e7d32;">
+                  <AppIcon name="check-circle" :size="14" style="vertical-align: middle;" />
+                  {{ parsedSubscribers.length }} contact(s) extrait(s) du fichier.
+                </div>
+              </div>
               <div class="fg">
-                <textarea v-model="newEmailsText" required rows="6" placeholder="email1@exemple.com&#10;email2@exemple.com"></textarea>
+                <label>Ou collez manuellement (e-mails uniquement)</label>
+                <textarea v-model="newEmailsText" rows="6" placeholder="email1@exemple.com&#10;email2@exemple.com"></textarea>
               </div>
               
               <div v-if="addSubscriberError" class="ev-form-error">
@@ -412,11 +474,63 @@
       </div>
     </Teleport>
 
+    <!-- Modale Éditer un abonné -->
+    <Teleport to="body">
+      <div v-if="showEditSubscriberModal" class="modal-backdrop" @click.self="showEditSubscriberModal = false">
+        <div class="modal-box form-card" style="max-width: 500px;">
+          <div class="fh fh-a">
+            <div class="fh-icon"><AppIcon name="edit" :size="22" /></div>
+            <div class="fh-title">Modifier l'abonné</div>
+          </div>
+          <div class="fb">
+            <form @submit.prevent="submitEditSubscriber" class="ev-form">
+              <div class="fg">
+                <label>Prénom</label>
+                <input type="text" v-model="editingSubscriber.prenom" placeholder="Prénom" />
+              </div>
+              <div class="fg">
+                <label>Nom</label>
+                <input type="text" v-model="editingSubscriber.nom" placeholder="Nom" />
+              </div>
+              <div class="fg">
+                <label>E-mail</label>
+                <input type="email" v-model="editingSubscriber.email" required placeholder="Email" />
+              </div>
+              <div class="fg">
+                <label>Institution / Entité</label>
+                <input type="text" v-model="editingSubscriber.institution" placeholder="Institution" />
+              </div>
+              <div class="fg">
+                <label>Fonction</label>
+                <input type="text" v-model="editingSubscriber.fonction" placeholder="Fonction" />
+              </div>
+
+              <div v-if="editSubscriberError" class="ev-form-error">
+                <AppIcon name="alert-triangle" :size="15" /> {{ editSubscriberError }}
+              </div>
+              <div v-if="editSubscriberSuccess" class="ev-form-success" style="color: #2e7d32; background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px;">
+                {{ editSubscriberSuccess }}
+              </div>
+
+              <div class="ev-form-actions">
+                <button type="button" class="btn-cancel" @click="showEditSubscriberModal = false">Annuler</button>
+                <button type="submit" class="bsub bsub-a" :disabled="saving">
+                  <AppIcon :name="saving ? 'loader' : 'check'" :size="16" />
+                  {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import * as XLSX from 'xlsx'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -438,12 +552,20 @@ const showDeleteModal = ref(false)
 const showDeleteCampaignModal = ref(false)
 const showPreviewModal = ref(false)
 const showAddSubscriberModal = ref(false)
+const showEditSubscriberModal = ref(false)
+const showFailedEmailsModal = ref(false)
 const previewHtml = ref('')
 const deletingSubscriber = ref(null)
+const editingSubscriber = ref(null)
 const deletingCampaign = ref(null)
 const newEmailsText = ref('')
+const parsedSubscribers = ref([])
 const addSubscriberError = ref('')
 const addSubscriberSuccess = ref('')
+const editSubscriberError = ref('')
+const editSubscriberSuccess = ref('')
+const failedEmailsList = ref([])
+const copySuccess = ref(false)
 
 const itemsPerPage = 25
 const currentPageSubscribers = ref(1)
@@ -494,7 +616,6 @@ onMounted(async () => {
 async function fetchData() {
   loading.value = true
   try {
-    // Les appels sont faits séparément pour éviter qu'une erreur sur l'un (ex: table manquante) ne bloque tout
     const [subs, camps, acts, evs] = await Promise.all([
       api.get('/api/newsletter/subscribers').catch(e => { console.error('Subscribers error:', e); return []; }),
       api.get('/api/newsletter/campaigns').catch(e => { console.error('Campaigns error:', e); return []; }),
@@ -716,6 +837,35 @@ async function doDeleteSubscriber() {
   }
 }
 
+function openEditSubscriberModal(sub) {
+  editingSubscriber.value = { ...sub }
+  editSubscriberError.value = ''
+  editSubscriberSuccess.value = ''
+  showEditSubscriberModal.value = true
+}
+
+async function submitEditSubscriber() {
+  editSubscriberError.value = ''
+  editSubscriberSuccess.value = ''
+  saving.value = true
+  try {
+    const res = await api.put(`/api/newsletter/subscribers/${editingSubscriber.value.id}`, editingSubscriber.value)
+    if (res.subscriber) {
+      const idx = subscribers.value.findIndex(s => s.id === res.subscriber.id)
+      if (idx !== -1) {
+        subscribers.value[idx] = res.subscriber
+      }
+    }
+    editSubscriberSuccess.value = res.message
+    setTimeout(() => {
+      showEditSubscriberModal.value = false
+    }, 1000)
+  } catch (err) {
+    editSubscriberError.value = err.message || "Erreur lors de la modification de l'abonné."
+  } finally {
+    saving.value = false
+  }
+}
 function confirmDeleteCampaign(camp) {
   deletingCampaign.value = camp
   showDeleteCampaignModal.value = true
@@ -738,38 +888,145 @@ async function deleteCampaign() {
 
 function openAddSubscriberModal() {
   newEmailsText.value = ''
+  parsedSubscribers.value = []
   addSubscriberError.value = ''
   addSubscriberSuccess.value = ''
   showAddSubscriberModal.value = true
+}
+
+function handleFileUpload(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  addSubscriberError.value = ''
+  
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const firstSheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[firstSheetName]
+      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+      
+      let extracted = []
+      
+      json.forEach(row => {
+        const emailKey = Object.keys(row).find(k => k.toLowerCase().includes('email') || k.toLowerCase().includes('e-mail'))
+        const email = emailKey ? row[emailKey] : null
+        if (!email) return
+
+        let prenom = null, nom = null, institution = null, fonction = null
+
+        const nomPrenomKey = Object.keys(row).find(k => k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom'))
+        if (nomPrenomKey && row[nomPrenomKey]) {
+           const parts = String(row[nomPrenomKey]).trim().split(' ')
+           if (parts.length > 1) {
+             nom = parts[0]
+             prenom = parts.slice(1).join(' ')
+           } else {
+             nom = parts[0]
+           }
+        } else {
+           const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'civilité')
+           const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom')
+           if (pKey) prenom = row[pKey]
+           if (nKey) nom = row[nKey]
+        }
+
+        const instKey = Object.keys(row).find(k => k.toLowerCase().includes('institution') || k.toLowerCase().includes('entité') || k.toLowerCase().includes('entite'))
+        if (instKey) institution = row[instKey]
+
+        const fKey = Object.keys(row).find(k => k.toLowerCase().includes('fonction') || k.toLowerCase().includes('statut'))
+        if (fKey) fonction = row[fKey]
+
+        extracted.push({
+          email: String(email).trim(),
+          prenom: prenom ? String(prenom).trim() : '',
+          nom: nom ? String(nom).trim() : '',
+          institution: institution ? String(institution).trim() : '',
+          fonction: fonction ? String(fonction).trim() : ''
+        })
+      })
+      
+      parsedSubscribers.value = extracted
+    } catch(err) {
+      addSubscriberError.value = "Erreur lors de la lecture du fichier Excel."
+      console.error(err)
+    }
+  }
+  reader.readAsArrayBuffer(file)
 }
 
 async function submitAddSubscribers() {
   addSubscriberError.value = ''
   addSubscriberSuccess.value = ''
   
-  if (!newEmailsText.value.trim()) {
-    addSubscriberError.value = "Veuillez entrer au moins un e-mail."
+  const emailsFromText = newEmailsText.value.split(/[\n,; ]+/).map(e => e.trim()).filter(Boolean)
+  
+  const payloadSubscribers = [...parsedSubscribers.value]
+  emailsFromText.forEach(e => {
+    payloadSubscribers.push({ email: e })
+  })
+  
+  if (payloadSubscribers.length === 0) {
+    addSubscriberError.value = "Veuillez entrer ou importer au moins un e-mail."
     return
   }
 
-  // Split by comma, semicolon, space, or newline
-  const emails = newEmailsText.value.split(/[\n,; ]+/).map(e => e.trim()).filter(Boolean)
-  
-  if (emails.length === 0) return
-
   saving.value = true
   try {
-    const res = await api.post('/api/newsletter/admin/add-subscribers', { emails })
+    const res = await api.post('/api/newsletter/admin/add-subscribers', { subscribers: payloadSubscribers })
     addSubscriberSuccess.value = res.message
     if (res.newSubscribers && res.newSubscribers.length > 0) {
       subscribers.value.unshift(...res.newSubscribers)
     }
     newEmailsText.value = ''
+    parsedSubscribers.value = []
   } catch (err) {
     addSubscriberError.value = err.message || "Erreur lors de l'ajout des abonnés."
   } finally {
     saving.value = false
   }
+}
+function viewFailedEmails(camp) {
+  failedEmailsList.value = camp.failed_emails || []
+  copySuccess.value = false
+  showFailedEmailsModal.value = true
+}
+
+async function copyFailedEmails() {
+  if (failedEmailsList.value.length === 0) return
+  try {
+    await navigator.clipboard.writeText(failedEmailsList.value.join('\n'))
+    copySuccess.value = true
+    setTimeout(() => { copySuccess.value = false }, 3000)
+  } catch (err) {
+    console.error('Failed to copy', err)
+  }
+}
+
+function downloadForOutlook() {
+  if (!previewHtml.value) return;
+  const subject = form.value.sujet_email || 'Newsletter_Musee';
+  // Use a simple unescape(encodeURIComponent) hack to convert utf8 to binary string for btoa
+  let subjectB64 = '';
+  try {
+    subjectB64 = btoa(unescape(encodeURIComponent(subject)));
+  } catch(e) {
+    subjectB64 = btoa('Newsletter');
+  }
+  
+  const emlContent = `X-Unsent: 1\r\nSubject: =?utf-8?B?${subjectB64}?=\r\nContent-Type: text/html; charset=utf-8\r\n\r\n${previewHtml.value}`;
+
+  const blob = new Blob([emlContent], { type: 'message/rfc822' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `newsletter_${new Date().toISOString().split('T')[0]}.eml`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 </script>
 

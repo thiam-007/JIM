@@ -664,23 +664,31 @@ export async function sendNewsletterCampaign({ emails, subject, titre, descripti
 
   let successCount = 0;
   let failCount = 0;
+  let failedEmails = [];
 
-  for (const email of emails) {
-    try {
-      await transporter.sendMail({
-        from: getFromAddress(),
-        to: email,
-        subject: subject,
-        html: htmlContent
-      });
-      successCount++;
-    } catch (error) {
-      console.error(`Erreur d'envoi newsletter à ${email}:`, error.message);
-      failCount++;
-    }
+  // Envoyer par lots de 10 pour aller beaucoup plus vite sans surcharger
+  const chunkSize = 10;
+  for (let i = 0; i < emails.length; i += chunkSize) {
+    const chunk = emails.slice(i, i + chunkSize);
+    
+    await Promise.all(chunk.map(async (email) => {
+      try {
+        await transporter.sendMail({
+          from: getFromAddress(),
+          to: email,
+          subject: subject,
+          html: htmlContent
+        });
+        successCount++;
+      } catch (error) {
+        console.error(`Erreur d'envoi newsletter à ${email}:`, error.message);
+        failCount++;
+        failedEmails.push(email);
+      }
+    }));
   }
 
-  return { successCount, failCount };
+  return { successCount, failCount, failedEmails };
 }
 
 // ─── generateBulletinHtml ───────────────────────────────────────────────────

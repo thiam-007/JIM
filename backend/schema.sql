@@ -150,6 +150,10 @@ CREATE INDEX IF NOT EXISTS idx_checkins_invitation_id ON checkins(invitation_id)
 CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR UNIQUE NOT NULL,
+  prenom VARCHAR,
+  nom VARCHAR,
+  institution VARCHAR,
+  fonction VARCHAR,
   statut VARCHAR DEFAULT 'actif' CHECK (statut IN ('actif', 'desabonne')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -163,10 +167,13 @@ CREATE TABLE IF NOT EXISTS newsletter_campaigns (
   type_source VARCHAR DEFAULT 'manuel' CHECK (type_source IN ('manuel', 'actualite', 'evenement', 'bulletin')),
   source_id UUID, -- References actualites(id) or evenements(id) if applicable
   contenu_personnalise TEXT,
-  ciblage VARCHAR DEFAULT 'tous' CHECK (ciblage IN ('tous', 'specifique')),
-  destinataires UUID[], -- Array of subscriber IDs if ciblage is 'specifique'
-  statut VARCHAR DEFAULT 'brouillon' CHECK (statut IN ('brouillon', 'en_cours', 'envoye')),
+  ciblage TEXT DEFAULT 'tous' CHECK (ciblage IN ('tous', 'specifique')),
+  destinataires UUID[] DEFAULT '{}',
+  statut TEXT DEFAULT 'brouillon' CHECK (statut IN ('brouillon', 'en_cours', 'envoye', 'erreur')),
   date_envoi TIMESTAMPTZ,
+  success_count INTEGER DEFAULT 0,
+  fail_count INTEGER DEFAULT 0,
+  failed_emails JSONB DEFAULT '[]'::JSONB,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
