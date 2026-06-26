@@ -178,22 +178,34 @@ function emailShell(bodyContent, options = {}) {
     }
   </style>
 </head>
-<body>
-<div class="wrapper">
+<body style="margin: 0; padding: 0; background-color: #E8DDD3;">
+  <center style="width: 100%; table-layout: fixed; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #E8DDD3; padding: 30px 0;">
+    <!--[if mso]>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="680" align="center" style="width:680px;">
+      <tr>
+        <td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;">
+    <![endif]-->
+    <div class="wrapper" style="max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,55,22,0.18);">
   <!-- HEADER -->
   <div class="header">
     <div class="header-pattern"></div>
     <div class="header-overlay"></div>
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2; padding: 36px 40px 32px;" class="mobile-padding">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2;">
       <tr>
-        <td width="90" valign="top" align="center" style="width:90px;" class="mobile-stack header-logo-container">
-          <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; display: block; margin: 0 auto;" />
-        </td>
-        <td width="24" style="width: 24px;" class="hide-mobile"></td>
-        <td valign="middle" style="border-left: 3px solid #F9B233; padding-left: 24px;" class="mobile-stack header-text-container mobile-center">
-          <p style="font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin: 0 0 6px 0;">${label}</p>
-          <h1 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0;">${title.replace('N°', 'N°&nbsp;')}</h1>
-          <p style="font-size: 12px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin: 8px 0 0 0;">${edition}</p>
+        <td style="padding: 36px 40px 32px;" class="mobile-padding">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td width="90" valign="top" align="center" style="width:90px;" class="mobile-stack header-logo-container">
+                <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #F9B233; display: block; margin: 0 auto;" />
+              </td>
+              <td width="24" style="width: 24px;" class="hide-mobile"></td>
+              <td valign="middle" style="border-left: 3px solid #F9B233; padding-left: 24px;" class="mobile-stack header-text-container mobile-center">
+                <p style="font-family: 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #F9B233; margin: 0 0 6px 0;">${label}</p>
+                <h1 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0;">${title.replace('N°', 'N°&nbsp;')}</h1>
+                <p style="font-size: 12px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin: 8px 0 0 0;">${edition}</p>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -244,7 +256,13 @@ function emailShell(bodyContent, options = {}) {
     </div>
   </div>
   <div class="or-bar-bottom"></div>
-</div>
+    </div>
+    <!--[if mso]>
+        </td>
+      </tr>
+    </table>
+    <![endif]-->
+  </center>
 </body>
 </html>`;
 }
