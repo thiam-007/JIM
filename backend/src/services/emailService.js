@@ -155,12 +155,12 @@ function emailShell(bodyContent, options = {}) {
     .actu-card-full { grid-column: 1 / -1; }
     .actu-card-img { width: 100%; height: 140px; object-fit: cover; }
     
-    .zoom { background: linear-gradient(135deg, #593716 0%, #382116 100%); padding: 36px 40px; position: relative; overflow: hidden; }
+    .zoom { background-color: #593716; background: linear-gradient(135deg, #593716 0%, #382116 100%); padding: 36px 40px; position: relative; overflow: hidden; }
     .zoom-inner { position: relative; z-index: 1; }
     .zoom-inner .section-label { color: #F9B233; }
     .zoom-inner .section-label::before { background: #F9B233; }
     .zoom h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; margin-bottom: 12px; margin-top: 0; }
-    .zoom p { font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.75; margin-bottom: 14px; margin-top: 0; }
+    .zoom p { font-size: 13.5px; color: #FFFFFF; line-height: 1.75; margin-bottom: 14px; margin-top: 0; }
     .zoom-cta { display: inline-block; margin-top: 8px; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 10px 22px; border-radius: 1px; }
     
     .nextstep { background: #FAF6F1; padding: 36px 40px; }
@@ -181,9 +181,9 @@ function emailShell(bodyContent, options = {}) {
 <body style="margin: 0; padding: 0; background-color: #E8DDD3;">
   <center style="width: 100%; table-layout: fixed; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #E8DDD3; padding: 30px 0;">
     <!--[if mso]>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="680" align="center" style="width:680px;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="680" align="center" style="width:680px; margin:0 auto;">
       <tr>
-        <td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;">
+        <td align="center" valign="top" style="padding:0; margin:0;">
     <![endif]-->
     <div class="wrapper" style="max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,55,22,0.18);">
   <!-- HEADER -->
@@ -809,11 +809,11 @@ export function generateBulletinHtml(data) {
   <!-- ████ ZOOM SUR ████ -->
   ${zoomTitre ? `
   <a name="zoom"></a>
-  <div class="zoom mobile-padding" id="zoom">
+  <div class="zoom mobile-padding" id="zoom" style="background-color: #593716;">
     <div class="zoom-inner">
       <div class="section-label">Zoom sur…</div>
       <h2>${zoomTitre}</h2>
-      <p>${zoomTexte.replace(/\n/g, '<br />')}</p>
+      <p style="color: #FFFFFF;">${zoomTexte.replace(/\n/g, '<br />')}</p>
     </div>
   </div>
   ` : ''}
