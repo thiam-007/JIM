@@ -326,6 +326,7 @@
                   <select v-model="form.ciblage" required>
                     <option value="tous">Tous les abonnés actifs</option>
                     <option value="specifique">Abonnés spécifiques</option>
+                    <option value="domaine">Par domaine / extension</option>
                   </select>
                 </div>
               </div>
@@ -337,6 +338,17 @@
                     <input type="checkbox" :value="sub.id" v-model="form.destinataires" />
                     <span>{{ sub.email }}</span>
                   </label>
+                </div>
+              </div>
+
+              <div class="fg" v-if="form.ciblage === 'domaine'">
+                <label>Domaines d'email (séparés par des virgules) <span class="req">*</span></label>
+                <input type="text" v-model="form.domaines" placeholder="Ex: .fr, .gn, @outlook.com" />
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                  <span style="font-size: 13px; color: var(--brun);">{{ matchingSubscribersByDomain.length }} destinataire(s) correspondant(s)</span>
+                  <button type="button" @click="copyDomainsEmails" class="btn-cancel" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;" v-if="matchingSubscribersByDomain.length > 0">
+                    <AppIcon name="copy" :size="14" /> Copier ces e-mails (Outlook)
+                  </button>
                 </div>
               </div>
 
@@ -592,6 +604,7 @@ const form = ref({
   linkUrl: '',
   ciblage: 'tous',
   destinataires: [],
+  domaines: '',
   bulletin: {
     edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
     editoTitre: '',
@@ -608,6 +621,27 @@ const form = ref({
 })
 
 const activeSubscribers = computed(() => subscribers.value.filter(s => s.statut === 'actif'))
+
+const matchingSubscribersByDomain = computed(() => {
+  if (!form.value.domaines) return []
+  const domainsList = form.value.domaines.split(',').map(d => d.trim().toLowerCase()).filter(d => d)
+  if (domainsList.length === 0) return []
+  return activeSubscribers.value.filter(sub => 
+    domainsList.some(domain => sub.email.toLowerCase().endsWith(domain))
+  )
+})
+
+async function copyDomainsEmails() {
+  const emails = matchingSubscribersByDomain.value.map(s => s.email).join('; ')
+  if (!emails) return
+  try {
+    await navigator.clipboard.writeText(emails)
+    alert("Adresses e-mail copiées ! Vous pouvez les coller dans le champ Cci d'Outlook.")
+  } catch (err) {
+    console.error(err)
+    alert("Erreur lors de la copie.")
+  }
+}
 
 onMounted(async () => {
   await fetchData()
@@ -651,7 +685,7 @@ function openCreateCampaign() {
   formError.value = ''
   form.value = {
     titre_interne: '', sujet_email: '', type_source: 'manuel', source_id: '',
-    contenu_personnalise: '', linkUrl: '', ciblage: 'tous', destinataires: [],
+    contenu_personnalise: '', linkUrl: '', ciblage: 'tous', destinataires: [], domaines: '',
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
@@ -680,9 +714,21 @@ async function submitCampaign() {
     packBulletinData();
   }
 
+  let finalCiblage = form.value.ciblage;
+  let finalDestinataires = form.value.destinataires;
+  if (form.value.ciblage === 'domaine') {
+    const matched = matchingSubscribersByDomain.value;
+    if (matched.length === 0) {
+      formError.value = "Aucun destinataire ne correspond à ces domaines."
+      return
+    }
+    finalCiblage = 'specifique';
+    finalDestinataires = matched.map(s => s.id);
+  }
+
   saving.value = true
   try {
-    const res = await api.post('/api/newsletter/campaigns', form.value)
+    const res = await api.post('/api/newsletter/campaigns', { ...form.value, ciblage: finalCiblage, destinataires: finalDestinataires })
     if (res.campaign) {
       campaigns.value.unshift(res.campaign)
     }
@@ -752,6 +798,7 @@ function duplicateCampaign(camp) {
     linkUrl: '',
     ciblage: camp.ciblage,
     destinataires: camp.destinataires || [],
+    domaines: '',
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',

@@ -354,6 +354,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
     const info = await transporter.sendMail({
       from: getFromAddress(),
       to: invite.email,
+      replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Invitation — ${evenement.titre}`,
       html: emailShell(body, 'INVITATION OFFICIELLE')
     })
@@ -450,6 +451,7 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
     const info = await transporter.sendMail({
       from: getFromAddress(),
       to: email,
+      replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Accusé de réception — ${sujet}`,
       html: emailShell(body, 'ACCUSÉ DE RÉCEPTION')
     })
@@ -537,6 +539,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
     const info = await transporter.sendMail({
       from: getFromAddress(),
       to: invite.email,
+      replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Confirmation — ${evenement.titre}`,
       html: emailShell(body, 'CONFIRMATION'),
       attachments: [
@@ -589,6 +592,7 @@ export async function sendNewsletterWelcome({ email }) {
     const info = await transporter.sendMail({
       from: getFromAddress(),
       to: email,
+      replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: "Bienvenue à la newsletter du Musée Virtuel de Guinée !",
       html: emailShell(body, 'BIENVENUE')
     })
@@ -676,6 +680,7 @@ export async function sendNewsletterCampaign({ emails, subject, titre, descripti
         await transporter.sendMail({
           from: getFromAddress(),
           to: email,
+          replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
           subject: subject,
           html: htmlContent
         });
