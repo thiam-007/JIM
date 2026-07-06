@@ -181,10 +181,14 @@
               />
             </div>
 
-            <div class="modal-select-actions">
+            <div class="modal-select-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%;">
               <button class="btn-select-all" @click="selectAll">Tout sélectionner</button>
               <button class="btn-select-all" @click="selectedIds.clear()">Tout désélectionner</button>
-              <span class="selection-count">{{ selectedIds.size }} sélectionné(s)</span>
+              <button class="btn-select-all" @click="syncNewsletterSubscribers" :disabled="syncing" style="background: rgba(132,89,54,0.08); color: var(--brun); display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;">
+                <AppIcon :name="syncing ? 'loader' : 'mail'" :size="12" :class="{ spin: syncing }" />
+                {{ syncing ? 'Importation…' : 'Importer les abonnés' }}
+              </button>
+              <span class="selection-count" style="margin-left: auto;">{{ selectedIds.size }} sélectionné(s)</span>
             </div>
 
             <div class="contacts-list" v-if="filteredContacts.length">
@@ -544,6 +548,70 @@ async function copyRsvpLink(token) {
     }, 2000)
   } catch (err) {
     console.error('Erreur lors de la copie :', err)
+  }
+}
+
+const syncing = ref(false)
+
+async function syncNewsletterSubscribers() {
+  syncing.value = true
+  try {
+    const subscribers = await api.get('/api/newsletter/subscribers')
+    if (!subscribers || subscribers.length === 0) {
+      alert('Aucun abonné trouvé dans la newsletter.')
+      return
+    }
+
+    await api.fetchInvites()
+    const existingEmails = new Set(api.invites.map(i => (i.email || '').toLowerCase().trim()).filter(Boolean))
+
+    const recordsToImport = []
+    subscribers.forEach(sub => {
+      if (!sub.email) return
+      const cleanEmail = sub.email.toLowerCase().trim()
+      if (existingEmails.has(cleanEmail)) return
+
+      let prenom = (sub.prenom || '').trim()
+      let nom = (sub.nom || '').trim()
+      
+      if (!prenom && !nom) {
+        const username = sub.email.split('@')[0]
+        const parts = username.split(/[\._-]/)
+        if (parts.length > 1) {
+          prenom = parts[0].charAt(0).toUpperCase() + parts[0].slice(1)
+          nom = parts.slice(1).join(' ').replace(/\b\w/g, c => c.toUpperCase())
+        } else {
+          prenom = username.charAt(0).toUpperCase() + username.slice(1)
+          nom = 'Abonné'
+        }
+      }
+
+      recordsToImport.push({
+        prenom: prenom || 'Abonné',
+        nom: nom || 'Newsletter',
+        email: sub.email,
+        telephone: '',
+        organisation: sub.institution || '',
+        titre_poste: sub.fonction || '',
+        notes: 'Importé depuis la newsletter'
+      })
+    })
+
+    if (recordsToImport.length === 0) {
+      alert('Tous vos abonnés de la newsletter figurent déjà dans vos contacts.')
+      return
+    }
+
+    const result = await api.post('/api/invites/bulk', { invites: recordsToImport })
+    alert(`${result.created || recordsToImport.length} nouvel/nouveaux abonné(s) importé(s) comme contact(s) avec succès !`)
+    
+    // Rafraîchir les contacts et recharger les invités existants
+    await api.fetchInvites()
+  } catch (err) {
+    console.error(err)
+    alert('Erreur lors de la synchronisation : ' + err.message)
+  } finally {
+    syncing.value = false
   }
 }
 </script>
