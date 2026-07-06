@@ -81,7 +81,9 @@ export const useApiStore = defineStore('api', {
       if (!res.ok) { 
         if (res.status === 401) { this.logout(); window.location.href = '/?admin=true'; }
         const e = await res.json().catch(() => ({})); 
-        throw new Error(e.error || `HTTP ${res.status}`) 
+        const err = new Error(e.error || `HTTP ${res.status}`)
+        if (e.matches) err.matches = e.matches
+        throw err
       }
       return res.json()
     },

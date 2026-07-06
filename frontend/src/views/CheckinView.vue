@@ -107,8 +107,32 @@
               {{ processing ? 'Vérification…' : 'Valider' }}
             </button>
           </div>
-          <div v-if="manualError" class="ck-manual-error">
-            <AppIcon name="alert-triangle" :size="15" /> {{ manualError }}
+          <div v-if="manualError" class="ck-manual-error" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <AppIcon name="alert-triangle" :size="15" /> <span>{{ manualError }}</span>
+            </div>
+            
+            <!-- Liste des correspondances multiples -->
+            <div v-if="manualMatches.length > 0" class="manual-matches-list" style="margin-top: 8px; display: flex; flex-direction: column; gap: 8px; width: 100%;">
+              <button
+                v-for="m in manualMatches"
+                :key="m.id"
+                type="button"
+                class="btn-match-select"
+                @click="selectMatch(m)"
+                style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(255,255,255,0.9); border: 1.5px solid rgba(132,89,54,0.18); border-radius: 10px; cursor: pointer; text-align: left; transition: all 0.2s;"
+              >
+                <div>
+                  <div style="font-weight: 700; color: var(--noir);">{{ m.prenom }} {{ m.nom }}</div>
+                  <div style="font-size: 0.76rem; color: #666; margin-top: 2px;">
+                    {{ m.organisation }} <span v-if="m.organisation && m.titre_poste">·</span> {{ m.titre_poste }}
+                  </div>
+                </div>
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--rouge); background: rgba(177,34,42,0.06); padding: 4px 10px; border-radius: 999px;">
+                  Sélectionner
+                </div>
+              </button>
+            </div>
           </div>
           <div class="ck-manual-row" style="margin-top: 14px; display: flex; justify-content: flex-end;">
             <button type="button" class="btn-import" @click="showRegisterModal = true" style="font-size: 0.85rem; font-weight: 700; border-radius: 999px;">
@@ -226,6 +250,7 @@ const videoEl = ref(null)
 const canvasEl = ref(null)
 const manualInput = ref('')
 const manualError = ref('')
+const manualMatches = ref([])
 const processing = ref(false)
 const showRegisterModal = ref(false)
 const registerLoading = ref(false)
@@ -421,6 +446,7 @@ async function handleScanResult(scannedText) {
 async function doManualCheckin() {
   if (!manualInput.value.trim() || processing.value) return
   manualError.value = ''
+  manualMatches.value = []
   processing.value = true
   try {
     const result = await api.post('/api/checkin/scan', {
@@ -442,7 +468,42 @@ async function doManualCheckin() {
     })
     manualInput.value = ''
   } catch (err) {
-    manualError.value = err.message || 'Token ou nom introuvable.'
+    if (err.matches) {
+      manualMatches.value = err.matches
+      manualError.value = 'Plusieurs correspondances trouvées. Veuillez sélectionner la bonne personne :'
+    } else {
+      manualError.value = err.message || 'Token ou nom introuvable.'
+    }
+  } finally {
+    processing.value = false
+  }
+}
+
+async function selectMatch(match) {
+  manualError.value = ''
+  manualMatches.value = []
+  processing.value = true
+  try {
+    const result = await api.post('/api/checkin/scan', {
+      token: match.token,
+      evenement_id: eventId
+    })
+    scanResult.value = {
+      type: 'success',
+      name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
+      message: 'Bienvenue !'
+    }
+    // Ajouter au log de check-in normalisé
+    checkinLog.value.unshift({
+      id: result.id || Math.random().toString(),
+      prenom: result.invite?.prenom || '',
+      nom: result.invite?.nom || '',
+      organisation: result.invite?.organisation || '',
+      checked_at: new Date().toISOString()
+    })
+    manualInput.value = ''
+  } catch (err) {
+    manualError.value = err.message || 'Erreur lors de la validation.'
   } finally {
     processing.value = false
   }
