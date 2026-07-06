@@ -38,48 +38,97 @@
 
     <div class="ck-content">
 
-      <!-- ─── Zone de scan ─── -->
-      <div class="ck-scanner-card form-card">
-        <div class="fb">
-          <div class="ck-scan-area">
-            <video ref="videoEl" class="ck-video" autoplay muted playsinline></video>
-            <canvas ref="canvasEl" class="ck-canvas" style="display:none"></canvas>
-            <div class="ck-scan-overlay">
-              <div class="ck-scan-frame">
-                <div class="corner tl"></div>
-                <div class="corner tr"></div>
-                <div class="corner bl"></div>
-                <div class="corner br"></div>
-                <div class="ck-scan-line" :class="{ active: scanning }"></div>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- ─── Zone de scan ─── -->
+        <div class="ck-scanner-card form-card">
+          <div class="fb">
+            <div class="ck-scan-area">
+              <video ref="videoEl" class="ck-video" autoplay muted playsinline></video>
+              <canvas ref="canvasEl" class="ck-canvas" style="display:none"></canvas>
+              <div class="ck-scan-overlay">
+                <div class="ck-scan-frame">
+                  <div class="corner tl"></div>
+                  <div class="corner tr"></div>
+                  <div class="corner bl"></div>
+                  <div class="corner br"></div>
+                  <div class="scan-line"></div>
+                </div>
+                <div class="ck-scan-hint" v-if="scanning">Cadrez le code QR d'invitation</div>
+                <div class="ck-scan-hint paused" v-else>Traitement en cours...</div>
               </div>
             </div>
-          </div>
 
-          <!-- Contrôles caméra -->
-          <div class="ck-cam-controls">
-            <button v-if="!cameraActive" class="btn-start-cam" @click="startCamera">
-              <AppIcon name="camera" :size="18" /> Activer la caméra
-            </button>
-            <button v-else class="btn-stop-cam" @click="stopCamera">
-              <AppIcon name="x" :size="18" /> Arrêter la caméra
-            </button>
-            <button v-if="cameraActive" class="btn-flip-cam" @click="flipCamera">
-              <AppIcon name="refresh-cw" :size="16" /> Changer de caméra
-            </button>
-          </div>
-
-          <!-- Résultat du scan -->
-          <Transition name="result">
-            <div v-if="scanResult" class="ck-result" :class="scanResult.type">
-              <div class="ck-result-icon">
-                <AppIcon :name="scanResult.type === 'success' ? 'check-circle' : 'alert-triangle'" :size="32" />
-              </div>
-              <div class="ck-result-body">
-                <div class="ck-result-name">{{ scanResult.name }}</div>
-                <div class="ck-result-msg">{{ scanResult.message }}</div>
-              </div>
+            <!-- Contrôles caméra -->
+            <div class="ck-cam-controls">
+              <button v-if="!cameraActive" class="btn-start-cam" @click="startCamera">
+                <AppIcon name="camera" :size="18" /> Activer la caméra
+              </button>
+              <button v-else class="btn-stop-cam" @click="stopCamera">
+                <AppIcon name="x" :size="18" /> Arrêter la caméra
+              </button>
+              <button v-if="cameraActive" class="btn-flip-cam" @click="flipCamera">
+                <AppIcon name="refresh-cw" :size="16" /> Changer de caméra
+              </button>
             </div>
-          </Transition>
+
+            <!-- Résultat du scan -->
+            <Transition name="result">
+              <div v-if="scanResult" class="ck-result" :class="scanResult.type">
+                <div class="ck-result-icon">
+                  <AppIcon :name="scanResult.type === 'success' ? 'check-circle' : 'alert-triangle'" :size="32" />
+                </div>
+                <div class="ck-result-body">
+                  <div class="ck-result-name">{{ scanResult.name }}</div>
+                  <div class="ck-result-msg">{{ scanResult.message }}</div>
+                </div>
+              </div>
+            </Transition>
+          </div>
+        </div>
+
+        <!-- ─── Statistiques des profils émargés ─── -->
+        <div class="form-card profile-stats-card" v-if="!loading && checkinLog.length > 0" style="box-shadow: 0 10px 30px rgba(132,89,54,0.06); border: 1.5px solid rgba(132,89,54,0.1);">
+          <div class="fh fh-a" style="padding: 16px 24px; border-bottom: 1px solid rgba(132,89,54,0.08);">
+            <div class="fh-icon" style="color: var(--brun);"><AppIcon name="bar-chart-2" :size="18" /></div>
+            <div>
+              <div class="fh-title" style="font-size: 1rem; color: var(--brun);">Répartition des présents</div>
+              <div class="fh-sub" style="font-size: 0.76rem; color: #888;">Top organisations et fonctions des présents</div>
+            </div>
+          </div>
+          <div class="fb" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px;">
+            <!-- Col 1: Organisations -->
+            <div>
+              <h4 style="margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid var(--brun); padding-left: 8px;">Organisations</h4>
+              <div v-if="profileStats.topOrgs.length" style="display: flex; flex-direction: column; gap: 8px;">
+                <div v-for="org in profileStats.topOrgs" :key="org.name" style="font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: 600;">
+                    <span style="color: var(--noir); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">{{ org.name }}</span>
+                    <span style="color: var(--rouge);">{{ org.count }}</span>
+                  </div>
+                  <div style="height: 5px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: var(--brun); border-radius: 3px;" :style="`width: ${Math.round((org.count / checkinLog.length) * 100)}%`"></div>
+                  </div>
+                </div>
+              </div>
+              <p v-else style="font-size: 0.8rem; color: #888; font-style: italic;">Aucune donnée</p>
+            </div>
+            <!-- Col 2: Fonctions -->
+            <div>
+              <h4 style="margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid var(--or); padding-left: 8px;">Fonctions / Postes</h4>
+              <div v-if="profileStats.topJobs.length" style="display: flex; flex-direction: column; gap: 8px;">
+                <div v-for="job in profileStats.topJobs" :key="job.name" style="font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: 600;">
+                    <span style="color: var(--noir); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">{{ job.name }}</span>
+                    <span style="color: var(--rouge);">{{ job.count }}</span>
+                  </div>
+                  <div style="height: 5px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: var(--or); border-radius: 3px;" :style="`width: ${Math.round((job.count / checkinLog.length) * 100)}%`"></div>
+                  </div>
+                </div>
+              </div>
+              <p v-else style="font-size: 0.8rem; color: #888; font-style: italic;">Aucune donnée</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -91,13 +140,13 @@
         </div>
         <div class="fb">
           <p class="ck-manual-desc">Entrez le token QR ou recherchez l'invité par nom.</p>
-          <div class="ck-manual-row">
-            <div class="ck-manual-input-wrap">
+          <div class="ck-manual-row" style="position: relative;">
+            <div class="ck-manual-input-wrap" style="width: 100%;">
               <AppIcon name="search" :size="16" class="ck-manual-icon" />
               <input
                 type="text"
                 v-model="manualInput"
-                placeholder="Token QR ou nom de l'invité…"
+                placeholder="Rechercher par nom ou token QR…"
                 class="ck-manual-input"
                 @keyup.enter="doManualCheckin"
               />
@@ -106,6 +155,29 @@
               <AppIcon :name="processing ? 'loader' : 'check'" :size="16" />
               {{ processing ? 'Vérification…' : 'Valider' }}
             </button>
+
+            <!-- Liste d'autocomplétion / suggestions -->
+            <div v-if="suggestions.length > 0" class="manual-autocomplete-dropdown">
+              <button
+                v-for="s in suggestions"
+                :key="s.id"
+                type="button"
+                class="autocomplete-item"
+                @click="handleSelectSuggestion(s)"
+                :disabled="s.statut === 'present'"
+              >
+                <div class="autocomplete-info">
+                  <span class="autocomplete-name">{{ s.invites?.prenom }} {{ s.invites?.nom }}</span>
+                  <span class="autocomplete-meta">
+                    {{ s.invites?.organisation || 'Sans organisation' }}
+                    <span v-if="s.invites?.titre_poste">· {{ s.invites?.titre_poste }}</span>
+                  </span>
+                </div>
+                <div class="autocomplete-badge" :class="s.statut">
+                  {{ s.statut === 'present' ? 'Déjà présent' : 'Émarger' }}
+                </div>
+              </button>
+            </div>
           </div>
           <div v-if="manualError" class="ck-manual-error" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; align-items: center; gap: 8px;">
@@ -271,6 +343,45 @@ watch(showRegisterModal, async (newVal) => {
 function focusNom() {
   nomInputRef.value?.focus()
 }
+
+const invitationsList = ref([])
+
+const suggestions = computed(() => {
+  const query = manualInput.value.trim().toLowerCase()
+  if (query.length < 2) return []
+  return invitationsList.value.filter(i => {
+    if (!i.invites) return false
+    const prenom = (i.invites.prenom || '').toLowerCase()
+    const nom = (i.invites.nom || '').toLowerCase()
+    const org = (i.invites.organisation || '').toLowerCase()
+    return prenom.includes(query) || nom.includes(query) || org.includes(query)
+  }).slice(0, 10)
+})
+
+const profileStats = computed(() => {
+  const orgMap = {}
+  const jobMap = {}
+  
+  checkinLog.value.forEach(item => {
+    const org = (item.organisation || 'Non spécifié').trim() || 'Non spécifié'
+    const job = (item.titre_poste || 'Non spécifié').trim() || 'Non spécifié'
+    
+    orgMap[org] = (orgMap[org] || 0) + 1
+    jobMap[job] = (jobMap[job] || 0) + 1
+  })
+  
+  const topOrgs = Object.entries(orgMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    
+  const topJobs = Object.entries(jobMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    
+  return { topOrgs, topJobs }
+})
 let stream = null
 let scanLoop = null
 let jsQR = null
@@ -301,12 +412,17 @@ onMounted(async () => {
     }
 
     // Load event data
-    const [evts, log] = await Promise.allSettled([
+    const [evts, log, invs] = await Promise.allSettled([
       api.get('/api/evenements'),
-      api.get(`/api/checkin/${eventId}/log`)
+      api.get(`/api/checkin/${eventId}/log`),
+      api.get(`/api/invitations?evenement_id=${eventId}`)
     ])
     if (evts.status === 'fulfilled') {
       evenement.value = (evts.value || []).find(e => String(e.id) === String(eventId)) || null
+    }
+    if (invs.status === 'fulfilled') {
+      invitationsList.value = invs.value || []
+      totalInscrits.value = invitationsList.value.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
     }
     if (log.status === 'fulfilled') {
       const rawLog = log.value?.log || log.value || []
@@ -316,9 +432,9 @@ onMounted(async () => {
         prenom: row.invitations?.invites?.prenom || '',
         nom: row.invitations?.invites?.nom || '',
         organisation: row.invitations?.invites?.organisation || '',
+        titre_poste: row.invitations?.invites?.titre_poste || '',
         checked_at: row.scanned_at
       }))
-      totalInscrits.value = log.value?.total_inscrits || 0
     }
   } finally {
     loading.value = false
@@ -422,8 +538,10 @@ async function handleScanResult(scannedText) {
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
+    await loadInvitationsList()
   } catch (err) {
     scanResult.value = {
       type: 'error',
@@ -464,9 +582,11 @@ async function doManualCheckin() {
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
     manualInput.value = ''
+    await loadInvitationsList()
   } catch (err) {
     if (err.matches) {
       manualMatches.value = err.matches
@@ -499,9 +619,52 @@ async function selectMatch(match) {
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
     manualInput.value = ''
+    await loadInvitationsList()
+  } catch (err) {
+    manualError.value = err.message || 'Erreur lors de la validation.'
+  } finally {
+    processing.value = false
+  }
+}
+
+async function loadInvitationsList() {
+  try {
+    const res = await api.get(`/api/invitations?evenement_id=${eventId}`)
+    invitationsList.value = res || []
+    totalInscrits.value = invitationsList.value.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
+  } catch (err) {
+    console.error('Erreur rechargement invitations:', err)
+  }
+}
+
+async function handleSelectSuggestion(invitationItem) {
+  manualInput.value = ''
+  processing.value = true
+  manualError.value = ''
+  try {
+    const result = await api.post('/api/checkin/scan', {
+      token: invitationItem.token,
+      evenement_id: eventId
+    })
+    scanResult.value = {
+      type: 'success',
+      name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
+      message: 'Bienvenue !'
+    }
+    // Ajouter au log de check-in normalisé
+    checkinLog.value.unshift({
+      id: result.id || Math.random().toString(),
+      prenom: result.invite?.prenom || '',
+      nom: result.invite?.nom || '',
+      organisation: result.invite?.organisation || '',
+      titre_poste: result.invite?.titre_poste || '',
+      checked_at: new Date().toISOString()
+    })
+    await loadInvitationsList()
   } catch (err) {
     manualError.value = err.message || 'Erreur lors de la validation.'
   } finally {
@@ -768,5 +931,72 @@ async function submitRegisterOnsite() {
   background: #ffeaea; border: 1.5px solid var(--rouge); border-radius: 12px;
   padding: 10px 14px; color: var(--rouge); font-size: .84rem; font-weight: 600;
   margin-top: 12px;
+}
+
+/* Autocomplete suggestions dropdown styling */
+.manual-autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1.5px solid rgba(132,89,54,0.15);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  z-index: 100;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 5px;
+}
+.autocomplete-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(132,89,54,0.05);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+.autocomplete-item:hover:not(:disabled) {
+  background: rgba(132,89,54,0.05);
+}
+.autocomplete-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.autocomplete-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.autocomplete-name {
+  font-weight: 700;
+  color: var(--noir);
+  font-size: 0.88rem;
+}
+.autocomplete-meta {
+  font-size: 0.74rem;
+  color: #777;
+}
+.autocomplete-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.autocomplete-badge.present {
+  background: #f0f0f0;
+  color: #888;
+}
+.autocomplete-badge:not(.present) {
+  background: rgba(46,125,50,0.1);
+  color: #2e7d32;
 }
 </style>
