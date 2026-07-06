@@ -184,6 +184,10 @@
             <div class="modal-select-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%;">
               <button class="btn-select-all" @click="selectAll">Tout sélectionner</button>
               <button class="btn-select-all" @click="selectedIds.clear()">Tout désélectionner</button>
+              <label class="btn-select-all" title="Importer un fichier Excel ou CSV" style="background: rgba(132,89,54,0.08); color: var(--brun); display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; cursor: pointer; font-size: 12px; padding: 6px 14px; font-weight: 700;">
+                <AppIcon name="upload" :size="12" /> Importer Excel / CSV
+                <input type="file" accept=".xlsx, .xls, .csv" @change="importExcelOrCSV" style="display:none" ref="fileInput" />
+              </label>
               <button class="btn-select-all" @click="syncNewsletterSubscribers" :disabled="syncing" style="background: rgba(132,89,54,0.08); color: var(--brun); display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;">
                 <AppIcon :name="syncing ? 'loader' : 'mail'" :size="12" :class="{ spin: syncing }" />
                 {{ syncing ? 'Importation…' : 'Importer les abonnés' }}
@@ -319,6 +323,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import * as XLSX from 'xlsx'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -612,6 +617,79 @@ async function syncNewsletterSubscribers() {
     alert('Erreur lors de la synchronisation : ' + err.message)
   } finally {
     syncing.value = false
+  }
+}
+
+const fileInput = ref(null)
+
+async function importExcelOrCSV(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  try {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+        const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+        
+        const records = []
+        
+        json.forEach(row => {
+          const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'first name' || k.toLowerCase() === 'firstname')
+          const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom' || k.toLowerCase() === 'last name' || k.toLowerCase() === 'lastname')
+          const eKey = Object.keys(row).find(k => k.toLowerCase() === 'email' || k.toLowerCase() === 'e-mail' || k.toLowerCase() === 'courriel')
+          const tKey = Object.keys(row).find(k => k.toLowerCase() === 'téléphone' || k.toLowerCase() === 'telephone' || k.toLowerCase() === 'tel' || k.toLowerCase() === 'phone')
+          const oKey = Object.keys(row).find(k => k.toLowerCase() === 'organisation' || k.toLowerCase() === 'société' || k.toLowerCase() === 'entreprise' || k.toLowerCase() === 'company' || k.toLowerCase() === 'institution')
+          const posKey = Object.keys(row).find(k => k.toLowerCase() === 'poste' || k.toLowerCase() === 'fonction' || k.toLowerCase() === 'titre' || k.toLowerCase() === 'position' || k.toLowerCase() === 'role')
+          const notesKey = Object.keys(row).find(k => k.toLowerCase() === 'notes' || k.toLowerCase() === 'note' || k.toLowerCase() === 'observation' || k.toLowerCase() === 'observations')
+          
+          let prenom = pKey ? String(row[pKey]).trim() : ''
+          let nom = nKey ? String(row[nKey]).trim() : ''
+          const email = eKey ? String(row[eKey]).trim() : ''
+          const telephone = tKey ? String(row[tKey]).trim() : ''
+          const organisation = oKey ? String(row[oKey]).trim() : ''
+          const titre_poste = posKey ? String(row[posKey]).trim() : ''
+          const notes = notesKey ? String(row[notesKey]).trim() : ''
+
+          if (!prenom && !nom) {
+            const fullnameKey = Object.keys(row).find(k => k.toLowerCase().includes('nom complet') || k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom') || k.toLowerCase() === 'name' || k.toLowerCase() === 'fullname')
+            if (fullnameKey && row[fullnameKey]) {
+              const parts = String(row[fullnameKey]).trim().split(/\s+/)
+              if (parts.length > 1) {
+                prenom = parts[0]
+                nom = parts.slice(1).join(' ')
+              } else {
+                nom = parts[0]
+              }
+            }
+          }
+
+          if (prenom || nom) {
+            records.push({ prenom, nom, email, telephone, organisation, titre_poste, notes })
+          }
+        })
+
+        if (records.length === 0) {
+          alert('Aucun contact valide trouvé dans le fichier.')
+          return
+        }
+
+        const result = await api.post('/api/invites/bulk', { invites: records })
+        alert(`${result.created || records.length} contact(s) importé(s) avec succès.`)
+        await api.fetchInvites()
+      } catch (err) {
+        console.error(err)
+        alert('Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.')
+      }
+    }
+    reader.readAsArrayBuffer(file)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    if (fileInput.value) fileInput.value.value = ''
   }
 }
 </script>
