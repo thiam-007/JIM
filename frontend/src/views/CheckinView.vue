@@ -89,10 +89,10 @@
         <!-- ─── Statistiques des profils émargés ─── -->
         <div class="form-card profile-stats-card" v-if="!loading && checkinLog.length > 0" style="box-shadow: 0 10px 30px rgba(132,89,54,0.06); border: 1.5px solid rgba(132,89,54,0.1);">
           <div class="fh fh-a" style="padding: 16px 24px; border-bottom: 1px solid rgba(132,89,54,0.08);">
-            <div class="fh-icon" style="color: var(--brun);"><AppIcon name="bar-chart-2" :size="18" /></div>
+            <div class="fh-icon" style="color: #fff;"><AppIcon name="bar-chart-2" :size="18" /></div>
             <div>
-              <div class="fh-title" style="font-size: 1rem; color: var(--brun);">Répartition des présents</div>
-              <div class="fh-sub" style="font-size: 0.76rem; color: #888;">Top organisations et fonctions des présents</div>
+              <div class="fh-title" style="font-size: 1rem; color: #fff;">Répartition des présents</div>
+              <div class="fh-sub" style="font-size: 0.76rem; color: rgba(255,255,255,0.85);">Top organisations et fonctions des présents</div>
             </div>
           </div>
           <div class="fb" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px;">
