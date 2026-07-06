@@ -83,7 +83,7 @@ function formatDateFr(iso) {
  * Shared HTML email shell with brand colours.
  */
 function emailShell(bodyContent, options = {}) {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
   
   // Handle retro-compatibility where options was just a string title
   const title = typeof options === 'string' ? options : (options.title || 'NOTIFICATION');
@@ -565,7 +565,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
           filename: 'qr-code.png',
           content: qrCodeDataUrl.split(',')[1],
           encoding: 'base64',
-          cid: 'qrcode' // same cid value as in the html img src
+          cid: 'qr-code.png' // same cid value as in the html img src
         }
       ]
     })

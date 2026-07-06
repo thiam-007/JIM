@@ -205,7 +205,15 @@ onMounted(async () => {
       evenement.value = (evts.value || []).find(e => String(e.id) === String(eventId)) || null
     }
     if (log.status === 'fulfilled') {
-      checkinLog.value = log.value?.log || log.value || []
+      const rawLog = log.value?.log || log.value || []
+      // Normalisation du log pour un affichage uniforme (nom, prénom, organisation, checked_at)
+      checkinLog.value = rawLog.map(row => ({
+        id: row.id,
+        prenom: row.invitations?.invites?.prenom || '',
+        nom: row.invitations?.invites?.nom || '',
+        organisation: row.invitations?.invites?.organisation || '',
+        checked_at: row.scanned_at
+      }))
       totalInscrits.value = log.value?.total_inscrits || 0
     }
   } finally {
@@ -287,23 +295,29 @@ async function handleScanResult(scannedText) {
     let token = scannedText
     try {
       const url = new URL(scannedText)
-      const parts = url.pathname.split('/')
+      // Gérer les barres obliques de fin de l'URL
+      const pathname = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname
+      const parts = pathname.split('/')
       token = parts[parts.length - 1]
     } catch(e) {
-      // scannedText is not a URL, so we keep it as is
+      // scannedText n'est pas une URL, on garde tel quel
     }
     // Nettoyage au cas où .png traîne
     if (token.endsWith('.png')) token = token.slice(0, -4)
+    token = token.trim().toLowerCase()
 
     const result = await api.post('/api/checkin/scan', { token, evenement_id: eventId })
     scanResult.value = {
       type: 'success',
-      name: `${result.prenom || ''} ${result.nom || ''}`.trim() || 'Invité',
-      message: result.message || 'Bienvenue !'
+      name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
+      message: 'Bienvenue !'
     }
-    // Add to log
+    // Ajouter au log de check-in normalisé
     checkinLog.value.unshift({
-      ...result,
+      id: result.id || Math.random().toString(),
+      prenom: result.invite?.prenom || '',
+      nom: result.invite?.nom || '',
+      organisation: result.invite?.organisation || '',
       checked_at: new Date().toISOString()
     })
   } catch (err) {
@@ -336,10 +350,17 @@ async function doManualCheckin() {
     })
     scanResult.value = {
       type: 'success',
-      name: `${result.prenom || ''} ${result.nom || ''}`.trim() || 'Invité',
-      message: result.message || 'Bienvenue !'
+      name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
+      message: 'Bienvenue !'
     }
-    checkinLog.value.unshift({ ...result, checked_at: new Date().toISOString() })
+    // Ajouter au log de check-in normalisé
+    checkinLog.value.unshift({
+      id: result.id || Math.random().toString(),
+      prenom: result.invite?.prenom || '',
+      nom: result.invite?.nom || '',
+      organisation: result.invite?.organisation || '',
+      checked_at: new Date().toISOString()
+    })
     manualInput.value = ''
   } catch (err) {
     manualError.value = err.message || 'Token ou nom introuvable.'

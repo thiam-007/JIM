@@ -157,7 +157,7 @@ app.get('/api/invitations/qr/:token', async (req, res, next) => {
 
     if (error || !data) return res.status(404).json({ error: 'Invitation introuvable' })
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     const pngBuffer = await generateQrPng(token, frontendUrl)
 
     res.setHeader('Content-Type', 'image/png')

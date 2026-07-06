@@ -5,6 +5,7 @@ import { sendNewsletterWelcome, sendNewsletterCampaign, generateNewsletterHtml }
 import { authMiddleware } from '../middleware/auth.js'
 
 const router = express.Router()
+const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
 
 // Fonction utilitaire pour nettoyer le markdown avant l'envoi en email
 function stripMarkdown(text) {
@@ -273,7 +274,7 @@ router.post('/preview', authMiddleware, async (req, res) => {
               tag: act.tags && act.tags.length > 0 ? act.tags[0] : 'Actualité',
               titre: act.titre,
               description: act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : '')),
-              linkUrl: (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id,
+              linkUrl: frontendUrl + '/actualites/' + act.id,
               imageUrl: act.image_url
             };
           }).filter(Boolean);
@@ -292,7 +293,7 @@ router.post('/preview', authMiddleware, async (req, res) => {
         titre = act.titre;
         description = act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : ''));
         imageUrl = act.image_url;
-        linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
+        linkUrl = frontendUrl + '/actualites/' + act.id;
       }
     } else if (type_source === 'evenement' && source_id) {
       const { data: ev, error: evErr } = await supabase.from('evenements').select('*').eq('id', source_id).single();
@@ -300,7 +301,7 @@ router.post('/preview', authMiddleware, async (req, res) => {
         titre = ev.titre;
         description = ev.description || ev.lieu || '';
         imageUrl = ev.image_url;
-        linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/evenements/' + ev.id;
+        linkUrl = frontendUrl + '/evenements/' + ev.id;
       }
     } else {
       linkUrl = req.body.linkUrl || null;
@@ -376,7 +377,7 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
               tag: act.tags && act.tags.length > 0 ? act.tags[0] : 'Actualité',
               titre: act.titre,
               description: act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : '')),
-              linkUrl: (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id,
+              linkUrl: frontendUrl + '/actualites/' + act.id,
               imageUrl: act.image_url
             };
           }).filter(Boolean);
@@ -389,14 +390,14 @@ router.post('/campaigns', authMiddleware, async (req, res) => {
       titre = act.titre;
       description = act.description ? stripMarkdown(act.description) : (cleanContenu.substring(0, 150) + (cleanContenu.length > 150 ? '...' : ''));
       imageUrl = act.image_url;
-      linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/actualites/' + act.id;
+      linkUrl = frontendUrl + '/actualites/' + act.id;
     } else if (type_source === 'evenement' && source_id) {
       const { data: ev, error: evErr } = await supabase.from('evenements').select('*').eq('id', source_id).single();
       if (evErr) throw evErr;
       titre = ev.titre;
       description = ev.description || ev.lieu || '';
       imageUrl = ev.image_url;
-      linkUrl = (process.env.FRONTEND_URL || 'http://localhost:5173') + '/evenements/' + ev.id;
+      linkUrl = frontendUrl + '/evenements/' + ev.id;
     } else {
       // type_source === 'manuel'
       linkUrl = req.body.linkUrl || null;

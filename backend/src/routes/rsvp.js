@@ -105,7 +105,7 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
 
     if (updateErr) throw updateErr
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     let qr_url = null
 
     // If confirmed, send confirmation email with QR code

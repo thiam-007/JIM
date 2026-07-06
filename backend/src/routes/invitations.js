@@ -124,7 +124,7 @@ router.post('/send', async (req, res, next) => {
     if (fetchErr) throw fetchErr
 
     const results = []
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
 
     for (const invitation of invitations) {
       const invite = invitation.invites

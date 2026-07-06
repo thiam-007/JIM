@@ -63,7 +63,7 @@ function isBot(userAgent) {
 router.get('/:type/:id', async (req, res, next) => {
   try {
     const { type, id } = req.params
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
 
     let title = 'Musée Virtuel de Guinée'
     let description = 'Découvrez les événements et actualités du Musée Virtuel de Guinée.'
