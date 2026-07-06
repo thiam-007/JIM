@@ -23,10 +23,14 @@
           </button>
         </div>
         <div class="inv-actions">
-          <label class="btn-import" title="Importer un fichier CSV">
-            <AppIcon name="upload" :size="16" /> Importer CSV
-            <input type="file" accept=".csv" @change="importCSV" style="display:none" ref="csvInput" />
+          <label class="btn-import" title="Importer un fichier Excel ou CSV">
+            <AppIcon name="upload" :size="16" /> Importer Excel / CSV
+            <input type="file" accept=".xlsx, .xls, .csv" @change="importExcelOrCSV" style="display:none" ref="fileInput" />
           </label>
+          <button class="btn-import" @click="importFromNewsletter" :disabled="importingFromNewsletter" title="Importer les abonnés de la newsletter comme contacts/invités">
+            <AppIcon :name="importingFromNewsletter ? 'loader' : 'mail'" :size="16" :class="{ spin: importingFromNewsletter }" />
+            {{ importingFromNewsletter ? 'Importation…' : 'Importer Abonnés' }}
+          </button>
           <button class="btn-create" @click="openCreate">
             <AppIcon name="plus" :size="16" /> Ajouter un invité
           </button>
@@ -221,6 +225,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import * as XLSX from 'xlsx'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -242,7 +247,8 @@ const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
 const importMsg = ref(null)
-const csvInput = ref(null)
+const fileInput = ref(null)
+const importingFromNewsletter = ref(false)
 
 const form = ref({
   prenom: '', nom: '', email: '', telephone: '',
@@ -376,47 +382,146 @@ async function doDelete() {
   }
 }
 
-async function importCSV(event) {
+async function importExcelOrCSV(event) {
   const file = event.target.files[0]
   if (!file) return
   importMsg.value = null
 
-  let text = await file.text()
-  // Supprimer le BOM (Byte Order Mark) ajouté par Excel
-  text = text.replace(/^\uFEFF/, '').trim()
-  const lines = text.split('\n')
-  if (lines.length < 2) {
-    importMsg.value = { type: 'error', text: 'Le fichier CSV est vide ou invalide.' }
-    return
+  const reader = new FileReader()
+  reader.onload = async (e) => {
+    try {
+      const data = new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: 'array' })
+      const firstSheetName = workbook.SheetNames[0]
+      const worksheet = workbook.Sheets[firstSheetName]
+      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+      
+      const records = []
+      
+      json.forEach(row => {
+        // Recherche des clés sans sensibilité à la casse
+        const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'first name' || k.toLowerCase() === 'firstname')
+        const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom' || k.toLowerCase() === 'last name' || k.toLowerCase() === 'lastname')
+        const eKey = Object.keys(row).find(k => k.toLowerCase() === 'email' || k.toLowerCase() === 'e-mail' || k.toLowerCase() === 'courriel')
+        const tKey = Object.keys(row).find(k => k.toLowerCase() === 'téléphone' || k.toLowerCase() === 'telephone' || k.toLowerCase() === 'tel' || k.toLowerCase() === 'phone')
+        const oKey = Object.keys(row).find(k => k.toLowerCase() === 'organisation' || k.toLowerCase() === 'société' || k.toLowerCase() === 'entreprise' || k.toLowerCase() === 'company' || k.toLowerCase() === 'institution')
+        const posKey = Object.keys(row).find(k => k.toLowerCase() === 'poste' || k.toLowerCase() === 'fonction' || k.toLowerCase() === 'titre' || k.toLowerCase() === 'position' || k.toLowerCase() === 'role')
+        const notesKey = Object.keys(row).find(k => k.toLowerCase() === 'notes' || k.toLowerCase() === 'note' || k.toLowerCase() === 'observation' || k.toLowerCase() === 'observations')
+        
+        let prenom = pKey ? String(row[pKey]).trim() : ''
+        let nom = nKey ? String(row[nKey]).trim() : ''
+        const email = eKey ? String(row[eKey]).trim() : ''
+        const telephone = tKey ? String(row[tKey]).trim() : ''
+        const organisation = oKey ? String(row[oKey]).trim() : ''
+        const titre_poste = posKey ? String(row[posKey]).trim() : ''
+        const notes = notesKey ? String(row[notesKey]).trim() : ''
+
+        // Gestion du cas où le nom complet figure dans une seule colonne
+        if (!prenom && !nom) {
+          const fullnameKey = Object.keys(row).find(k => k.toLowerCase().includes('nom complet') || k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom') || k.toLowerCase() === 'name' || k.toLowerCase() === 'fullname')
+          if (fullnameKey && row[fullnameKey]) {
+            const parts = String(row[fullnameKey]).trim().split(/\s+/)
+            if (parts.length > 1) {
+              prenom = parts[0]
+              nom = parts.slice(1).join(' ')
+            } else {
+              nom = parts[0]
+            }
+          }
+        }
+
+        if (prenom || nom) {
+          records.push({ prenom, nom, email, telephone, organisation, titre_poste, notes })
+        }
+      })
+
+      if (records.length === 0) {
+        importMsg.value = { type: 'error', text: 'Aucun contact valide trouvé dans le fichier.' }
+        return
+      }
+
+      const result = await api.post('/api/invites/bulk', { invites: records })
+      importMsg.value = { type: 'success', text: `${result.created || records.length} contact(s) importé(s) avec succès.` }
+      await api.fetchInvites()
+    } catch (err) {
+      console.error(err)
+      importMsg.value = { type: 'error', text: 'Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.' }
+    }
   }
+  
+  reader.readAsArrayBuffer(file)
+  if (fileInput.value) fileInput.value.value = ''
+  setTimeout(() => { importMsg.value = null }, 5000)
+}
 
-  const separator = lines[0].includes(';') ? ';' : ','
-  const headers = lines[0].split(separator).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase())
-  const records = []
-
-  for (let i = 1; i < lines.length; i++) {
-    const cells = lines[i].split(separator).map(c => c.trim().replace(/^"|"$/g, ''))
-    if (cells.every(c => !c)) continue
-    const row = {}
-    headers.forEach((h, idx) => { row[h] = cells[idx] || '' })
-    if (row.prenom || row.nom) records.push(row)
-  }
-
-  if (!records.length) {
-    importMsg.value = { type: 'error', text: 'Aucune ligne valide trouvée dans le fichier CSV.' }
-    return
-  }
-
+async function importFromNewsletter() {
+  importingFromNewsletter.value = true
+  importMsg.value = null
   try {
-    const result = await api.post('/api/invites/bulk', { invites: records })
-    importMsg.value = { type: 'success', text: `${result.created || records.length} invités importés avec succès.` }
+    // 1. Récupérer les abonnés
+    const subscribers = await api.get('/api/newsletter/subscribers')
+    if (!subscribers || subscribers.length === 0) {
+      importMsg.value = { type: 'error', text: 'Aucun abonné trouvé dans la newsletter.' }
+      return
+    }
+
+    // 2. Récupérer les invités existants pour éviter les doublons par email
+    await api.fetchInvites()
+    const existingEmails = new Set(api.invites.map(i => (i.email || '').toLowerCase().trim()).filter(Boolean))
+
+    const recordsToImport = []
+    subscribers.forEach(sub => {
+      if (!sub.email) return
+      const cleanEmail = sub.email.toLowerCase().trim()
+      
+      // Sauter si l'email existe déjà dans la liste des contacts
+      if (existingEmails.has(cleanEmail)) return
+
+      let prenom = (sub.prenom || '').trim()
+      let nom = (sub.nom || '').trim()
+      
+      // Extraction intelligente du prénom/nom à partir du pseudonyme de l'email si absent
+      if (!prenom && !nom) {
+        const username = sub.email.split('@')[0]
+        const parts = username.split(/[\._-]/)
+        if (parts.length > 1) {
+          prenom = parts[0].charAt(0).toUpperCase() + parts[0].slice(1)
+          nom = parts.slice(1).join(' ').replace(/\b\w/g, c => c.toUpperCase())
+        } else {
+          prenom = username.charAt(0).toUpperCase() + username.slice(1)
+          nom = 'Abonné'
+        }
+      }
+
+      recordsToImport.push({
+        prenom: prenom || 'Abonné',
+        nom: nom || 'Newsletter',
+        email: sub.email,
+        telephone: '',
+        organisation: sub.institution || '',
+        titre_poste: sub.fonction || '',
+        notes: 'Importé depuis la newsletter'
+      })
+    })
+
+    if (recordsToImport.length === 0) {
+      importMsg.value = { type: 'success', text: 'Tous vos abonnés figurent déjà dans votre liste de contacts.' }
+      return
+    }
+
+    // 3. Envoi en masse au backend
+    const result = await api.post('/api/invites/bulk', { invites: recordsToImport })
+    importMsg.value = { type: 'success', text: `${result.created || recordsToImport.length} abonné(s) importé(s) comme contact(s) avec succès.` }
+    
+    // Recharger la liste d'affichage
     await api.fetchInvites()
   } catch (err) {
-    importMsg.value = { type: 'error', text: err.message || 'Erreur lors de l\'import.' }
+    console.error(err)
+    importMsg.value = { type: 'error', text: err.message || 'Erreur lors de l\'importation des abonnés.' }
+  } finally {
+    importingFromNewsletter.value = false
+    setTimeout(() => { importMsg.value = null }, 5000)
   }
-
-  if (csvInput.value) csvInput.value.value = ''
-  setTimeout(() => { importMsg.value = null }, 5000)
 }
 </script>
 

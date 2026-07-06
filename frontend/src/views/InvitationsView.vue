@@ -257,11 +257,17 @@
                 <span class="detail-label">Date de réponse</span>
                 <span>{{ formatDate(detailInv.date_reponse) }}</span>
               </div>
-              <div class="detail-item" v-if="detailInv.token">
+              <div class="detail-item" v-if="detailInv.token" style="grid-column: span 2;">
                 <span class="detail-label">Lien RSVP</span>
-                <a :href="`/rsvp/${detailInv.token}`" target="_blank" class="inv-email">
-                  /rsvp/{{ detailInv.token.slice(0, 12) }}…
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center; background: rgba(132,89,54,0.05); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(132,89,54,0.1); margin-top: 4px;">
+                  <a :href="`/rsvp/${detailInv.token}`" target="_blank" class="inv-email" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 0.8rem; font-weight: 600;">
+                    {{ getFullRsvpUrl(detailInv.token) }}
+                  </a>
+                  <button type="button" @click="copyRsvpLink(detailInv.token)" class="btn-select-all" style="padding: 4px 10px; font-size: 11px; white-space: nowrap; margin-left: auto; border-radius: 6px;">
+                    <AppIcon :name="copySuccess ? 'check-circle' : 'copy'" :size="12" />
+                    {{ copySuccess ? 'Copié !' : 'Copier' }}
+                  </button>
+                </div>
               </div>
             </div>
             <div v-if="detailInv.token" class="detail-qr">
@@ -519,6 +525,25 @@ async function doDelete() {
     deletingInv.value = null
   } finally {
     deleting.value = false
+  }
+}
+
+const copySuccess = ref(false)
+
+function getFullRsvpUrl(token) {
+  return window.location.origin + '/rsvp/' + token
+}
+
+async function copyRsvpLink(token) {
+  const url = getFullRsvpUrl(token)
+  try {
+    await navigator.clipboard.writeText(url)
+    copySuccess.value = true
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('Erreur lors de la copie :', err)
   }
 }
 </script>
