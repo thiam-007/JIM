@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
+import crypto from 'crypto'
 import supabase from '../config/supabase.js'
 import { sendConfirmation } from '../services/emailService.js'
 import { generateQrDataUrl } from '../services/qrService.js'
@@ -129,6 +130,148 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
       statut: updated.statut,
       date_reponse: updated.date_reponse,
       ...(confirmed && { qr_url: `/api/invitations/qr/${token}.png` })
+    })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── GET /api/rsvp/evenement/:id — Public event details for self-registration ─────────────
+router.get('/evenement/:id', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('evenements')
+      .select('id, titre, description, date_debut, date_fin, lieu, image_url, format, statut')
+      .eq('id', req.params.id)
+      .single()
+
+    if (error || !data) return res.status(404).json({ error: 'Événement introuvable' })
+    if (data.statut !== 'publie') {
+      return res.status(403).json({ error: 'Cet événement n\'est pas ouvert aux inscriptions publiques.' })
+    }
+    
+    res.json(data)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── POST /api/rsvp/evenement/:id/register — Public self-registration ────────────────────────────
+router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
+  try {
+    const evenement_id = req.params.id
+    const { prenom, nom, email, organisation, telephone } = req.body
+
+    if (!prenom || !nom) return res.status(400).json({ error: 'Prénom et nom requis' })
+    if (!email) return res.status(400).json({ error: 'L\'adresse e-mail est obligatoire pour s\'inscrire.' })
+
+    // Vérifier si l'événement est actif et publié
+    const { data: evenement, error: evErr } = await supabase
+      .from('evenements')
+      .select('id, titre, description, date_debut, date_fin, lieu, image_url, statut')
+      .eq('id', evenement_id)
+      .single()
+
+    if (evErr || !evenement) return res.status(404).json({ error: 'Événement introuvable' })
+    if (evenement.statut !== 'publie') {
+      return res.status(403).json({ error: 'Cet événement n\'est pas ouvert aux inscriptions publiques.' })
+    }
+
+    let inviteId = null
+    let inviteData = null
+
+    // 1. Recherche par e-mail
+    const { data: existingInvite } = await supabase
+      .from('invites')
+      .select('*')
+      .eq('email', email.trim().toLowerCase())
+      .maybeSingle()
+
+    if (existingInvite) {
+      inviteId = existingInvite.id
+      inviteData = existingInvite
+    } else {
+      // Créer le contact
+      const { data: newInvite, error: inviteErr } = await supabase
+        .from('invites')
+        .insert({
+          prenom: prenom.trim(),
+          nom: nom.trim(),
+          organisation: organisation ? organisation.trim() : null,
+          email: email.trim().toLowerCase(),
+          telephone: telephone ? telephone.trim() : null
+        })
+        .select()
+        .single()
+
+      if (inviteErr) throw inviteErr
+      inviteId = newInvite.id
+      inviteData = newInvite
+    }
+
+    // 2. Créer ou récupérer l'invitation pour cet événement
+    let invitation = null
+    const { data: existingInvitation } = await supabase
+      .from('invitations')
+      .select('id, token, statut')
+      .eq('evenement_id', evenement_id)
+      .eq('invite_id', inviteId)
+      .maybeSingle()
+
+    if (existingInvitation) {
+      invitation = existingInvitation
+      // Si l'invitation existe déjà mais n'est pas confirmée, on la valide
+      if (invitation.statut !== 'present' && invitation.statut !== 'inscrit') {
+        const { data: updated, error: updateErr } = await supabase
+          .from('invitations')
+          .update({
+            statut: 'inscrit',
+            date_reponse: new Date().toISOString()
+          })
+          .eq('id', invitation.id)
+          .select('id, token, statut')
+          .single()
+
+        if (updateErr) throw updateErr
+        invitation = updated
+      }
+    } else {
+      const token = crypto.randomUUID()
+      const { data: newInvitation, error: inviteErr } = await supabase
+        .from('invitations')
+        .insert({
+          evenement_id,
+          invite_id: inviteId,
+          token,
+          statut: 'inscrit',
+          date_reponse: new Date().toISOString()
+        })
+        .select('id, token, statut')
+        .single()
+
+      if (inviteErr) throw inviteErr
+      invitation = newInvitation
+    }
+
+    // 3. Envoyer un e-mail de confirmation avec le QR code si l'e-mail est disponible
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
+    const qrCodeDataUrl = await generateQrDataUrl(invitation.token, frontendUrl)
+
+    try {
+      await sendConfirmation({
+        invite: inviteData,
+        evenement: evenement,
+        qrCodeDataUrl,
+        token: invitation.token
+      })
+    } catch (emailErr) {
+      console.error('Failed to send self-registration confirmation email:', emailErr)
+    }
+
+    res.status(201).json({
+      ok: true,
+      token: invitation.token,
+      statut: invitation.statut
     })
   } catch (err) {
     next(err)

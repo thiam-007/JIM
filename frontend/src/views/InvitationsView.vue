@@ -38,6 +38,51 @@
         </div>
       </div>
 
+      <!-- Statistiques des profils -->
+      <div class="form-card profile-stats-card" v-if="!loading && stats.presents > 0" style="margin-bottom: 20px; box-shadow: 0 10px 30px rgba(132,89,54,0.06); border: 1.5px solid rgba(132,89,54,0.1);">
+        <div class="fh fh-a" style="padding: 16px 24px; border-bottom: 1px solid rgba(132,89,54,0.08);">
+          <div class="fh-icon" style="color: var(--brun);"><AppIcon name="bar-chart-2" :size="18" /></div>
+          <div>
+            <div class="fh-title" style="font-size: 1rem; color: var(--brun);">Profil des participants présents</div>
+            <div class="fh-sub" style="font-size: 0.76rem; color: #888;">Répartition des présents par organisation et fonction</div>
+          </div>
+        </div>
+        <div class="fb" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 24px;">
+          <!-- Col 1: Organisations -->
+          <div>
+            <h4 style="margin: 0 0 12px; font-size: 0.82rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid var(--brun); padding-left: 8px;">Organisations</h4>
+            <div v-if="profileStats.topOrgs.length" style="display: flex; flex-direction: column; gap: 10px;">
+              <div v-for="org in profileStats.topOrgs" :key="org.name" style="font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px; font-weight: 600;">
+                  <span style="color: var(--noir); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">{{ org.name }}</span>
+                  <span style="color: var(--rouge);">{{ org.count }}</span>
+                </div>
+                <div style="height: 6px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; background: var(--brun); border-radius: 3px;" :style="`width: ${Math.round((org.count / stats.presents) * 100)}%`"></div>
+                </div>
+              </div>
+            </div>
+            <p v-else style="font-size: 0.85rem; color: #888; font-style: italic;">Aucune donnée disponible</p>
+          </div>
+          <!-- Col 2: Fonctions -->
+          <div>
+            <h4 style="margin: 0 0 12px; font-size: 0.82rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid var(--or); padding-left: 8px;">Fonctions / Postes</h4>
+            <div v-if="profileStats.topJobs.length" style="display: flex; flex-direction: column; gap: 10px;">
+              <div v-for="job in profileStats.topJobs" :key="job.name" style="font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 3px; font-weight: 600;">
+                  <span style="color: var(--noir); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 80%;">{{ job.name }}</span>
+                  <span style="color: var(--rouge);">{{ job.count }}</span>
+                </div>
+                <div style="height: 6px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
+                  <div style="height: 100%; background: var(--or); border-radius: 3px;" :style="`width: ${Math.round((job.count / stats.presents) * 100)}%`"></div>
+                </div>
+              </div>
+            </div>
+            <p v-else style="font-size: 0.85rem; color: #888; font-style: italic;">Aucune donnée disponible</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Actions toolbar -->
       <div class="inv-toolbar fb">
         <div class="inv-search-wrap">
@@ -378,6 +423,34 @@ function pct(n) {
   if (!stats.value.total) return 0
   return Math.round((n / stats.value.total) * 100)
 }
+
+const profileStats = computed(() => {
+  const invitations = api.invitations || []
+  const presents = invitations.filter(i => i.statut === 'present' && i.invites)
+  
+  const orgMap = {}
+  const jobMap = {}
+  
+  presents.forEach(inv => {
+    const org = (inv.invites.organisation || 'Non spécifié').trim() || 'Non spécifié'
+    const job = (inv.invites.titre_poste || 'Non spécifié').trim() || 'Non spécifié'
+    
+    orgMap[org] = (orgMap[org] || 0) + 1
+    jobMap[job] = (jobMap[job] || 0) + 1
+  })
+  
+  const topOrgs = Object.entries(orgMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    
+  const topJobs = Object.entries(jobMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+    
+  return { topOrgs, topJobs }
+})
 
 const pendingCount = computed(() =>
   api.invitations.filter(i => i.statut === 'pas_de_reaction').length

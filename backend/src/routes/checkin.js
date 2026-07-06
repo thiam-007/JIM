@@ -1,4 +1,5 @@
 import { Router } from 'express'
+import crypto from 'crypto'
 import supabase from '../config/supabase.js'
 
 const router = Router()
@@ -217,6 +218,123 @@ router.get('/:evenement_id/log', async (req, res, next) => {
     )
 
     res.json(filtered)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── POST /api/checkin/register-onsite — Register and check in a guest on-site ─────────────────────
+router.post('/register-onsite', async (req, res, next) => {
+  try {
+    const { prenom, nom, organisation, titre_poste, email, evenement_id, agent } = req.body
+
+    if (!evenement_id) return res.status(400).json({ error: 'ID de l\'événement requis' })
+    if (!prenom || !nom) return res.status(400).json({ error: 'Prénom et nom requis' })
+
+    let inviteId = null
+    let inviteData = null
+
+    // 1. Recherche par email pour éviter les doublons si l'email est fourni
+    if (email && email.trim()) {
+      const { data: existingInvite } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle()
+
+      if (existingInvite) {
+        inviteId = existingInvite.id
+        inviteData = existingInvite
+      }
+    }
+
+    // 2. Créer le contact s'il n'existe pas
+    if (!inviteId) {
+      const { data: newInvite, error: inviteErr } = await supabase
+        .from('invites')
+        .insert({
+          prenom: prenom.trim(),
+          nom: nom.trim(),
+          organisation: organisation ? organisation.trim() : null,
+          titre_poste: titre_poste ? titre_poste.trim() : null,
+          email: email ? email.trim().toLowerCase() : null
+        })
+        .select()
+        .single()
+
+      if (inviteErr) throw inviteErr
+      inviteId = newInvite.id
+      inviteData = newInvite
+    }
+
+    // 3. Créer ou récupérer l'invitation pour cet événement
+    let invitation = null
+    const { data: existingInvitation } = await supabase
+      .from('invitations')
+      .select('id, token, statut, heure_arrivee, invites(prenom, nom, organisation, titre_poste)')
+      .eq('evenement_id', evenement_id)
+      .eq('invite_id', inviteId)
+      .maybeSingle()
+
+    if (existingInvitation) {
+      invitation = existingInvitation
+    } else {
+      const token = crypto.randomUUID()
+      const { data: newInvitation, error: inviteErr } = await supabase
+        .from('invitations')
+        .insert({
+          evenement_id,
+          invite_id: inviteId,
+          token,
+          statut: 'present', // émargement direct
+          heure_arrivee: new Date().toISOString(),
+          agent_checkin: agent || null
+        })
+        .select('id, token, statut, heure_arrivee, invites(prenom, nom, organisation, titre_poste)')
+        .single()
+
+      if (inviteErr) throw inviteErr
+      invitation = newInvitation
+    }
+
+    // 4. Si l'invitation existait déjà mais n'était pas présente, on l'émarge
+    if (invitation.statut !== 'present') {
+      const { data: updated, error: checkinErr } = await supabase
+        .from('invitations')
+        .update({
+          statut: 'present',
+          heure_arrivee: new Date().toISOString(),
+          agent_checkin: agent || null
+        })
+        .eq('id', invitation.id)
+        .select('id, token, statut, heure_arrivee, invites(prenom, nom, organisation, titre_poste)')
+        .single()
+
+      if (checkinErr) throw checkinErr
+      invitation = updated
+    }
+
+    // 5. Créer l'historique d'émargement (checkins log)
+    const { data: checkinLog, error: logErr } = await supabase
+      .from('checkins')
+      .insert({
+        invitation_id: invitation.id,
+        scanned_at: new Date().toISOString(),
+        agent: agent || null,
+        success: true
+      })
+      .select()
+      .single()
+
+    if (logErr) throw logErr
+
+    res.status(201).json({
+      ok: true,
+      statut: 'present',
+      heure_arrivee: invitation.heure_arrivee,
+      invite: inviteData || invitation.invites,
+      id: invitation.id
+    })
   } catch (err) {
     next(err)
   }

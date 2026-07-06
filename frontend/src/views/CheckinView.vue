@@ -110,10 +110,70 @@
           <div v-if="manualError" class="ck-manual-error">
             <AppIcon name="alert-triangle" :size="15" /> {{ manualError }}
           </div>
+          <div class="ck-manual-row" style="margin-top: 14px; display: flex; justify-content: flex-end;">
+            <button type="button" class="btn-import" @click="showRegisterModal = true" style="font-size: 0.85rem; font-weight: 700; border-radius: 999px;">
+              <AppIcon name="user-plus" :size="15" /> Enregistrer sur place
+            </button>
+          </div>
         </div>
       </div>
 
     </div>
+
+    <!-- ─── Modal Enregistrement sur place ─── -->
+    <Teleport to="body">
+      <div v-if="showRegisterModal" class="modal-backdrop" @click.self="showRegisterModal = false">
+        <div class="modal-box form-card">
+          <div class="fh fh-a">
+            <div class="fh-icon"><AppIcon name="user-plus" :size="22" /></div>
+            <div class="fh-title">Enregistrement sur place</div>
+          </div>
+          <div class="fb">
+            <p style="font-size: 0.85rem; color: #666; margin-top: -10px; margin-bottom: 15px;">
+              💡 <em>Saisie rapide : renseignez uniquement le prénom et le nom. L'e-mail et l'organisation sont optionnels et peuvent être laissés vides pour gagner du temps.</em>
+            </p>
+            <form @submit.prevent="submitRegisterOnsite">
+              <div class="fr">
+                <div class="fg">
+                  <label>Prénom <span class="req">*</span></label>
+                  <input type="text" v-model="registerForm.prenom" ref="prenomInputRef" @keyup.enter="focusNom" required placeholder="Ex : Mamadou" />
+                </div>
+                <div class="fg">
+                  <label>Nom <span class="req">*</span></label>
+                  <input type="text" v-model="registerForm.nom" ref="nomInputRef" @keyup.enter="submitRegisterOnsite" required placeholder="Ex : Diallo" />
+                </div>
+              </div>
+              <div class="fr">
+                <div class="fg">
+                  <label>Organisation / Institution</label>
+                  <input type="text" v-model="registerForm.organisation" placeholder="Ex : Ministère de la Culture" />
+                </div>
+                <div class="fg">
+                  <label>Titre / Fonction</label>
+                  <input type="text" v-model="registerForm.titre_poste" placeholder="Ex : Étudiant, Directeur..." />
+                </div>
+              </div>
+              <div class="fg" style="margin-top: 10px;">
+                <label>Adresse e-mail (Optionnel)</label>
+                <input type="email" v-model="registerForm.email" placeholder="Ex : nom@domaine.com" />
+              </div>
+
+              <div v-if="registerError" class="form-error-msg">
+                <AppIcon name="alert-triangle" :size="15" /> {{ registerError }}
+              </div>
+
+              <div class="modal-actions">
+                <button type="button" class="btn-cancel" @click="showRegisterModal = false">Annuler</button>
+                <button type="submit" class="bsub bsub-a modal-submit" :disabled="registerLoading">
+                  <AppIcon :name="registerLoading ? 'loader' : 'check'" :size="16" />
+                  {{ registerLoading ? 'Enregistrement…' : 'Enregistrer & Émarger' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- ─── Historique des check-ins ─── -->
     <div class="form-card" v-if="checkinLog.length > 0">
@@ -146,7 +206,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
@@ -167,6 +227,25 @@ const canvasEl = ref(null)
 const manualInput = ref('')
 const manualError = ref('')
 const processing = ref(false)
+const showRegisterModal = ref(false)
+const registerLoading = ref(false)
+const registerError = ref('')
+const registerForm = ref({ prenom: '', nom: '', organisation: '', titre_poste: '', email: '' })
+
+const prenomInputRef = ref(null)
+const nomInputRef = ref(null)
+
+// Focus automatique sur le premier champ quand la modale s'ouvre
+watch(showRegisterModal, async (newVal) => {
+  if (newVal) {
+    await nextTick()
+    prenomInputRef.value?.focus()
+  }
+})
+
+function focusNom() {
+  nomInputRef.value?.focus()
+}
 let stream = null
 let scanLoop = null
 let jsQR = null
@@ -381,6 +460,44 @@ function formatTime(ts) {
     return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date(ts))
   } catch { return '' }
 }
+
+async function submitRegisterOnsite() {
+  if (!registerForm.value.prenom.trim() || !registerForm.value.nom.trim()) return
+  registerLoading.value = true
+  registerError.value = ''
+  try {
+    const result = await api.post('/api/checkin/register-onsite', {
+      ...registerForm.value,
+      evenement_id: eventId,
+      agent: api.user?.name || 'Accueil'
+    })
+    
+    showRegisterModal.value = false
+    registerForm.value = { prenom: '', nom: '', organisation: '', titre_poste: '', email: '' }
+    
+    // Afficher le résultat avec succès
+    scanResult.value = {
+      type: 'success',
+      name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
+      message: 'Bienvenue ! (Enregistré sur place)'
+    }
+    
+    // Ajouter au log de check-in normalisé
+    checkinLog.value.unshift({
+      id: result.id || Math.random().toString(),
+      prenom: result.invite?.prenom || '',
+      nom: result.invite?.nom || '',
+      organisation: result.invite?.organisation || '',
+      checked_at: new Date().toISOString()
+    })
+    
+    totalInscrits.value++
+  } catch (err) {
+    registerError.value = err.message || 'Erreur lors de l\'enregistrement.'
+  } finally {
+    registerLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -549,4 +666,46 @@ function formatTime(ts) {
 .ck-log-badge { color: #2e7d32; }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Modals & Buttons */
+.btn-import {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 20px; background: rgba(132,89,54,.08);
+  color: var(--brun); border: 1.5px solid rgba(132,89,54,.25);
+  border-radius: 999px; font-size: .86rem; font-weight: 700;
+  cursor: pointer; transition: all .25s; white-space: nowrap;
+}
+.btn-import:hover { background: rgba(132,89,54,.16); border-color: var(--brun); }
+
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(26,16,8,.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; animation: fadeIn .2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-box {
+  width: 100%; max-width: 660px;
+  max-height: calc(100vh - 40px); overflow-y: auto;
+  animation: modalIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(.92) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+.btn-cancel {
+  padding: 12px 22px; background: none;
+  border: 2px solid rgba(132,89,54,.2); border-radius: 12px;
+  color: var(--brun); font-size: .88rem; font-weight: 700; cursor: pointer;
+  transition: all .2s;
+}
+.btn-cancel:hover { border-color: var(--brun); background: rgba(132,89,54,.06); }
+.modal-submit { width: auto; padding: 12px 28px; margin-top: 0; }
+.form-error-msg {
+  display: flex; align-items: center; gap: 8px;
+  background: #ffeaea; border: 1.5px solid var(--rouge); border-radius: 12px;
+  padding: 10px 14px; color: var(--rouge); font-size: .84rem; font-weight: 600;
+  margin-top: 12px;
+}
 </style>

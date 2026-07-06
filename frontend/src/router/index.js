@@ -6,6 +6,7 @@ import InvitesView from '../views/InvitesView.vue'
 import InvitationsView from '../views/InvitationsView.vue'
 import CheckinView from '../views/CheckinView.vue'
 import RsvpView from '../views/RsvpView.vue'
+import InscriptionView from '../views/InscriptionView.vue'
 import AproposView from '../views/AproposView.vue'
 import ActualitesView from '../views/ActualitesView.vue'
 import ActualiteDetailView from '../views/ActualiteDetailView.vue'
@@ -21,6 +22,7 @@ import { useApiStore } from '../store/api.js'
 
 const routes = [
   { path: '/rsvp/:token', name: 'Rsvp', component: RsvpView, meta: { public: true } },
+  { path: '/inscription/:eventId', name: 'Inscription', component: InscriptionView, meta: { public: true } },
   { path: '/', name: 'Home', component: HomeView },
   { path: '/a-propos', name: 'Apropos', component: AproposView },
   { path: '/actualites', name: 'Actualites', component: ActualitesView },
