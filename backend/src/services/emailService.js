@@ -228,6 +228,13 @@ function emailShell(bodyContent, options = {}) {
         }
       }
     }
+
+    /* Anti-overflow text wrapping for email clients */
+    .edito p, .actu-card p, .zoom p, .nextstep h2, .galerie h4, .galerie p {
+      word-wrap: break-word !important;
+      overflow-wrap: break-word !important;
+      word-break: break-word !important;
+    }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #E8DDD3;">
@@ -818,10 +825,10 @@ export function generateBulletinHtml(data) {
     }
     
     galerieHtml = `
-    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+    <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
       ${rows.map(row => `
       <tr>
-        <td width="48%" valign="top" style="padding-bottom: 20px;">
+        <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
             <tr>
               <td style="padding: 12px; text-align: center;">
@@ -841,8 +848,8 @@ export function generateBulletinHtml(data) {
             </tr>
           </table>
         </td>
-        <td width="4%"></td>
-        <td width="48%" valign="top" style="padding-bottom: 20px;">
+        <td width="24" style="width: 24px;"></td>
+        <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           ${row[1] ? `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
             <tr>
@@ -936,7 +943,7 @@ export function generateBulletinHtml(data) {
       ${actus.map((actu, index) => `
       <div style="border: 1px solid rgba(132,89,54,0.15); border-radius: 2px; overflow: hidden; margin-bottom: 16px; background: #ffffff;">
         <div style="height: 8px; background: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#F9B233')};"></div>
-        ${actu.imageUrl ? `<img src="${actu.imageUrl}" width="600" height="250" style="width: 100%; max-width: 600px; height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
+        ${actu.imageUrl ? `<img src="${actu.imageUrl}" width="598" height="250" style="width: 100%; max-width: 598px; height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
         <div style="padding: 16px;">
           <p style="font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#8C3B2A')}; margin: 0 0 6px 0;">${actu.tag || 'Actualité'}</p>
           <h3 style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: #593716; margin: 0 0 8px 0; line-height: 1.3;">${actu.titre}</h3>
