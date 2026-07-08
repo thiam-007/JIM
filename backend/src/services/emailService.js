@@ -171,7 +171,7 @@ function emailShell(bodyContent, options = {}) {
     
     /* CSS Carousel in web preview */
     @media screen and (min-width: 480px) {
-      .zoom-media-gallery table, .zoom-media-gallery tbody {
+      .zoom-media-scroll {
         display: flex !important;
         flex-direction: row !important;
         overflow-x: auto !important;
@@ -179,9 +179,10 @@ function emailShell(bodyContent, options = {}) {
         gap: 16px !important;
         width: 100% !important;
       }
-      .zoom-media-gallery tr {
+      .zoom-media-card {
         display: block !important;
         flex: 0 0 85% !important;
+        width: 85% !important;
         scroll-snap-align: start !important;
       }
     }
@@ -937,57 +938,30 @@ export function generateBulletinHtml(data) {
       <!-- Médias Zoom (Email-safe stacked layout + beautiful CSS slide carousel in modern web/preview views) -->
       ${zoomMedia && zoomMedia.length > 0 ? `
       <div class="zoom-media-gallery" style="margin-top: 24px;">
-        <!--[if mso]>
-        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+        <div class="zoom-media-scroll">
           ${zoomMedia.map(media => `
-          <tr>
-            <td style="padding: 10px 0; text-align: center;">
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
-                <tr>
-                  <td style="padding: 12px; text-align: center;">
-                    <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                      <img src="${media.url}" style="width: 100%; max-width: 540px; height: auto; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
-                    </a>
-                    ${media.type === 'video' ? `
-                    <div style="text-align: center; margin-top: 12px;">
-                      <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
-                    </div>
-                    ` : (media.link ? `
-                    <div style="text-align: center; margin-top: 12px;">
-                      <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
-                    </div>
-                    ` : '')}
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          `).join('')}
-        </table>
-        <![endif]-->
-        
-        <!--[if !mso]><!-->
-        <div class="zoom-carousel-container" style="overflow: hidden; width: 100%;">
-          <div class="zoom-carousel-scroll" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 16px; padding-bottom: 14px; -webkit-overflow-scrolling: touch;">
-            ${zoomMedia.map(media => `
-            <div style="flex: 0 0 85%; scroll-snap-align: start; background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); padding: 12px; box-sizing: border-box; text-align: center;">
-              <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                <img src="${media.url}" style="width: 100%; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
-              </a>
-              ${media.type === 'video' ? `
-              <div style="text-align: center; margin-top: 12px;">
-                <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
-              </div>
-              ` : (media.link ? `
-              <div style="text-align: center; margin-top: 12px;">
-                <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
-              </div>
-              ` : '')}
-            </div>
-            `).join('')}
+          <div class="zoom-media-card" style="margin-bottom: 16px;">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
+              <tr>
+                <td style="padding: 12px; text-align: center;">
+                  <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
+                    <img src="${media.url}" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                  </a>
+                  ${media.type === 'video' ? `
+                  <div style="text-align: center; margin-top: 12px;">
+                    <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
+                  </div>
+                  ` : (media.link ? `
+                  <div style="text-align: center; margin-top: 12px;">
+                    <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
+                  </div>
+                  ` : '')}
+                </td>
+              </tr>
+            </table>
           </div>
+          `).join('')}
         </div>
-        <!--<![endif]-->
       </div>
       ` : ''}
     </div>
