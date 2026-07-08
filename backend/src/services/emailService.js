@@ -764,7 +764,7 @@ export function generateBulletinHtml(data) {
   } = data;
 
   let editoHtml = '';
-  const paragraphs = editoTexte.split(/\r?\n\s*\r?\n/).map(p => p.trim()).filter(Boolean);
+  const paragraphs = editoTexte.split(/\r?\n/).map(p => p.trim()).filter(Boolean);
   if (paragraphs.length <= 1) {
     editoHtml = `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${editoTexte.replace(/\n/g, '<br />')}</p>`;
   } else {
