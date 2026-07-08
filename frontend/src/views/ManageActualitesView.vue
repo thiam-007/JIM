@@ -140,10 +140,49 @@
 
               <div class="fg">
                 <label>Contenu complet <span class="req">*</span></label>
-                <textarea v-model="form.contenu" required placeholder="Le corps complet de l'article avec tous les détails..." rows="8"></textarea>
+                
+                <!-- Barre d'outils d'insertion de médias -->
+                <div class="media-toolbar">
+                  <button type="button" class="toolbar-btn" @click="triggerImageUpload" :disabled="uploadingMedia">
+                    <AppIcon name="image" :size="16" />
+                    <span>{{ uploadingMedia ? 'Téléversement...' : 'Insérer une image' }}</span>
+                  </button>
+                  <button type="button" class="toolbar-btn" @click="promptVideoUrl">
+                    <AppIcon name="video" :size="16" />
+                    <span>Insérer une vidéo</span>
+                  </button>
+                  <input type="file" id="content-media-input" accept="image/*,video/*" @change="uploadInlineMedia" style="display: none;" />
+                </div>
+
+                <textarea id="content-textarea" v-model="form.contenu" required placeholder="Le corps complet de l'article avec tous les détails..." rows="12"></textarea>
+                
                 <div style="font-size: 0.8rem; color: #6a5040; margin-top: 6px; opacity: 0.8;">
                   <AppIcon name="info" :size="12" style="display: inline-block; vertical-align: middle; margin-right: 4px;" />
-                  <strong>Astuce de formatage :</strong> Utilisez <code>**texte**</code> pour mettre en <strong>gras</strong>, ou commencez une ligne par <code>- </code> pour créer une liste à puces.
+                  <strong>Astuce de formatage :</strong> Utilisez <code>**texte**</code> pour <strong>gras</strong>, <code>- </code> pour des listes. Insérez vos médias via les boutons de la barre d'outils.
+                </div>
+
+                <!-- Liste des médias téléversés lors de la session -->
+                <div v-if="sessionMedias.length > 0" class="uploaded-medias-list">
+                  <div class="list-title">Médias téléversés dans cet article :</div>
+                  <div class="medias-grid">
+                    <div v-for="media in sessionMedias" :key="media.url" class="media-thumbnail-card">
+                      <div class="thumb-wrap">
+                        <img v-if="media.type === 'image'" :src="media.url" />
+                        <div v-else class="video-thumb"><AppIcon name="video" :size="20" /></div>
+                      </div>
+                      <div class="media-details">
+                        <span class="media-name">{{ media.name }}</span>
+                        <div class="media-actions">
+                          <button type="button" class="btn-copy-code" @click="copyMediaMarkdown(media)" title="Copier le code">
+                            <AppIcon name="copy" :size="12" /> Copier code
+                          </button>
+                          <button type="button" class="btn-reinsert" @click="reinsertMedia(media)" title="Réinsérer au curseur">
+                            <AppIcon name="plus" :size="12" /> Réinsérer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -339,6 +378,9 @@ const coverMode = ref('file') // 'file' | 'url'
 const detailFile = ref(null) // { base64: '', name: '', mimeType: '' }
 const detailMode = ref('file') // 'file' | 'url'
 
+const uploadingMedia = ref(false)
+const sessionMedias = ref([]) // { type: 'image'|'video', url: '', name: '' }
+
 onMounted(async () => {
   await api.fetchActualites()
 })
@@ -479,6 +521,7 @@ function openCreate() {
   coverMode.value = 'file'
   detailMode.value = 'file'
   formError.value = ''
+  sessionMedias.value = []
   showModal.value = true
 }
 
@@ -498,6 +541,27 @@ function openEdit(actu) {
   coverMode.value = (actu.imageUrl && !actu.imageUrl.startsWith('data:') && !actu.imageUrl.includes('supabase.co') && actu.imageUrl !== '/images/side-photo.jpeg') ? 'url' : 'file'
   detailMode.value = (actu.imageDetailUrl && !actu.imageDetailUrl.startsWith('data:') && !actu.imageDetailUrl.includes('supabase.co') && actu.imageDetailUrl !== '/images/side-photo.jpeg') ? 'url' : 'file'
   formError.value = ''
+  sessionMedias.value = []
+  
+  // Try to find inline images/videos already in content and put them in sessionMedias for convenience
+  if (actu.contenu) {
+    const imgRegex = /!\[(.*?)\]\((.*?)\)/g
+    let match
+    while ((match = imgRegex.exec(actu.contenu)) !== null) {
+      sessionMedias.value.push({ type: 'image', name: match[1] || 'Image', url: match[2] })
+    }
+    
+    const videoRegex = /<video[^>]*src=["'](.*?)["']/g
+    while ((match = videoRegex.exec(actu.contenu)) !== null) {
+      sessionMedias.value.push({ type: 'video', name: 'Vidéo locale', url: match[1] })
+    }
+    
+    const iframeRegex = /<iframe[^>]*src=["'](.*?)["']/g
+    while ((match = iframeRegex.exec(actu.contenu)) !== null) {
+      sessionMedias.value.push({ type: 'video', name: 'Vidéo intégrée', url: match[1] })
+    }
+  }
+  
   showModal.value = true
 }
 
@@ -599,6 +663,153 @@ async function doDelete() {
   } finally {
     deleting.value = false
   }
+}
+
+// Media Insertion Helpers
+function triggerImageUpload() {
+  const input = document.getElementById('content-media-input')
+  if (input) {
+    input.click()
+  }
+}
+
+async function uploadInlineMedia(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  uploadingMedia.value = true
+  formError.value = ''
+  try {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const base64 = e.target.result
+      try {
+        const res = await api.post('/api/actualites/upload', {
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type
+        })
+        
+        const fileUrl = res.url
+        const isImage = file.type.startsWith('image/')
+        const mediaType = isImage ? 'image' : 'video'
+        
+        insertAtCursor(mediaType, fileUrl, file.name)
+        
+        // Add to session media if not already present
+        if (!sessionMedias.value.some(m => m.url === fileUrl)) {
+          sessionMedias.value.push({
+            type: mediaType,
+            url: fileUrl,
+            name: file.name
+          })
+        }
+      } catch (uploadErr) {
+        formError.value = "Erreur lors du téléversement du média : " + (uploadErr.message || uploadErr)
+      } finally {
+        uploadingMedia.value = false
+        event.target.value = ''
+      }
+    }
+    reader.readAsDataURL(file)
+  } catch (err) {
+    formError.value = "Erreur lecture fichier : " + err.message
+    uploadingMedia.value = false
+  }
+}
+
+function insertAtCursor(type, url, name) {
+  const textarea = document.getElementById('content-textarea')
+  if (!textarea) {
+    if (type === 'image') {
+      form.value.contenu += `\n\n![${name || 'Image'}](${url})\n\n`
+    } else {
+      form.value.contenu += `\n\n<video src="${url}" controls style="max-width:100%; border-radius:12px;"></video>\n\n`
+    }
+    return
+  }
+  
+  const startPos = textarea.selectionStart
+  const endPos = textarea.selectionEnd
+  const textBefore = form.value.contenu.substring(0, startPos)
+  const textAfter = form.value.contenu.substring(endPos)
+  
+  let insertion = ''
+  if (type === 'image') {
+    insertion = `\n\n![${name || 'Image'}](${url})\n\n`
+  } else if (type === 'video') {
+    if (url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')) {
+      insertion = `\n\n<div class="video-container"><iframe src="${getEmbedUrl(url)}" allowfullscreen></iframe></div>\n\n`
+    } else {
+      insertion = `\n\n<video src="${url}" controls style="max-width:100%; border-radius:12px; margin: 1.8rem auto; display: block;"></video>\n\n`
+    }
+  }
+  
+  form.value.contenu = textBefore + insertion + textAfter
+  
+  setTimeout(() => {
+    textarea.focus()
+    const newCursorPos = startPos + insertion.length
+    textarea.setSelectionRange(newCursorPos, newCursorPos)
+  }, 50)
+}
+
+function getEmbedUrl(url) {
+  if (url.includes('youtube.com/embed/')) return url
+  if (url.includes('youtube.com/watch')) {
+    try {
+      const u = new URL(url)
+      const v = u.searchParams.get('v')
+      if (v) return `https://www.youtube.com/embed/${v}`
+    } catch (_) {}
+  }
+  if (url.includes('youtu.be/')) {
+    const parts = url.split('/')
+    const v = parts[parts.length - 1]?.split('?')[0]
+    if (v) return `https://www.youtube.com/embed/${v}`
+  }
+  if (url.includes('vimeo.com/')) {
+    const parts = url.split('/')
+    const v = parts[parts.length - 1]?.split('?')[0]
+    if (v) return `https://player.vimeo.com/video/${v}`
+  }
+  return url
+}
+
+function promptVideoUrl() {
+  const url = prompt("Veuillez coller le lien de votre vidéo (YouTube, Vimeo, ou lien direct .mp4) :")
+  if (!url) return
+  const isDirectVideo = /\.(mp4|webm|ogg)$/i.test(url)
+  const isEmbeddable = url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com')
+  
+  if (isDirectVideo || isEmbeddable) {
+    insertAtCursor('video', url, 'Vidéo')
+  } else {
+    insertAtCursor('video', url, 'Vidéo')
+  }
+}
+
+async function copyMediaMarkdown(media) {
+  let code = ''
+  if (media.type === 'image') {
+    code = `![${media.name}](${media.url})`
+  } else {
+    if (media.url.includes('youtube.com') || media.url.includes('youtu.be') || media.url.includes('vimeo.com')) {
+      code = `<div class="video-container"><iframe src="${getEmbedUrl(media.url)}" allowfullscreen></iframe></div>`
+    } else {
+      code = `<video src="${media.url}" controls style="max-width:100%; border-radius:12px;"></video>`
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(code)
+    alert("Code d'insertion copié !")
+  } catch (_) {
+    alert("Impossible de copier le code.")
+  }
+}
+
+function reinsertMedia(media) {
+  insertAtCursor(media.type, media.url, media.name)
 }
 </script>
 
@@ -934,5 +1145,126 @@ async function doDelete() {
 .flex-col {
   display: flex;
   flex-direction: column;
+}
+
+/* Barre d'outils médias et liste des médias de la session */
+.media-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  background: #fcfcfc;
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(132, 89, 54, 0.1);
+}
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid rgba(132, 89, 54, 0.2);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brun);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.toolbar-btn:hover:not(:disabled) {
+  background: #fdfaf6;
+  border-color: var(--brun);
+  transform: translateY(-1px);
+}
+.toolbar-btn:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.uploaded-medias-list {
+  margin-top: 14px;
+  background: rgba(132, 89, 54, 0.03);
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px dashed rgba(132, 89, 54, 0.2);
+}
+.uploaded-medias-list .list-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--brun-fonce);
+  margin-bottom: 10px;
+}
+.uploaded-medias-list .medias-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.media-thumbnail-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: white;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(132, 89, 54, 0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+.media-thumbnail-card .thumb-wrap {
+  width: 50px;
+  height: 50px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #eee;
+}
+.media-thumbnail-card .thumb-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.media-thumbnail-card .video-thumb {
+  color: var(--brun);
+}
+.media-thumbnail-card .media-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.media-thumbnail-card .media-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.media-thumbnail-card .media-actions {
+  display: flex;
+  gap: 6px;
+}
+.media-thumbnail-card .media-actions button {
+  background: none;
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  padding: 3px 6px;
+  font-size: 0.68rem;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--brun);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s;
+}
+.media-thumbnail-card .media-actions button:hover {
+  background: var(--brun);
+  color: white;
+  border-color: var(--brun);
 }
 </style>

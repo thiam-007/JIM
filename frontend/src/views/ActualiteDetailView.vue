@@ -274,6 +274,38 @@ async function shareNews() {
 .markdown-body :deep(h1), .markdown-body :deep(h2), .markdown-body :deep(h3) { color: var(--brun); margin-top: 1.5em; margin-bottom: 0.5em; }
 .markdown-body :deep(blockquote) { border-left: 4px solid var(--or); padding-left: 16px; color: #555; font-style: italic; background: rgba(249, 178, 51, 0.05); margin: 1em 0; padding: 10px 16px; border-radius: 0 8px 8px 0; }
 .markdown-body :deep(a) { color: var(--rouge); text-decoration: underline; font-weight: 600; }
+.markdown-body :deep(img), .markdown-body :deep(video) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(89, 55, 22, 0.12);
+  margin: 1.8rem auto;
+  display: block;
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  transition: transform 0.3s ease;
+}
+.markdown-body :deep(img:hover) {
+  transform: scale(1.01);
+}
+.markdown-body :deep(.video-container) {
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 ratio */
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(89, 55, 22, 0.12);
+  margin: 1.8rem auto;
+  border: 1px solid rgba(132, 89, 54, 0.15);
+}
+.markdown-body :deep(.video-container iframe) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 
 .article-author {
   display: inline-flex;

@@ -16,7 +16,14 @@ export function renderMarkdown(text) {
   if (!text) return ''
   // Render markdown to HTML
   const rawHtml = marked.parse(text)
-  // Sanitize the HTML to prevent XSS
-  const cleanHtml = DOMPurify.sanitize(rawHtml)
+  // Sanitize the HTML to prevent XSS, but allow video elements and YouTube/Vimeo embeds
+  const cleanHtml = DOMPurify.sanitize(rawHtml, {
+    ADD_TAGS: ['iframe', 'video', 'source'],
+    ADD_ATTR: [
+      'allow', 'allowfullscreen', 'frameborder', 'scrolling', 'src', 
+      'width', 'height', 'controls', 'type', 'class', 'style', 'poster'
+    ]
+  })
   return cleanHtml
 }
+

@@ -302,11 +302,134 @@
                   <textarea v-model="form.bulletin.zoomTexte" rows="4"></textarea>
                 </div>
 
+                <!-- Editeur de médias Zoom -->
+                <div class="newsletter-sub-section">
+                  <div class="sub-section-header">
+                    <label>Médias du Zoom (Images/Vidéos)</label>
+                    <button type="button" class="btn-sub-action" @click="addZoomMedia">
+                      <AppIcon name="plus" :size="14" /> Ajouter un média
+                    </button>
+                  </div>
+                  <div v-if="form.bulletin.zoomMedia && form.bulletin.zoomMedia.length > 0" class="builder-media-list">
+                    <div v-for="(media, index) in form.bulletin.zoomMedia" :key="index" class="media-builder-card">
+                      <div class="media-card-header">
+                        <span class="media-index">Média #{{ index + 1 }}</span>
+                        <div class="media-order-buttons">
+                          <button type="button" class="btn-icon-small" :disabled="index === 0" @click="moveZoomMedia(index, -1)">
+                            <AppIcon name="chevron-up" :size="12" />
+                          </button>
+                          <button type="button" class="btn-icon-small" :disabled="index === form.bulletin.zoomMedia.length - 1" @click="moveZoomMedia(index, 1)">
+                            <AppIcon name="chevron-down" :size="12" />
+                          </button>
+                          <button type="button" class="btn-icon-small delete" @click="removeZoomMedia(index)">
+                            <AppIcon name="trash" :size="12" />
+                          </button>
+                        </div>
+                      </div>
+                      <div class="media-card-body">
+                        <div class="media-fields-row">
+                          <div class="fg-half">
+                            <label>Type</label>
+                            <select v-model="media.type">
+                              <option value="image">Image</option>
+                              <option value="video">Vidéo (YouTube/Vimeo)</option>
+                            </select>
+                          </div>
+                          <div class="fg-half">
+                            <label>Téléverser image / Lien source</label>
+                            <div class="upload-inline-group">
+                              <input type="text" v-model="media.url" placeholder="https://..." />
+                              <button type="button" class="btn-inline-upload" @click="triggerZoomMediaUpload(index)">
+                                <AppIcon name="upload" :size="14" />
+                              </button>
+                              <input type="file" :id="'zoom-media-file-' + index" accept="image/*" @change="uploadZoomMediaFile($event, index)" style="display: none;" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="fg" style="margin-top: 8px;">
+                          <label>Lien de redirection (Optionnel)</label>
+                          <input type="url" v-model="media.link" placeholder="Ex: https://youtube.com/... ou page web" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="empty-media-msg">Aucun média ajouté. Le zoom s'affichera uniquement en texte.</div>
+                </div>
+
                 <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
                 <h4 style="margin: 0 0 10px; color: var(--brun-fonce);">Prochaines Étapes</h4>
                 <div class="fg">
                   <label>Livrables ou événements (Format: Titre | Description, une par ligne)</label>
                   <textarea v-model="form.bulletin.etapesText" rows="3" placeholder="Atelier de collecte | Avec les communautés locales...&#10;Réunion | Réunion de coordination..."></textarea>
+                </div>
+
+                <!-- Editeur Galerie Visuelle de fin -->
+                <div class="newsletter-sub-section">
+                  <div class="sub-section-header">
+                    <label>Galerie Visuelle de Fin (Avant le footer)</label>
+                    <button type="button" class="btn-sub-action" @click="addGalerieMedia">
+                      <AppIcon name="plus" :size="14" /> Ajouter un visuel
+                    </button>
+                  </div>
+                  <div class="fg" style="margin-bottom: 12px;">
+                    <label>Titre de la Galerie</label>
+                    <input type="text" v-model="form.bulletin.galerie.titre" placeholder="Ex: Rétrospective visuelle, En images..." />
+                  </div>
+                  
+                  <div v-if="form.bulletin.galerie && form.bulletin.galerie.medias && form.bulletin.galerie.medias.length > 0" class="builder-media-list">
+                    <div v-for="(media, index) in form.bulletin.galerie.medias" :key="index" class="media-builder-card">
+                      <div class="media-card-header">
+                        <span class="media-index">Visuel #{{ index + 1 }}</span>
+                        <div class="media-order-buttons">
+                          <button type="button" class="btn-icon-small" :disabled="index === 0" @click="moveGalerieMedia(index, -1)">
+                            <AppIcon name="chevron-up" :size="12" />
+                          </button>
+                          <button type="button" class="btn-icon-small" :disabled="index === form.bulletin.galerie.medias.length - 1" @click="moveGalerieMedia(index, 1)">
+                            <AppIcon name="chevron-down" :size="12" />
+                          </button>
+                          <button type="button" class="btn-icon-small delete" @click="removeGalerieMedia(index)">
+                            <AppIcon name="trash" :size="12" />
+                          </button>
+                        </div>
+                      </div>
+                      <div class="media-card-body">
+                        <div class="media-fields-row">
+                          <div class="fg-third">
+                            <label>Type</label>
+                            <select v-model="media.type">
+                              <option value="image">Image</option>
+                              <option value="video">Vidéo</option>
+                            </select>
+                          </div>
+                          <div class="fg-two-thirds">
+                            <label>Téléverser image / Lien source</label>
+                            <div class="upload-inline-group">
+                              <input type="text" v-model="media.url" placeholder="https://..." />
+                              <button type="button" class="btn-inline-upload" @click="triggerGalerieMediaUpload(index)">
+                                <AppIcon name="upload" :size="14" />
+                              </button>
+                              <input type="file" :id="'galerie-media-file-' + index" accept="image/*" @change="uploadGalerieMediaFile($event, index)" style="display: none;" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="media-fields-row" style="margin-top: 8px;">
+                          <div class="fg-half">
+                            <label>Titre / Légende</label>
+                            <input type="text" v-model="media.titre" placeholder="Titre du visuel" />
+                          </div>
+                          <div class="fg-half">
+                            <label>Lien (Clic)</label>
+                            <input type="url" v-model="media.link" placeholder="Lien vers la vidéo/page" />
+                          </div>
+                        </div>
+                        <div class="fg" style="margin-top: 8px;">
+                          <label>Description courte (Optionnel)</label>
+                          <input type="text" v-model="media.description" placeholder="Courte légende explicative..." />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="empty-media-msg">Aucun élément visuel ajouté en fin de newsletter.</div>
                 </div>
               </div>
 
@@ -689,7 +812,13 @@ function openCreateCampaign() {
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
-      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '', etapesText: ''
+      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
+      zoomMedia: [],
+      galerie: {
+        titre: 'Galerie Photos & Vidéos',
+        medias: []
+      },
+      etapesText: ''
     }
   }
   showCampaignModal.value = true
@@ -802,7 +931,13 @@ function duplicateCampaign(camp) {
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
-      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '', etapesText: ''
+      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
+      zoomMedia: [],
+      galerie: {
+        titre: 'Galerie Photos & Vidéos',
+        medias: []
+      },
+      etapesText: ''
     }
   }
 
@@ -829,6 +964,8 @@ function duplicateCampaign(camp) {
       }
       form.value.bulletin.zoomTitre = bData.zoomTitre || ''
       form.value.bulletin.zoomTexte = bData.zoomTexte || ''
+      form.value.bulletin.zoomMedia = bData.zoomMedia || []
+      form.value.bulletin.galerie = bData.galerie || { titre: 'Galerie Photos & Vidéos', medias: [] }
       if (bData.etapes && bData.etapes.length) {
         form.value.bulletin.etapesText = bData.etapes.map(e => `${e.titre} | ${e.desc}`).join('\n')
       }
@@ -859,9 +996,121 @@ function packBulletinData() {
     actus_ids: b.actus.filter(Boolean),
     zoomTitre: b.zoomTitre,
     zoomTexte: b.zoomTexte,
+    zoomMedia: b.zoomMedia || [],
+    galerie: b.galerie || { titre: 'Galerie Photos & Vidéos', medias: [] },
     etapes
   };
   form.value.contenu_personnalise = JSON.stringify(bulletinData);
+}
+
+// Media list management helpers for bulletin builder
+function addZoomMedia() {
+  if (!form.value.bulletin.zoomMedia) form.value.bulletin.zoomMedia = []
+  form.value.bulletin.zoomMedia.push({ type: 'image', url: '', link: '' })
+}
+
+function removeZoomMedia(index) {
+  form.value.bulletin.zoomMedia.splice(index, 1)
+}
+
+function moveZoomMedia(index, direction) {
+  const targetIndex = index + direction
+  if (targetIndex < 0 || targetIndex >= form.value.bulletin.zoomMedia.length) return
+  const temp = form.value.bulletin.zoomMedia[index]
+  form.value.bulletin.zoomMedia[index] = form.value.bulletin.zoomMedia[targetIndex]
+  form.value.bulletin.zoomMedia[targetIndex] = temp
+}
+
+function triggerZoomMediaUpload(index) {
+  const el = document.getElementById('zoom-media-file-' + index)
+  if (el) el.click()
+}
+
+async function uploadZoomMediaFile(event, index) {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  saving.value = true
+  try {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const base64 = e.target.result
+      try {
+        const res = await api.post('/api/actualites/upload', {
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type
+        })
+        form.value.bulletin.zoomMedia[index].url = res.url
+      } catch (err) {
+        alert("Erreur upload: " + err.message)
+      } finally {
+        saving.value = false
+        event.target.value = ''
+      }
+    }
+    reader.readAsDataURL(file)
+  } catch (e) {
+    saving.value = false
+    alert(e.message)
+  }
+}
+
+function addGalerieMedia() {
+  if (!form.value.bulletin.galerie) {
+    form.value.bulletin.galerie = { titre: 'Galerie Photos & Vidéos', medias: [] }
+  }
+  if (!form.value.bulletin.galerie.medias) {
+    form.value.bulletin.galerie.medias = []
+  }
+  form.value.bulletin.galerie.medias.push({ type: 'image', url: '', link: '', titre: '', description: '' })
+}
+
+function removeGalerieMedia(index) {
+  form.value.bulletin.galerie.medias.splice(index, 1)
+}
+
+function moveGalerieMedia(index, direction) {
+  const targetIndex = index + direction
+  if (targetIndex < 0 || targetIndex >= form.value.bulletin.galerie.medias.length) return
+  const temp = form.value.bulletin.galerie.medias[index]
+  form.value.bulletin.galerie.medias[index] = form.value.bulletin.galerie.medias[targetIndex]
+  form.value.bulletin.galerie.medias[targetIndex] = temp
+}
+
+function triggerGalerieMediaUpload(index) {
+  const el = document.getElementById('galerie-media-file-' + index)
+  if (el) el.click()
+}
+
+async function uploadGalerieMediaFile(event, index) {
+  const file = event.target.files[0]
+  if (!file) return
+  
+  saving.value = true
+  try {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const base64 = e.target.result
+      try {
+        const res = await api.post('/api/actualites/upload', {
+          file: base64,
+          fileName: file.name,
+          mimeType: file.type
+        })
+        form.value.bulletin.galerie.medias[index].url = res.url
+      } catch (err) {
+        alert("Erreur upload: " + err.message)
+      } finally {
+        saving.value = false
+        event.target.value = ''
+      }
+    }
+    reader.readAsDataURL(file)
+  } catch (e) {
+    saving.value = false
+    alert(e.message)
+  }
 }
 
 function confirmDeleteSubscriber(sub) {
@@ -1193,5 +1442,151 @@ function downloadForOutlook() {
   font-size: 13px;
   font-weight: 600;
   color: var(--brun-fonce);
+}
+
+/* Newsletter builder new sub sections */
+.newsletter-sub-section {
+  background: rgba(132, 89, 54, 0.02);
+  border: 1px solid rgba(132, 89, 54, 0.1);
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+.sub-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sub-section-header label {
+  font-weight: 700;
+  color: var(--brun-fonce);
+  margin: 0;
+}
+.btn-sub-action {
+  background: white;
+  border: 1.5px solid var(--brun);
+  color: var(--brun);
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+.btn-sub-action:hover {
+  background: var(--brun);
+  color: white;
+}
+.builder-media-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.media-builder-card {
+  background: white;
+  border: 1.5px solid rgba(132, 89, 54, 0.15);
+  border-radius: 8px;
+  padding: 12px;
+}
+.media-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f4eae0;
+  margin-bottom: 10px;
+}
+.media-index {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--brun);
+}
+.media-order-buttons {
+  display: flex;
+  gap: 4px;
+}
+.btn-icon-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.15s;
+}
+.btn-icon-small:hover:not(:disabled) {
+  border-color: var(--brun);
+  color: var(--brun);
+  background: #fdfaf6;
+}
+.btn-icon-small.delete:hover {
+  border-color: var(--rouge);
+  color: var(--rouge);
+  background: #ffebeb;
+}
+.btn-icon-small:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.media-fields-row {
+  display: flex;
+  gap: 12px;
+}
+.fg-half {
+  flex: 1;
+}
+.fg-third {
+  flex: 1;
+}
+.fg-two-thirds {
+  flex: 2;
+}
+.upload-inline-group {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+.upload-inline-group input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(132, 89, 54, 0.15);
+  font-size: 0.88rem;
+}
+.btn-inline-upload {
+  background: var(--creme);
+  border: 1.5px solid rgba(132, 89, 54, 0.2);
+  color: var(--brun);
+  width: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-inline-upload:hover {
+  background: var(--brun);
+  color: white;
+  border-color: var(--brun);
+}
+.empty-media-msg {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+  text-align: center;
+  padding: 14px 0;
+  border: 1px dashed rgba(132, 89, 54, 0.15);
+  border-radius: 6px;
+  background: white;
 }
 </style>

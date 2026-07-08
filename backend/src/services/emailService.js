@@ -166,6 +166,26 @@ function emailShell(bodyContent, options = {}) {
     .nextstep { background: #FAF6F1; padding: 36px 40px; }
     .nextstep h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 20px; margin-top: 0; }
     
+    .galerie { background: #FFFFFF; padding: 36px 40px; }
+    .galerie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    
+    /* CSS Carousel in web preview */
+    @media screen and (min-width: 480px) {
+      .zoom-media-gallery table, .zoom-media-gallery tbody {
+        display: flex !important;
+        flex-direction: row !important;
+        overflow-x: auto !important;
+        scroll-snap-type: x mandatory !important;
+        gap: 16px !important;
+        width: 100% !important;
+      }
+      .zoom-media-gallery tr {
+        display: block !important;
+        flex: 0 0 85% !important;
+        scroll-snap-align: start !important;
+      }
+    }
+    
     @media (max-width: 600px) {
       .actu-grid { display: block; }
       .wrapper { width: 100% !important; max-width: 100% !important; box-shadow: none !important; border-radius: 0 !important; }
@@ -728,6 +748,8 @@ export function generateBulletinHtml(data) {
     actus = [], // array of { tag, titre, description, linkUrl, imageUrl }
     zoomTitre = '',
     zoomTexte = '',
+    zoomMedia = [], // array of { type: 'image' | 'video', url: string, link: string }
+    galerie = null, // { titre: string, medias: Array<{ type, url, link, titre, description }> }
     etapes = [] // array of { titre, desc }
   } = data;
 
@@ -743,6 +765,10 @@ export function generateBulletinHtml(data) {
       <a href="#zoom" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">Zoom sur…</a>
       &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
       <a href="#nextstep" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">Prochaines étapes</a>
+      ${galerie && galerie.medias && galerie.medias.length > 0 ? `
+      &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
+      <a href="#galerie" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(249,178,51,0.3); padding-bottom: 1px;">${galerie.titre || 'Galerie'}</a>
+      ` : ''}
     </div>
   </div>
 
@@ -814,6 +840,38 @@ export function generateBulletinHtml(data) {
       <div class="section-label">Zoom sur…</div>
       <h2>${zoomTitre}</h2>
       <p style="color: #FFFFFF;">${zoomTexte.replace(/\n/g, '<br />')}</p>
+      
+      <!-- Médias Zoom (Email-safe list with dynamic CSS slide behavior in browser) -->
+      ${zoomMedia && zoomMedia.length > 0 ? `
+      <div class="zoom-media-gallery" style="margin-top: 24px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%">
+          ${zoomMedia.map(media => `
+          <tr>
+            <td style="padding: 10px 0;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
+                <tr>
+                  <td style="padding: 12px; text-align: center;">
+                    <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
+                      <img src="${media.url}" style="width: 100%; max-width: 540px; height: auto; max-height: 320px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                    </a>
+                    ${media.type === 'video' ? `
+                    <div style="text-align: center; margin-top: 12px;">
+                      <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
+                    </div>
+                    ` : (media.link ? `
+                    <div style="text-align: center; margin-top: 12px;">
+                      <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
+                    </div>
+                    ` : '')}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          `).join('')}
+        </table>
+      </div>
+      ` : ''}
     </div>
   </div>
   ` : ''}
@@ -843,6 +901,41 @@ export function generateBulletinHtml(data) {
         </td>
       </tr>
       `).join('')}
+    </table>
+  </div>
+  ` : ''}
+
+  <!-- ████ GALERIE VISUELLE DE FIN ████ -->
+  ${galerie && galerie.medias && galerie.medias.length > 0 ? `
+  <a name="galerie"></a>
+  <div class="galerie mobile-padding" id="galerie" style="padding: 36px 40px; background: #FFFFFF; border-top: 1px solid rgba(132,89,54,0.12);">
+    <div class="section-label">${galerie.titre || 'Visuels'}</div>
+    <h2 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #593716; margin-bottom: 24px; margin-top: 0;">Rétrospective visuelle</h2>
+    
+    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+      <tr>
+        <td style="padding: 0;">
+          <!-- Fallback layout for email clients -->
+          <div class="galerie-grid">
+            ${galerie.medias.map(media => `
+            <div class="galerie-card" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1; box-sizing: border-box; padding: 12px; margin-bottom: 16px;">
+              <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
+                <img src="${media.url}" style="width: 100%; height: 180px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie MVG'}" />
+              </a>
+              <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3;">${media.titre || ''}</h4>
+              ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0;">${media.description}</p>` : ''}
+              <div style="text-align: center; margin-top: 8px;">
+                ${media.type === 'video' ? `
+                <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #B1222A; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #B1222A;">▶ Visionner</a>
+                ` : (media.link ? `
+                <a href="${media.link}" target="_blank" style="display: inline-block; background: #845936; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #845936;">En savoir plus</a>
+                ` : '')}
+              </div>
+            </div>
+            `).join('')}
+          </div>
+        </td>
+      </tr>
     </table>
   </div>
   ` : ''}
