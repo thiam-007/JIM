@@ -196,6 +196,15 @@ function emailShell(bodyContent, options = {}) {
       .header-text-container { border-left: none !important; padding-left: 0 !important; }
       .hide-mobile { display: none !important; }
     }
+    
+    /* Interactive read more for Edito */
+    .edito-toggle-cb:checked ~ .edito-more-text {
+      max-height: 3000px !important;
+      display: block !important;
+    }
+    .edito-toggle-cb:checked ~ .edito-toggle-label {
+      display: none !important;
+    }
   </style>
 </head>
 <body style="margin: 0; padding: 0; background-color: #E8DDD3;">
@@ -753,6 +762,28 @@ export function generateBulletinHtml(data) {
     etapes = [] // array of { titre, desc }
   } = data;
 
+  let editoHtml = '';
+  const paragraphs = editoTexte.split(/\r?\n\r?\n/).filter(Boolean);
+  if (paragraphs.length <= 1) {
+    editoHtml = `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${editoTexte.replace(/\n/g, '<br />')}</p>`;
+  } else {
+    const firstPara = paragraphs[0].replace(/\n/g, '<br />');
+    const restPara = paragraphs.slice(1).map(p => `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${p.replace(/\n/g, '<br />')}</p>`).join('');
+    
+    editoHtml = `
+      <p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${firstPara}</p>
+      <!--[if !mso]><!-->
+      <input type="checkbox" id="toggle-edito" style="display: none !important;" class="edito-toggle-cb" />
+      <div class="edito-more-text" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease;">
+      <!--<![endif]-->
+        ${restPara}
+      <!--[if !mso]><!-->
+      </div>
+      <label for="toggle-edito" class="edito-toggle-label" style="display: inline-block; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
+      <!--<![endif]-->
+    `;
+  }
+
   const body = `
   <!-- ████ SOMMAIRE ████ -->
   <div class="sommaire mobile-padding" style="background: #593716; padding: 18px 40px; text-align: center;">
@@ -779,7 +810,7 @@ export function generateBulletinHtml(data) {
     <div class="edito-inner">
       <div style="margin-bottom: 24px;">
         <h2>${editoTitre}</h2>
-        <p>${editoTexte.replace(/\n/g, '<br />')}</p>
+        ${editoHtml}
         <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 18px;">
           <tr>
             <td width="38" height="38" align="center" valign="middle" style="width: 38px; height: 38px; border-radius: 50%; background: #B1222A; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; text-align: center; mso-line-height-rule: exactly;">
