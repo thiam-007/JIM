@@ -169,21 +169,24 @@ function emailShell(bodyContent, options = {}) {
     .galerie { background: #FFFFFF; padding: 36px 40px; }
     .galerie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     
-    /* CSS Carousel in web preview */
-    @media screen and (min-width: 480px) {
-      .zoom-media-scroll {
-        display: flex !important;
-        flex-direction: row !important;
-        overflow-x: auto !important;
-        scroll-snap-type: x mandatory !important;
-        gap: 16px !important;
-        width: 100% !important;
-      }
-      .zoom-media-card {
-        display: block !important;
-        flex: 0 0 85% !important;
-        width: 85% !important;
-        scroll-snap-align: start !important;
+    /* Carrousel horizontal UNIQUEMENT pour Apple Mail (iOS/macOS Mail) et navigateurs.
+       Partout ailleurs (Gmail, Outlook, Yahoo…) : empilement vertical, sans risque. */
+    @media not all and (min-resolution:.001dpcm) {
+      @supports (-webkit-appearance: none) {
+        .zoom-media-scroll {
+          display: flex !important;
+          flex-direction: row !important;
+          overflow-x: auto !important;
+          scroll-snap-type: x mandatory !important;
+          gap: 16px !important;
+          width: 100% !important;
+        }
+        .zoom-media-card {
+          display: block !important;
+          flex: 0 0 85% !important;
+          width: 85% !important;
+          scroll-snap-align: start !important;
+        }
       }
     }
     
@@ -198,13 +201,32 @@ function emailShell(bodyContent, options = {}) {
       .hide-mobile { display: none !important; }
     }
     
-    /* Interactive read more for Edito */
-    .edito-toggle-cb:checked ~ .edito-more-text {
-      max-height: 3000px !important;
-      display: block !important;
-    }
-    .edito-toggle-cb:checked ~ .edito-toggle-label {
+    /* Par défaut partout : labels invisibles, texte complet visible.
+       C'est le seul état garanti sur Gmail/Outlook (qui ignorent :checked). */
+    .edito-toggle-label-more, .edito-toggle-label-less {
       display: none !important;
+    }
+    .edito-more-text {
+      display: block !important;
+      max-height: none !important;
+    }
+    
+    /* Bonus interactif UNIQUEMENT pour Apple Mail (iOS/macOS Mail),
+       seul client mail qui applique fidèlement :checked + combinateur ~ */
+    @media not all and (min-resolution:.001dpcm) {
+      @supports (-webkit-appearance: none) {
+        .edito-toggle-cb:checked ~ .edito-more-text {
+          max-height: 0 !important;
+          overflow: hidden !important;
+          display: none !important;
+        }
+        .edito-toggle-cb:checked ~ .edito-toggle-label-more {
+          display: inline-block !important;
+        }
+        .edito-toggle-cb:not(:checked) ~ .edito-toggle-label-less {
+          display: inline-block !important;
+        }
+      }
     }
   </style>
 </head>
@@ -679,7 +701,7 @@ export function generateNewsletterHtml({ titre, description, imageUrl, linkUrl, 
     body = `
       ${imageUrl ? `
         <div style="text-align:center;margin-bottom:24px;">
-          <img src="${imageUrl}" alt="${titre}" style="max-width:100%;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+          <img src="${imageUrl}" alt="${titre}" width="600" style="max-width:100%;width:100%;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
         </div>
       ` : ''}
       <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
@@ -775,12 +797,13 @@ export function generateBulletinHtml(data) {
       <p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${firstPara}</p>
       <!--[if !mso]><!-->
       <input type="checkbox" id="toggle-edito" style="display: none !important;" class="edito-toggle-cb" />
-      <div class="edito-more-text" style="max-height: 0; overflow: hidden; transition: max-height 0.4s ease;">
+      <div class="edito-more-text">
       <!--<![endif]-->
         ${restPara}
       <!--[if !mso]><!-->
       </div>
-      <label for="toggle-edito" class="edito-toggle-label" style="display: inline-block; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
+      <label for="toggle-edito" class="edito-toggle-label-more" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
+      <label for="toggle-edito" class="edito-toggle-label-less" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Réduire ▲</label>
       <!--<![endif]-->
     `;
   }
@@ -803,7 +826,7 @@ export function generateBulletinHtml(data) {
             <tr>
               <td style="padding: 12px; text-align: center;">
                 <a href="${row[0].link || row[0].url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-                  <img src="${row[0].url}" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[0].titre || 'Galerie'}" />
+                  <img src="${row[0].url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[0].titre || 'Galerie'}" />
                 </a>
                 <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${row[0].titre || ''}</h4>
                 ${row[0].description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${row[0].description}</p>` : ''}
@@ -825,7 +848,7 @@ export function generateBulletinHtml(data) {
             <tr>
               <td style="padding: 12px; text-align: center;">
                 <a href="${row[1].link || row[1].url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-                  <img src="${row[1].url}" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[1].titre || 'Galerie'}" />
+                  <img src="${row[1].url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[1].titre || 'Galerie'}" />
                 </a>
                 <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${row[1].titre || ''}</h4>
                 ${row[1].description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${row[1].description}</p>` : ''}
@@ -913,7 +936,7 @@ export function generateBulletinHtml(data) {
       ${actus.map((actu, index) => `
       <div style="border: 1px solid rgba(132,89,54,0.15); border-radius: 2px; overflow: hidden; margin-bottom: 16px; background: #ffffff;">
         <div style="height: 8px; background: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#F9B233')};"></div>
-        ${actu.imageUrl ? `<img src="${actu.imageUrl}" style="width: 100%; max-height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
+        ${actu.imageUrl ? `<img src="${actu.imageUrl}" width="600" height="250" style="width: 100%; max-width: 600px; height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
         <div style="padding: 16px;">
           <p style="font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: ${index === 0 ? '#B1222A' : (index === 1 ? '#845936' : '#8C3B2A')}; margin: 0 0 6px 0;">${actu.tag || 'Actualité'}</p>
           <h3 style="font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700; color: #593716; margin: 0 0 8px 0; line-height: 1.3;">${actu.titre}</h3>
@@ -945,7 +968,7 @@ export function generateBulletinHtml(data) {
               <tr>
                 <td style="padding: 12px; text-align: center;">
                   <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                    <img src="${media.url}" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                    <img src="${media.url}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
                   </a>
                   ${media.type === 'video' ? `
                   <div style="text-align: center; margin-top: 12px;">
