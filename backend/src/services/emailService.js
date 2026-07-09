@@ -827,12 +827,15 @@ export function generateBulletinHtml(data) {
     //     active le mécanisme de pliage interactif via :checked.
     editoHtml = `
       <p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${firstPara}</p>
-      <input type="checkbox" id="toggle-edito" style="display: none !important;" class="edito-toggle-cb" />
-      <div class="edito-more-text">
+      <input type="checkbox" id="toggle-edito" class="edito-toggle-cb"
+        style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;" />
+      <div class="edito-more-text" style="display:block;">
         ${restPara}
       </div>
-      <label for="toggle-edito" class="edito-toggle-label-more" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
-      <label for="toggle-edito" class="edito-toggle-label-less" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Réduire ▲</label>
+      <label for="toggle-edito" class="edito-toggle-label-more"
+        style="display:none!important; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
+      <label for="toggle-edito" class="edito-toggle-label-less"
+        style="display:none!important; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Réduire ▲</label>
     `;
   }
 
@@ -848,14 +851,20 @@ export function generateBulletinHtml(data) {
     // pour toutes les suivantes, quelle que soit l'URL.
     // Solution : donner à chaque image un height légèrement différent (+index px).
     // La différence visuelle est imperceptible (1-2 pixels max).
+    // Fix bug Outlook Desktop (moteur Word) : le moteur Word cache les images en
+    // ressources téléchargées, indexées principalement par leur URL. Un décalage de
+    // hauteur seul ne suffit pas à casser ce cache. On ajoute donc un paramètre
+    // unique à l'URL (?_mvg=index) en plus du décalage de hauteur pour une double
+    // sécurité : ça force Outlook à traiter chaque <img> comme une ressource distincte.
     const cardInner = (media, index, msoMode = false) => {
-      // En mode MSO : on décale la hauteur de l'image de +index px pour casser le cache
-      // En mode carrousel normal : height fixe identique, pas de problème sur les vrais navigateurs
       const imgHeight = msoMode ? 160 + index : 160;
       const imgHeightStyle = msoMode ? `${imgHeight}px` : '160px';
+      const imgSrc = msoMode
+        ? `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`
+        : media.url;
       return `
       <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-        <img src="${media.url}" width="260" height="${imgHeight}" style="width: 100%; max-width: 260px; height: ${imgHeightStyle}; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
+        <img src="${imgSrc}" width="260" height="${imgHeight}" style="width: 100%; max-width: 260px; height: ${imgHeightStyle}; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
       </a>
       <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${media.titre || ''}</h4>
       ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${media.description}</p>` : ''}
@@ -1016,8 +1025,10 @@ export function generateBulletinHtml(data) {
         <!--[if mso]>
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
           ${zoomMedia.map((media, index) => {
-            // Décalage de hauteur (+index px) pour casser le cache dimensionnel d'Outlook Desktop
+            // Décalage de hauteur (+index px) ET paramètre d'URL unique (?_mvg=index) :
+            // double sécurité contre le bug de cache d'image d'Outlook Desktop.
             const imgHeight = 260 + index;
+            const imgSrc = `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`;
             return `
             <tr>
               <td style="padding-bottom: 16px; text-align: center;">
@@ -1025,7 +1036,7 @@ export function generateBulletinHtml(data) {
                   <tr>
                     <td style="padding: 12px; text-align: center;">
                       <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                        <img src="${media.url}" width="540" height="${imgHeight}" style="width: 100%; max-width: 540px; height: ${imgHeight}px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                        <img src="${imgSrc}" width="540" height="${imgHeight}" style="width: 100%; max-width: 540px; height: ${imgHeight}px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
                       </a>
                       ${media.type === 'video' ? `
                       <div style="text-align: center; margin-top: 12px;">
@@ -1127,4 +1138,3 @@ export function generateBulletinHtml(data) {
     isFullWidth: true
   });
 }
-
