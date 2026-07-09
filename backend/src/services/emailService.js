@@ -835,19 +835,20 @@ export function generateBulletinHtml(data) {
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
 
-    // forceCacheBust=true ajoute un paramètre unique à l'URL de l'image, utilisé
-    // UNIQUEMENT dans le fallback Outlook Desktop (mso) : Outlook Desktop (moteur Word)
-    // a un bug connu de cache d'image qui réutilise la 1ère image chargée pour les
-    // suivantes quand plusieurs <img> partagent les mêmes dimensions et le même
-    // domaine (ici le proxy/CDN de suivi Brevo). Un paramètre unique par image force
-    // Outlook à les traiter comme des ressources distinctes.
-    const cardInner = (media, index, forceCacheBust = false) => {
-      const imgSrc = forceCacheBust
-        ? `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`
-        : media.url;
+    // Fix bug Outlook Desktop (moteur Word) : le moteur pré-télécharge toutes les images
+    // et les stocke dans un pool local indexé par dimensions PHYSIQUES (width × height).
+    // Si plusieurs <img> ont le même width et height, Outlook réutilise la 1ère image
+    // pour toutes les suivantes, quelle que soit l'URL.
+    // Solution : donner à chaque image un height légèrement différent (+index px).
+    // La différence visuelle est imperceptible (1-2 pixels max).
+    const cardInner = (media, index, msoMode = false) => {
+      // En mode MSO : on décale la hauteur de l'image de +index px pour casser le cache
+      // En mode carrousel normal : height fixe identique, pas de problème sur les vrais navigateurs
+      const imgHeight = msoMode ? 160 + index : 160;
+      const imgHeightStyle = msoMode ? `${imgHeight}px` : '160px';
       return `
       <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-        <img src="${imgSrc}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
+        <img src="${media.url}" width="260" height="${imgHeight}" style="width: 100%; max-width: 260px; height: ${imgHeightStyle}; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
       </a>
       <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${media.titre || ''}</h4>
       ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${media.description}</p>` : ''}
@@ -862,7 +863,7 @@ export function generateBulletinHtml(data) {
     };
 
     // Fallback Outlook / MSO : grille 2 colonnes classique (table-based, ultra stable)
-    // Chaque média garde son index global (_idx) pour le cache-busting.
+    // Chaque média reçoit son index GLOBAL pour le décalage de hauteur (msoMode=true).
     const mediasIndexed = medias.map((m, i) => ({ ...m, _idx: i }));
     const rows = [];
     for (let i = 0; i < mediasIndexed.length; i += 2) {
@@ -1008,7 +1009,8 @@ export function generateBulletinHtml(data) {
         <!--[if mso]>
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
           ${zoomMedia.map((media, index) => {
-            const imgSrc = `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=z_${index}`;
+            // Décalage de hauteur (+index px) pour casser le cache dimensionnel d'Outlook Desktop
+            const imgHeight = 260 + index;
             return `
             <tr>
               <td style="padding-bottom: 16px; text-align: center;">
@@ -1016,7 +1018,7 @@ export function generateBulletinHtml(data) {
                   <tr>
                     <td style="padding: 12px; text-align: center;">
                       <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                        <img src="${imgSrc}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                        <img src="${media.url}" width="540" height="${imgHeight}" style="width: 100%; max-width: 540px; height: ${imgHeight}px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
                       </a>
                       ${media.type === 'video' ? `
                       <div style="text-align: center; margin-top: 12px;">
