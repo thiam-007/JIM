@@ -813,19 +813,26 @@ export function generateBulletinHtml(data) {
   } else {
     const firstPara = paragraphs[0].replace(/\n/g, '<br />');
     const restPara = paragraphs.slice(1).map(p => `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${p.replace(/\n/g, '<br />')}</p>`).join('');
-    
+
+    // IMPORTANT : pas de commentaires conditionnels MSO ici.
+    // Les commentaires <!--[if !mso]--> imbriqués dans le body corrompent le parseur
+    // conditionnel d'Outlook Desktop et lui font ignorer les blocs <!--[if mso]--> des
+    // carrousels Galerie et Zoom qui suivent (Outlook affiche alors le carrousel HTML
+    // au lieu de la grille MSO, ce qui provoque la répétition d'images).
+    //
+    // Le checkbox hack ne nécessite pas de conditionnels MSO :
+    //   – Sur Outlook Desktop & Gmail : la case n'est jamais cochable →
+    //     .edito-more-text reste visible (display:block, défini en CSS global).
+    //   – Sur Apple Mail / Safari : @supports (-webkit-appearance: none)
+    //     active le mécanisme de pliage interactif via :checked.
     editoHtml = `
       <p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${firstPara}</p>
-      <!--[if !mso]><!-->
       <input type="checkbox" id="toggle-edito" style="display: none !important;" class="edito-toggle-cb" />
       <div class="edito-more-text">
-      <!--<![endif]-->
         ${restPara}
-      <!--[if !mso]><!-->
       </div>
       <label for="toggle-edito" class="edito-toggle-label-more" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
       <label for="toggle-edito" class="edito-toggle-label-less" style="display: none; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Réduire ▲</label>
-      <!--<![endif]-->
     `;
   }
 
