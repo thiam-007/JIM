@@ -99,6 +99,15 @@ function emailShell(bodyContent, options = {}) {
   <title>Musée Virtuel de Guinée</title>
   <style type="text/css">
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lato:wght@300;400;700&display=swap');
+    
+    /* Fix Outlook Desktop (moteur Word) : neutralise l'espacement par défaut des tables
+       qui élargit progressivement le contenu imbriqué */
+    table {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse;
+    }
+    
     body { background-color: #E8DDD3; font-family: 'Lato', sans-serif; padding: 30px 0; margin: 0; }
     .wrapper { max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(89,55,22,0.18); }
     .header { position: relative; background-color: #593716; min-height: 190px; overflow: hidden; }
@@ -169,25 +178,28 @@ function emailShell(bodyContent, options = {}) {
     .galerie { background: #FFFFFF; padding: 36px 40px; }
     .galerie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     
-    /* Carrousel horizontal UNIQUEMENT pour Apple Mail (iOS/macOS Mail) et navigateurs.
-       Partout ailleurs (Gmail, Outlook, Yahoo…) : empilement vertical, sans risque. */
-    @media not all and (min-resolution:.001dpcm) {
-      @supports (-webkit-appearance: none) {
-        .zoom-media-scroll {
-          display: flex !important;
-          flex-direction: row !important;
-          overflow-x: auto !important;
-          scroll-snap-type: x mandatory !important;
-          gap: 16px !important;
-          width: 100% !important;
-        }
-        .zoom-media-card {
-          display: block !important;
-          flex: 0 0 85% !important;
-          width: 85% !important;
-          scroll-snap-align: start !important;
-        }
-      }
+    /* ─────────────────────────────────────────────────────────────────
+       CARROUSEL HORIZONTAL — classes mutualisées (Zoom + Galerie)
+       Utilise overflow-x + inline-block, PAS de flexbox (peu fiable en email).
+       Rendu par défaut (Gmail web/app, Apple Mail, Outlook.com, Yahoo, mobile) :
+       vrai scroll horizontal.
+       Outlook Desktop (Windows, moteur Word) reçoit un fallback totalement
+       différent via les commentaires conditionnels <!--[if mso]-->, voir le HTML.
+       ───────────────────────────────────────────────────────────────── */
+    .carousel-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+      scroll-snap-type: x proximity;
+      -ms-overflow-style: none;
+    }
+    .carousel-scroll::-webkit-scrollbar { height: 6px; }
+    .carousel-scroll::-webkit-scrollbar-thumb { background: rgba(249,178,51,0.4); border-radius: 3px; }
+    .carousel-item {
+      display: inline-block;
+      white-space: normal;
+      vertical-align: top;
+      scroll-snap-align: start;
     }
     
     @media (max-width: 600px) {
@@ -230,7 +242,9 @@ function emailShell(bodyContent, options = {}) {
     }
 
     /* Anti-overflow text wrapping for email clients */
-    .edito p, .actu-card p, .zoom p, .nextstep h2, .galerie h4, .galerie p {
+    .edito p, .edito h2, .actu-card p, .actu-card h3,
+    .zoom p, .zoom h2, .nextstep h2, .nextstep strong, .nextstep span,
+    .galerie h2, .galerie h4, .galerie p, .edito-aside li, .sommaire-links a {
       word-wrap: break-word !important;
       overflow-wrap: break-word !important;
       word-break: break-word !important;
@@ -815,65 +829,74 @@ export function generateBulletinHtml(data) {
     `;
   }
 
-  // Generate Email-safe 2-column Grid for Galerie Visuelle
+  // ─── Galerie de fin : carrousel horizontal pour tous les clients modernes,
+  // fallback grille 2 colonnes en table pour Outlook Desktop (Windows) via [if mso] ───
   let galerieHtml = '';
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
+
+    const cardInner = (media) => `
+      <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
+        <img src="${media.url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
+      </a>
+      <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${media.description}</p>` : ''}
+      <div style="text-align: center; margin-top: 8px;">
+        ${media.type === 'video' ? `
+        <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #B1222A; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #B1222A;">▶ Visionner</a>
+        ` : (media.link ? `
+        <a href="${media.link}" target="_blank" style="display: inline-block; background: #845936; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #845936;">En savoir plus</a>
+        ` : '')}
+      </div>
+    `;
+
+    // Fallback Outlook / MSO : grille 2 colonnes classique (table-based, ultra stable)
     const rows = [];
     for (let i = 0; i < medias.length; i += 2) {
       rows.push(medias.slice(i, i + 2));
     }
-    
-    galerieHtml = `
+    const msoGrid = `
     <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
       ${rows.map(row => `
       <tr>
         <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr>
-              <td style="padding: 12px; text-align: center;">
-                <a href="${row[0].link || row[0].url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-                  <img src="${row[0].url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[0].titre || 'Galerie'}" />
-                </a>
-                <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${row[0].titre || ''}</h4>
-                ${row[0].description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${row[0].description}</p>` : ''}
-                <div style="text-align: center; margin-top: 8px;">
-                  ${row[0].type === 'video' ? `
-                  <a href="${row[0].link || row[0].url}" target="_blank" style="display: inline-block; background: #B1222A; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #B1222A;">▶ Visionner</a>
-                  ` : (row[0].link ? `
-                  <a href="${row[0].link}" target="_blank" style="display: inline-block; background: #845936; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #845936;">En savoir plus</a>
-                  ` : '')}
-                </div>
-              </td>
-            </tr>
+            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[0])}</td></tr>
           </table>
         </td>
         <td width="24" style="width: 24px;"></td>
         <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           ${row[1] ? `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr>
-              <td style="padding: 12px; text-align: center;">
-                <a href="${row[1].link || row[1].url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-                  <img src="${row[1].url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${row[1].titre || 'Galerie'}" />
-                </a>
-                <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${row[1].titre || ''}</h4>
-                ${row[1].description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${row[1].description}</p>` : ''}
-                <div style="text-align: center; margin-top: 8px;">
-                  ${row[1].type === 'video' ? `
-                  <a href="${row[1].link || row[1].url}" target="_blank" style="display: inline-block; background: #B1222A; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #B1222A;">▶ Visionner</a>
-                  ` : (row[1].link ? `
-                  <a href="${row[1].link}" target="_blank" style="display: inline-block; background: #845936; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #845936;">En savoir plus</a>
-                  ` : '')}
-                </div>
-              </td>
-            </tr>
+            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[1])}</td></tr>
           </table>
           ` : ''}
         </td>
       </tr>
       `).join('')}
     </table>
+    `;
+
+    // Carrousel horizontal : Gmail (web+app), Apple Mail, Outlook.com, Yahoo, mobile
+    const carousel = `
+    <div class="carousel-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap;">
+      ${medias.map(media => `
+      <div class="carousel-item" style="display: inline-block; white-space: normal; vertical-align: top; width: 85%; max-width: 280px; margin-right: 16px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
+          <tr><td style="padding: 12px; text-align: center;">${cardInner(media)}</td></tr>
+        </table>
+      </div>
+      `).join('')}
+    </div>
+    `;
+
+    galerieHtml = `
+      <!--[if mso]>
+      ${msoGrid}
+      <![endif]-->
+      <!--[if !mso]><!-->
+      ${carousel}
+      <!--<![endif]-->
     `;
   }
 
@@ -968,9 +991,39 @@ export function generateBulletinHtml(data) {
       <!-- Médias Zoom (Email-safe stacked layout + beautiful CSS slide carousel in modern web/preview views) -->
       ${zoomMedia && zoomMedia.length > 0 ? `
       <div class="zoom-media-gallery" style="margin-top: 24px;">
-        <div class="zoom-media-scroll">
+        <!--[if mso]>
+        <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
           ${zoomMedia.map(media => `
-          <div class="zoom-media-card" style="margin-bottom: 16px;">
+          <tr>
+            <td style="padding-bottom: 16px; text-align: center;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
+                <tr>
+                  <td style="padding: 12px; text-align: center;">
+                    <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
+                      <img src="${media.url}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                    </a>
+                    ${media.type === 'video' ? `
+                    <div style="text-align: center; margin-top: 12px;">
+                      <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
+                    </div>
+                    ` : (media.link ? `
+                    <div style="text-align: center; margin-top: 12px;">
+                      <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
+                    </div>
+                    ` : '')}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          `).join('')}
+        </table>
+        <![endif]-->
+        
+        <!--[if !mso]><!-->
+        <div class="carousel-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap;">
+          ${zoomMedia.map(media => `
+          <div class="carousel-item" style="display: inline-block; white-space: normal; vertical-align: top; width: 85%; max-width: 540px; margin-right: 16px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
               <tr>
                 <td style="padding: 12px; text-align: center;">
@@ -992,6 +1045,7 @@ export function generateBulletinHtml(data) {
           </div>
           `).join('')}
         </div>
+        <!--<![endif]-->
       </div>
       ` : ''}
     </div>
