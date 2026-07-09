@@ -835,9 +835,19 @@ export function generateBulletinHtml(data) {
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
 
-    const cardInner = (media) => `
+    // forceCacheBust=true ajoute un paramètre unique à l'URL de l'image, utilisé
+    // UNIQUEMENT dans le fallback Outlook Desktop (mso) : Outlook Desktop (moteur Word)
+    // a un bug connu de cache d'image qui réutilise la 1ère image chargée pour les
+    // suivantes quand plusieurs <img> partagent les mêmes dimensions et le même
+    // domaine (ici le proxy/CDN de suivi Brevo). Un paramètre unique par image force
+    // Outlook à les traiter comme des ressources distinctes.
+    const cardInner = (media, index, forceCacheBust = false) => {
+      const imgSrc = forceCacheBust
+        ? `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`
+        : media.url;
+      return `
       <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-        <img src="${media.url}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
+        <img src="${imgSrc}" width="260" height="160" style="width: 100%; max-width: 260px; height: 160px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
       </a>
       <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${media.titre || ''}</h4>
       ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${media.description}</p>` : ''}
@@ -849,11 +859,14 @@ export function generateBulletinHtml(data) {
         ` : '')}
       </div>
     `;
+    };
 
     // Fallback Outlook / MSO : grille 2 colonnes classique (table-based, ultra stable)
+    // Chaque média garde son index global (_idx) pour le cache-busting.
+    const mediasIndexed = medias.map((m, i) => ({ ...m, _idx: i }));
     const rows = [];
-    for (let i = 0; i < medias.length; i += 2) {
-      rows.push(medias.slice(i, i + 2));
+    for (let i = 0; i < mediasIndexed.length; i += 2) {
+      rows.push(mediasIndexed.slice(i, i + 2));
     }
     const msoGrid = `
     <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
@@ -861,14 +874,14 @@ export function generateBulletinHtml(data) {
       <tr>
         <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[0])}</td></tr>
+            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[0], row[0]._idx, true)}</td></tr>
           </table>
         </td>
         <td width="24" style="width: 24px;"></td>
         <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
           ${row[1] ? `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[1])}</td></tr>
+            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[1], row[1]._idx, true)}</td></tr>
           </table>
           ` : ''}
         </td>
@@ -878,6 +891,7 @@ export function generateBulletinHtml(data) {
     `;
 
     // Carrousel horizontal : Gmail (web+app), Apple Mail, Outlook.com, Yahoo, mobile
+    // Pas besoin de cache-busting ici, ce bug est spécifique au moteur Word d'Outlook Desktop.
     const carousel = `
     <div class="carousel-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap;">
       ${medias.map(media => `
@@ -993,30 +1007,33 @@ export function generateBulletinHtml(data) {
       <div class="zoom-media-gallery" style="margin-top: 24px;">
         <!--[if mso]>
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
-          ${zoomMedia.map(media => `
-          <tr>
-            <td style="padding-bottom: 16px; text-align: center;">
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
-                <tr>
-                  <td style="padding: 12px; text-align: center;">
-                    <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                      <img src="${media.url}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
-                    </a>
-                    ${media.type === 'video' ? `
-                    <div style="text-align: center; margin-top: 12px;">
-                      <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
-                    </div>
-                    ` : (media.link ? `
-                    <div style="text-align: center; margin-top: 12px;">
-                      <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
-                    </div>
-                    ` : '')}
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          `).join('')}
+          ${zoomMedia.map((media, index) => {
+            const imgSrc = `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=z_${index}`;
+            return `
+            <tr>
+              <td style="padding-bottom: 16px; text-align: center;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
+                  <tr>
+                    <td style="padding: 12px; text-align: center;">
+                      <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
+                        <img src="${imgSrc}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                      </a>
+                      ${media.type === 'video' ? `
+                      <div style="text-align: center; margin-top: 12px;">
+                        <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
+                      </div>
+                      ` : (media.link ? `
+                      <div style="text-align: center; margin-top: 12px;">
+                        <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
+                      </div>
+                      ` : '')}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            `;
+          }).join('')}
         </table>
         <![endif]-->
         
