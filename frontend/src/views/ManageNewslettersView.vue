@@ -261,15 +261,53 @@
                   </div>
                 </div>
                 <div class="fg">
-                  <label>📌 En bref ce mois-ci <span style="font-weight:400;color:#888;font-size:11px;">(chaque puce peut être cliquable)</span></label>
-                  <div v-for="(item, idx) in form.bulletin.editoBref" :key="idx" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
-                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                      <input type="text" v-model="item.text" :placeholder="`Puce ${idx + 1} (ex : Lancement du site)`" style="width:100%;" />
-                      <input type="url" v-model="item.url" placeholder="URL de l'article (optionnel)" style="width:100%;font-size:11px;color:#666;" />
+                  <label>📌 En bref ce mois-ci <span style="font-weight:400;color:#888;font-size:11px;">(articles ou événements cliquables)</span></label>
+
+                  <!-- Puces sélectionnées -->
+                  <div v-if="form.bulletin.editoBref.filter(i=>i.text).length > 0" style="margin-bottom:10px;">
+                    <div v-for="(item, idx) in form.bulletin.editoBref.filter(i=>i.text)" :key="idx"
+                      style="display:flex;align-items:center;gap:8px;background:rgba(132,89,54,0.07);border:1px solid rgba(132,89,54,0.18);border-radius:6px;padding:7px 10px;margin-bottom:6px;">
+                      <span style="font-size:12px;color:#593716;flex:1;font-weight:500;">▸ {{ item.text }}</span>
+                      <span v-if="item.url" style="font-size:10px;color:#845936;opacity:0.7;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" :title="item.url">{{ item.url }}</span>
+                      <button type="button" @click="form.bulletin.editoBref.splice(form.bulletin.editoBref.indexOf(item), 1)"
+                        style="background:none;border:none;color:#B1222A;font-size:16px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;" title="Retirer">✕</button>
                     </div>
-                    <button type="button" @click="form.bulletin.editoBref.splice(idx, 1)" style="background:none;border:none;color:#B1222A;font-size:18px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0;" title="Supprimer">✕</button>
                   </div>
-                  <button type="button" @click="form.bulletin.editoBref.push({ text: '', url: '' })" style="background:none;border:1px dashed rgba(132,89,54,0.4);color:#845936;font-size:12px;padding:6px 14px;border-radius:4px;cursor:pointer;width:100%;margin-top:2px;">＋ Ajouter une puce</button>
+
+                  <!-- Sélecteur déroulant -->
+                  <div style="border:1px solid rgba(132,89,54,0.25);border-radius:6px;overflow:hidden;">
+                    <div style="background:rgba(132,89,54,0.04);padding:8px 10px;font-size:11px;font-weight:700;color:#845936;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(132,89,54,0.12);">
+                      📰 Articles
+                    </div>
+                    <div style="max-height:140px;overflow-y:auto;">
+                      <div v-if="actualites.length === 0" style="padding:12px;font-size:12px;color:#999;font-style:italic;">Aucun article disponible</div>
+                      <div v-for="act in actualites" :key="'act-'+act.id"
+                        :style="form.bulletin.editoBref.some(i=>i._id===act.id && i._type==='actu') ? 'opacity:0.4;pointer-events:none;' : ''"
+                        @click="form.bulletin.editoBref.push({ text: act.titre, url: '', _id: act.id, _type: 'actu' }); form.bulletin.editoBref = form.bulletin.editoBref.filter(i=>i.text)"
+                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(132,89,54,0.06);transition:background 0.15s;"
+                        @mouseenter="$event.currentTarget.style.background='rgba(132,89,54,0.07)'"
+                        @mouseleave="$event.currentTarget.style.background='transparent'">
+                        <span style="font-size:18px;">📄</span>
+                        <span style="font-size:12px;color:#4A3020;">{{ act.titre }}</span>
+                      </div>
+                    </div>
+
+                    <div style="background:rgba(132,89,54,0.04);padding:8px 10px;font-size:11px;font-weight:700;color:#845936;text-transform:uppercase;letter-spacing:1px;border-top:1px solid rgba(132,89,54,0.12);border-bottom:1px solid rgba(132,89,54,0.12);">
+                      📅 Événements
+                    </div>
+                    <div style="max-height:140px;overflow-y:auto;">
+                      <div v-if="evenements.length === 0" style="padding:12px;font-size:12px;color:#999;font-style:italic;">Aucun événement disponible</div>
+                      <div v-for="ev in evenements" :key="'ev-'+ev.id"
+                        :style="form.bulletin.editoBref.some(i=>i._id===ev.id && i._type==='ev') ? 'opacity:0.4;pointer-events:none;' : ''"
+                        @click="form.bulletin.editoBref.push({ text: ev.titre, url: '', _id: ev.id, _type: 'ev' }); form.bulletin.editoBref = form.bulletin.editoBref.filter(i=>i.text)"
+                        style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid rgba(132,89,54,0.06);transition:background 0.15s;"
+                        @mouseenter="$event.currentTarget.style.background='rgba(132,89,54,0.07)'"
+                        @mouseleave="$event.currentTarget.style.background='transparent'">
+                        <span style="font-size:18px;">🗓️</span>
+                        <span style="font-size:12px;color:#4A3020;">{{ ev.titre }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
@@ -996,8 +1034,18 @@ function packBulletinData() {
     const parts = line.split('|');
     return { titre: parts[0] ? parts[0].trim() : '', desc: parts[1] ? parts[1].trim() : '' };
   });
-  const editoBref = (b.editoBref || []).filter(item => item.text && item.text.trim());
-  editoBref.forEach(item => { if (!item.url || !item.url.trim()) item.url = null; });
+  const frontendOrigin = window.location.origin;
+  const editoBref = (b.editoBref || [])
+    .filter(item => item.text && item.text.trim())
+    .map(item => {
+      // Construire l'URL automatiquement depuis le type/id si pas d'URL manuelle
+      let url = item.url && item.url.trim() ? item.url.trim() : null;
+      if (!url && item._type && item._id) {
+        if (item._type === 'actu') url = `${frontendOrigin}/actualites/${item._id}`;
+        else if (item._type === 'ev') url = `${frontendOrigin}/evenements/${item._id}`;
+      }
+      return { text: item.text.trim(), url };
+    });
   
   const bulletinData = {
     edition: b.edition,
