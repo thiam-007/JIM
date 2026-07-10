@@ -819,7 +819,7 @@ function openCreateCampaign() {
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
-      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
+      editoBref: [{ text: '', url: '' }], actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
       zoomMedia: [],
       galerie: {
         titre: 'Galerie Photos & Vidéos',
@@ -938,7 +938,7 @@ function duplicateCampaign(camp) {
     bulletin: {
       edition: 'Édition N°01 — ' + new Date().toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'}),
       editoTitre: '', editoTexte: '', editoAuteurNom: '', editoAuteurRole: '', editoAuteurInitiales: '',
-      editoBrefText: '', actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
+      editoBref: [{ text: '', url: '' }], actus: ['', '', ''], zoomTitre: '', zoomTexte: '',
       zoomMedia: [],
       galerie: {
         titre: 'Galerie Photos & Vidéos',
@@ -960,7 +960,13 @@ function duplicateCampaign(camp) {
       form.value.bulletin.editoAuteurRole = bData.editoAuteurRole || ''
       form.value.bulletin.editoAuteurInitiales = bData.editoAuteurInitiales || ''
       if (bData.editoBref && bData.editoBref.length) {
-        form.value.bulletin.editoBrefText = bData.editoBref.map(i => '- ' + i).join('\n')
+        // Supporte l'ancien format (string[]) ET le nouveau format ({text,url}[])
+        form.value.bulletin.editoBref = bData.editoBref.map(i =>
+          typeof i === 'string' ? { text: i, url: '' } : { text: i.text || '', url: i.url || '' }
+        );
+        if (form.value.bulletin.editoBref.length === 0) {
+          form.value.bulletin.editoBref = [{ text: '', url: '' }];
+        }
       }
       if (bData.actus_ids && bData.actus_ids.length) {
         form.value.bulletin.actus = [
