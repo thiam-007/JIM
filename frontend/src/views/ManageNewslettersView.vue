@@ -261,8 +261,15 @@
                   </div>
                 </div>
                 <div class="fg">
-                  <label>En bref ce mois-ci (Une ligne par puce)</label>
-                  <textarea v-model="form.bulletin.editoBrefText" rows="3" placeholder="- Lancement de la newsletter&#10;- Finalisation de la charte"></textarea>
+                  <label>📌 En bref ce mois-ci <span style="font-weight:400;color:#888;font-size:11px;">(chaque puce peut être cliquable)</span></label>
+                  <div v-for="(item, idx) in form.bulletin.editoBref" :key="idx" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+                      <input type="text" v-model="item.text" :placeholder="`Puce ${idx + 1} (ex : Lancement du site)`" style="width:100%;" />
+                      <input type="url" v-model="item.url" placeholder="URL de l'article (optionnel)" style="width:100%;font-size:11px;color:#666;" />
+                    </div>
+                    <button type="button" @click="form.bulletin.editoBref.splice(idx, 1)" style="background:none;border:none;color:#B1222A;font-size:18px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0;" title="Supprimer">✕</button>
+                  </div>
+                  <button type="button" @click="form.bulletin.editoBref.push({ text: '', url: '' })" style="background:none;border:1px dashed rgba(132,89,54,0.4);color:#845936;font-size:12px;padding:6px 14px;border-radius:4px;cursor:pointer;width:100%;margin-top:2px;">＋ Ajouter une puce</button>
                 </div>
 
                 <div style="border-top: 1px solid rgba(132,89,54,0.1); margin: 20px 0;"></div>
@@ -735,7 +742,7 @@ const form = ref({
     editoAuteurNom: '',
     editoAuteurRole: '',
     editoAuteurInitiales: '',
-    editoBrefText: '',
+    editoBref: [{ text: '', url: '' }],
     actus: ['', '', ''],
     zoomTitre: '',
     zoomTexte: '',
@@ -983,7 +990,8 @@ function packBulletinData() {
     const parts = line.split('|');
     return { titre: parts[0] ? parts[0].trim() : '', desc: parts[1] ? parts[1].trim() : '' };
   });
-  const editoBref = b.editoBrefText.split('\n').map(l => l.replace(/^-/, '').trim()).filter(Boolean);
+  const editoBref = (b.editoBref || []).filter(item => item.text && item.text.trim());
+  editoBref.forEach(item => { if (!item.url || !item.url.trim()) item.url = null; });
   
   const bulletinData = {
     edition: b.edition,

@@ -92,7 +92,7 @@ function emailShell(bodyContent, options = {}) {
   const isFullWidth = options.isFullWidth || false;
   
   return `<!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -212,34 +212,7 @@ function emailShell(bodyContent, options = {}) {
       .header-text-container { border-left: none !important; padding-left: 0 !important; }
       .hide-mobile { display: none !important; }
     }
-    
-    /* Par défaut partout : labels invisibles, texte complet visible.
-       C'est le seul état garanti sur Gmail/Outlook (qui ignorent :checked). */
-    .edito-toggle-label-more, .edito-toggle-label-less {
-      display: none !important;
-    }
-    .edito-more-text {
-      display: block !important;
-      max-height: none !important;
-    }
-    
-    /* Bonus interactif UNIQUEMENT pour Apple Mail (iOS/macOS Mail),
-       seul client mail qui applique fidèlement :checked + combinateur ~ */
-    @media not all and (min-resolution:.001dpcm) {
-      @supports (-webkit-appearance: none) {
-        .edito-toggle-cb:checked ~ .edito-more-text {
-          max-height: 0 !important;
-          overflow: hidden !important;
-          display: none !important;
-        }
-        .edito-toggle-cb:checked ~ .edito-toggle-label-more {
-          display: inline-block !important;
-        }
-        .edito-toggle-cb:not(:checked) ~ .edito-toggle-label-less {
-          display: inline-block !important;
-        }
-      }
-    }
+
 
     /* Anti-overflow text wrapping for email clients */
     .edito p, .edito h2, .actu-card p, .actu-card h3,
@@ -806,37 +779,17 @@ export function generateBulletinHtml(data) {
     etapes = [] // array of { titre, desc }
   } = data;
 
+  // Édito : tous les paragraphes sont toujours affichés intégralement.
+  // Le mécanisme toggle (checkbox hack) est supprimé — il n'est pas fiable
+  // dans les clients mail et génère des artefacts visuels ([ ], boutons morts).
   let editoHtml = '';
   const paragraphs = editoTexte.split(/\r?\n/).map(p => p.trim()).filter(Boolean);
-  if (paragraphs.length <= 1) {
+  if (paragraphs.length === 0) {
     editoHtml = `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${editoTexte.replace(/\n/g, '<br />')}</p>`;
   } else {
-    const firstPara = paragraphs[0].replace(/\n/g, '<br />');
-    const restPara = paragraphs.slice(1).map(p => `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${p.replace(/\n/g, '<br />')}</p>`).join('');
-
-    // IMPORTANT : pas de commentaires conditionnels MSO ici.
-    // Les commentaires <!--[if !mso]--> imbriqués dans le body corrompent le parseur
-    // conditionnel d'Outlook Desktop et lui font ignorer les blocs <!--[if mso]--> des
-    // carrousels Galerie et Zoom qui suivent (Outlook affiche alors le carrousel HTML
-    // au lieu de la grille MSO, ce qui provoque la répétition d'images).
-    //
-    // Le checkbox hack ne nécessite pas de conditionnels MSO :
-    //   – Sur Outlook Desktop & Gmail : la case n'est jamais cochable →
-    //     .edito-more-text reste visible (display:block, défini en CSS global).
-    //   – Sur Apple Mail / Safari : @supports (-webkit-appearance: none)
-    //     active le mécanisme de pliage interactif via :checked.
-    editoHtml = `
-      <p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${firstPara}</p>
-      <input type="checkbox" id="toggle-edito" class="edito-toggle-cb"
-        style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;" />
-      <div class="edito-more-text" style="display:block;">
-        ${restPara}
-      </div>
-      <label for="toggle-edito" class="edito-toggle-label-more"
-        style="display:none!important; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Lire la suite ↓</label>
-      <label for="toggle-edito" class="edito-toggle-label-less"
-        style="display:none!important; color: #B1222A; font-weight: bold; cursor: pointer; margin-top: 10px; text-decoration: underline; text-transform: uppercase; font-size: 11px; letter-spacing: 1px;">Réduire ▲</label>
-    `;
+    editoHtml = paragraphs.map(p =>
+      `<p style="font-size: 14px; line-height: 1.75; color: #4A3020; margin-bottom: 10px; margin-top: 0;">${p.replace(/\n/g, '<br />')}</p>`
+    ).join('');
   }
 
   // ─── Galerie de fin : carrousel horizontal pour tous les clients modernes,
@@ -845,79 +798,76 @@ export function generateBulletinHtml(data) {
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
 
-    // Fix bug Outlook Desktop (moteur Word) : le moteur pré-télécharge toutes les images
-    // et les stocke dans un pool local indexé par dimensions PHYSIQUES (width × height).
-    // Si plusieurs <img> ont le même width et height, Outlook réutilise la 1ère image
-    // pour toutes les suivantes, quelle que soit l'URL.
-    // Solution : donner à chaque image un height légèrement différent (+index px).
-    // La différence visuelle est imperceptible (1-2 pixels max).
-    // Fix bug Outlook Desktop (moteur Word) : le moteur Word cache les images en
-    // ressources téléchargées, indexées principalement par leur URL. Un décalage de
-    // hauteur seul ne suffit pas à casser ce cache. On ajoute donc un paramètre
-    // unique à l'URL (?_mvg=index) en plus du décalage de hauteur pour une double
-    // sécurité : ça force Outlook à traiter chaque <img> comme une ressource distincte.
-    const cardInner = (media, index, msoMode = false) => {
-      const imgHeight = msoMode ? 160 + index : 160;
-      const imgHeightStyle = msoMode ? `${imgHeight}px` : '160px';
-      const imgSrc = msoMode
-        ? `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`
-        : media.url;
+    // ── Carte pour la grille MSO (Outlook Desktop) ──────────────────────────────
+    // Utilise <v:image> (VML natif Microsoft Office) au lieu de <img>.
+    // VML n'a PAS le bug de cache par dimensions : chaque <v:image> est rendu
+    // indépendamment par le moteur Word, quelle que soit sa taille.
+    // Le namespace xmlns:v est déclaré sur la balise <html> du shell.
+    const msoCardInner = (media) => {
+      const btnHtml = media.type === 'video'
+        ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
+        : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
       return `
-      <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block; text-align: center;">
-        <img src="${imgSrc}" width="260" height="${imgHeight}" style="width: 100%; max-width: 260px; height: ${imgHeightStyle}; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="${media.titre || 'Galerie'}" />
+      <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
+        <v:image xmlns:v="urn:schemas-microsoft-com:vml"
+          src="${media.url}"
+          style="width:260px;height:160px;display:block;" />
       </a>
-      <h4 style="font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #593716; margin: 12px 0 6px 0; line-height: 1.3; text-align: left;">${media.titre || ''}</h4>
-      ${media.description ? `<p style="font-size: 12px; color: #6A4830; line-height: 1.45; margin: 0 0 12px 0; text-align: left;">${media.description}</p>` : ''}
-      <div style="text-align: center; margin-top: 8px;">
-        ${media.type === 'video' ? `
-        <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #B1222A; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #B1222A;">▶ Visionner</a>
-        ` : (media.link ? `
-        <a href="${media.link}" target="_blank" style="display: inline-block; background: #845936; color: #FFFFFF; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; padding: 6px 16px; border-radius: 4px; border: 1px solid #845936;">En savoir plus</a>
-        ` : '')}
-      </div>
+      <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
+      <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
     `;
     };
 
-    // Fallback Outlook / MSO : grille 2 colonnes classique (table-based, ultra stable)
-    // Chaque média reçoit son index GLOBAL pour le décalage de hauteur (msoMode=true).
-    const mediasIndexed = medias.map((m, i) => ({ ...m, _idx: i }));
+    // ── Carte pour le carousel HTML (Gmail, Apple Mail, Outlook.com, mobile) ───
+    const carouselCardInner = (media) => {
+      const btnHtml = media.type === 'video'
+        ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
+        : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
+      return `
+      <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
+        <img src="${media.url}" width="260" height="160" style="width:100%;max-width:260px;height:160px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="${media.titre || 'Galerie'}" />
+      </a>
+      <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
+      <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
+    `;
+    };
+
+    // Fallback Outlook / MSO : grille 2 colonnes en tables fixes, images VML
     const rows = [];
-    for (let i = 0; i < mediasIndexed.length; i += 2) {
-      rows.push(mediasIndexed.slice(i, i + 2));
+    for (let i = 0; i < medias.length; i += 2) {
+      rows.push(medias.slice(i, i + 2));
     }
     const msoGrid = `
-    <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
+    <table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;table-layout:fixed;">
       ${rows.map(row => `
       <tr>
-        <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
-          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[0], row[0]._idx, true)}</td></tr>
+        <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
+            <tr><td style="padding:12px;text-align:center;">${msoCardInner(row[0])}</td></tr>
           </table>
         </td>
-        <td width="24" style="width: 24px;"></td>
-        <td width="288" valign="top" style="padding-bottom: 20px; width: 288px;">
+        <td width="24" style="width:24px;"></td>
+        <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
           ${row[1] ? `
-          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-            <tr><td style="padding: 12px; text-align: center;">${cardInner(row[1], row[1]._idx, true)}</td></tr>
-          </table>
-          ` : ''}
+          <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
+            <tr><td style="padding:12px;text-align:center;">${msoCardInner(row[1])}</td></tr>
+          </table>` : ''}
         </td>
-      </tr>
-      `).join('')}
+      </tr>`).join('')}
     </table>
     `;
 
-    // Carrousel horizontal : Gmail (web+app), Apple Mail, Outlook.com, Yahoo, mobile
-    // Pas besoin de cache-busting ici, ce bug est spécifique au moteur Word d'Outlook Desktop.
+    // Carrousel horizontal : Gmail, Apple Mail, Outlook.com, Yahoo, mobile
     const carousel = `
-    <div class="carousel-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap;">
+    <div class="carousel-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;">
       ${medias.map(media => `
-      <div class="carousel-item" style="display: inline-block; white-space: normal; vertical-align: top; width: 85%; max-width: 280px; margin-right: 16px;">
-        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 1px solid rgba(132,89,54,0.15); border-radius: 8px; overflow: hidden; background: #FAF6F1;">
-          <tr><td style="padding: 12px; text-align: center;">${cardInner(media)}</td></tr>
+      <div class="carousel-item" style="display:inline-block;white-space:normal;vertical-align:top;width:85%;max-width:280px;margin-right:16px;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);border-radius:8px;overflow:hidden;background:#FAF6F1;">
+          <tr><td style="padding:12px;text-align:center;">${carouselCardInner(media)}</td></tr>
         </table>
-      </div>
-      `).join('')}
+      </div>`).join('')}
     </div>
     `;
 
@@ -1023,36 +973,29 @@ export function generateBulletinHtml(data) {
       ${zoomMedia && zoomMedia.length > 0 ? `
       <div class="zoom-media-gallery" style="margin-top: 24px;">
         <!--[if mso]>
-        <table cellpadding="0" cellspacing="0" border="0" width="600" style="width: 600px; table-layout: fixed;">
-          ${zoomMedia.map((media, index) => {
-            // Décalage de hauteur (+index px) ET paramètre d'URL unique (?_mvg=index) :
-            // double sécurité contre le bug de cache d'image d'Outlook Desktop.
-            const imgHeight = 260 + index;
-            const imgSrc = `${media.url}${media.url.includes('?') ? '&' : '?'}_mvg=${index}`;
+        <table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;table-layout:fixed;">
+          ${zoomMedia.map((media) => {
+            // VML natif Microsoft Office : pas de bug de cache par dimensions
+            const btnHtml = media.type === 'video'
+              ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#F9B233;color:#382116;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:8px 18px;border-radius:4px;border:1px solid #F9B233;">&#9658; Visionner la Vidéo</a>`
+              : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:rgba(255,255,255,0.15);color:#FFFFFF;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:8px 18px;border-radius:4px;border:1px solid rgba(255,255,255,0.25);">Découvrir &#8594;</a>` : '');
             return `
             <tr>
-              <td style="padding-bottom: 16px; text-align: center;">
-                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
+              <td style="padding-bottom:16px;text-align:center;">
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.12);overflow:hidden;">
                   <tr>
-                    <td style="padding: 12px; text-align: center;">
-                      <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                        <img src="${imgSrc}" width="540" height="${imgHeight}" style="width: 100%; max-width: 540px; height: ${imgHeight}px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                    <td style="padding:12px;text-align:center;">
+                      <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;">
+                        <v:image xmlns:v="urn:schemas-microsoft-com:vml"
+                          src="${media.url}"
+                          style="width:540px;height:260px;display:block;" />
                       </a>
-                      ${media.type === 'video' ? `
-                      <div style="text-align: center; margin-top: 12px;">
-                        <a href="${media.link || media.url}" target="_blank" style="display: inline-block; background: #F9B233; color: #382116; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid #F9B233;">▶ Visionner la Vidéo</a>
-                      </div>
-                      ` : (media.link ? `
-                      <div style="text-align: center; margin-top: 12px;">
-                        <a href="${media.link}" target="_blank" style="display: inline-block; background: rgba(255,255,255,0.15); color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; padding: 8px 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.25);">Découvrir →</a>
-                      </div>
-                      ` : '')}
+                      ${btnHtml ? `<div style="text-align:center;margin-top:12px;">${btnHtml}</div>` : ''}
                     </td>
                   </tr>
                 </table>
               </td>
-            </tr>
-            `;
+            </tr>`;
           }).join('')}
         </table>
         <![endif]-->
