@@ -472,23 +472,55 @@ function onImageError(event) {
 // ─── Compression d'image côté client (canvas) ──────────────────────────────
 // Redimensionne l'image à max 1600px de large et la compresse en JPEG 85%
 // avant l'envoi au serveur. Évite les crashs 502 sur Render (mémoire limitée).
+// En cas d'erreur (canvas, FileReader, image corrompue), retourne le fichier
+// original sans compression plutôt que de bloquer indéfiniment.
 function compressImage(file, maxWidth = 1600, quality = 0.85) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // Timeout de sécurité : si rien ne se passe après 15s, on abandonne
+    const timeout = setTimeout(() => {
+      reject(new Error('Compression timeout — fichier trop volumineux ou format non supporté'))
+    }, 15000)
+
     const reader = new FileReader()
+
+    reader.onerror = () => {
+      clearTimeout(timeout)
+      reject(new Error('Impossible de lire le fichier image'))
+    }
+
     reader.onload = (e) => {
       const img = new Image()
-      img.onload = () => {
-        const scale = Math.min(1, maxWidth / img.width)
-        const canvas = document.createElement('canvas')
-        canvas.width  = Math.round(img.width  * scale)
-        canvas.height = Math.round(img.height * scale)
-        const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        const compressed = canvas.toDataURL('image/jpeg', quality)
-        resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
+
+      img.onerror = () => {
+        clearTimeout(timeout)
+        reject(new Error('Image invalide ou format non supporté'))
       }
+
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxWidth / img.width)
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * scale)
+          canvas.height = Math.round(img.height * scale)
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            clearTimeout(timeout)
+            reject(new Error('Canvas non disponible dans ce navigateur'))
+            return
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          const compressed = canvas.toDataURL('image/jpeg', quality)
+          clearTimeout(timeout)
+          resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
+        } catch (canvasErr) {
+          clearTimeout(timeout)
+          reject(new Error('Erreur lors de la compression : ' + canvasErr.message))
+        }
+      }
+
       img.src = e.target.result
     }
+
     reader.readAsDataURL(file)
   })
 }
@@ -692,44 +724,57 @@ async function uploadInlineMedia(event) {
 
   uploadingMedia.value = true
   formError.value = ''
+
+  const isImage = file.type.startsWith('image/')
+
   try {
-    // Compression avant envoi (évite 502 sur Render)
-    const isImage = file.type.startsWith('image/')
+    // ── Étape 1 : préparer le payload (compression ou lecture brute) ──────────
     let payload
     if (isImage) {
-      payload = await compressImage(file)
+      try {
+        // Tentative de compression via canvas
+        payload = await compressImage(file)
+      } catch (compressErr) {
+        console.warn('[upload] Compression échouée, envoi du fichier brut :', compressErr.message)
+        // Fallback : lire le fichier original sans compression
+        payload = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onerror = () => reject(new Error('Impossible de lire le fichier'))
+          reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+          reader.readAsDataURL(file)
+        })
+      }
     } else {
-      // Vidéo : pas de compression, lecture directe
-      payload = await new Promise((resolve) => {
+      // Vidéo : lecture directe sans compression
+      payload = await new Promise((resolve, reject) => {
         const reader = new FileReader()
+        reader.onerror = () => reject(new Error('Impossible de lire le fichier vidéo'))
         reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
         reader.readAsDataURL(file)
       })
     }
 
-    try {
-      const res = await api.post('/api/actualites/upload', {
-        file: payload.base64,
-        fileName: payload.name,
-        mimeType: payload.mimeType
-      })
+    // ── Étape 2 : envoi au backend ────────────────────────────────────────────
+    const res = await api.post('/api/actualites/upload', {
+      file: payload.base64,
+      fileName: payload.name,
+      mimeType: payload.mimeType
+    })
 
-      const fileUrl = res.url
-      const mediaType = isImage ? 'image' : 'video'
-      insertAtCursor(mediaType, fileUrl, file.name)
+    const fileUrl = res.url
+    const mediaType = isImage ? 'image' : 'video'
+    insertAtCursor(mediaType, fileUrl, file.name)
 
-      if (!sessionMedias.value.some(m => m.url === fileUrl)) {
-        sessionMedias.value.push({ type: mediaType, url: fileUrl, name: file.name })
-      }
-    } catch (uploadErr) {
-      formError.value = "Erreur lors du téléversement du média : " + (uploadErr.message || uploadErr)
-    } finally {
-      uploadingMedia.value = false
-      event.target.value = ''
+    if (!sessionMedias.value.some(m => m.url === fileUrl)) {
+      sessionMedias.value.push({ type: mediaType, url: fileUrl, name: file.name })
     }
+
   } catch (err) {
-    formError.value = "Erreur lecture fichier : " + err.message
+    formError.value = 'Erreur lors du téléversement : ' + (err.message || err)
+  } finally {
+    // Toujours libérer le bouton, quoi qu'il arrive
     uploadingMedia.value = false
+    event.target.value = ''
   }
 }
 
