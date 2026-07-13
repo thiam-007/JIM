@@ -179,6 +179,9 @@
                           <button type="button" class="btn-reinsert" @click="reinsertMedia(media)" title="Réinsérer au curseur">
                             <AppIcon name="plus" :size="12" /> Réinsérer
                           </button>
+                          <button type="button" class="btn-delete-media" @click="deleteMedia(media)" title="Supprimer le média" style="border-color: rgba(177, 34, 42, 0.2); color: #B1222A;">
+                            <AppIcon name="trash" :size="12" /> Supprimer
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -476,52 +479,37 @@ function onImageError(event) {
 // original sans compression plutôt que de bloquer indéfiniment.
 function compressImage(file, maxWidth = 1600, quality = 0.85) {
   return new Promise((resolve, reject) => {
-    // Timeout de sécurité : si rien ne se passe après 15s, on abandonne
-    const timeout = setTimeout(() => {
-      reject(new Error('Compression timeout — fichier trop volumineux ou format non supporté'))
-    }, 15000)
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
 
-    const reader = new FileReader()
-
-    reader.onerror = () => {
-      clearTimeout(timeout)
-      reject(new Error('Impossible de lire le fichier image'))
-    }
-
-    reader.onload = (e) => {
-      const img = new Image()
-
-      img.onerror = () => {
-        clearTimeout(timeout)
-        reject(new Error('Image invalide ou format non supporté'))
-      }
-
-      img.onload = () => {
-        try {
-          const scale = Math.min(1, maxWidth / img.width)
-          const canvas = document.createElement('canvas')
-          canvas.width  = Math.round(img.width  * scale)
-          canvas.height = Math.round(img.height * scale)
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            clearTimeout(timeout)
-            reject(new Error('Canvas non disponible dans ce navigateur'))
-            return
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          const compressed = canvas.toDataURL('image/jpeg', quality)
-          clearTimeout(timeout)
-          resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
-        } catch (canvasErr) {
-          clearTimeout(timeout)
-          reject(new Error('Erreur lors de la compression : ' + canvasErr.message))
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxWidth / img.width)
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(img.width  * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl)
+          reject(new Error('Canvas non disponible dans ce navigateur'))
+          return
         }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const compressed = canvas.toDataURL('image/jpeg', quality)
+        URL.revokeObjectURL(objectUrl)
+        resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
+      } catch (canvasErr) {
+        URL.revokeObjectURL(objectUrl)
+        reject(new Error('Erreur lors de la compression : ' + canvasErr.message))
       }
-
-      img.src = e.target.result
     }
 
-    reader.readAsDataURL(file)
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Impossible de charger l’image (fichier corrompu ou format non supporté)'))
+    }
+
+    img.src = objectUrl
   })
 }
 
@@ -905,6 +893,32 @@ async function copyMediaMarkdown(media) {
 
 function reinsertMedia(media) {
   insertAtCursor(media.type, media.url, media.name)
+}
+
+function deleteMedia(media) {
+  if (!confirm("Voulez-vous retirer ce média ? Son lien sera également effacé de l'article s'il y est présent.")) return
+
+  // 1. Retirer de la liste de session
+  sessionMedias.value = sessionMedias.value.filter(m => m.url !== media.url)
+
+  // 2. Chercher et effacer automatiquement la syntaxe d'insertion dans le contenu
+  let codeToMatch = ''
+  if (media.type === 'image') {
+    // Échapper les caractères spéciaux du nom pour la regex
+    const escapedName = (media.name || '').replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+    // Match ![nom_image](url_image) ou ![Image](url_image) avec ou sans sauts de ligne
+    const regex = new RegExp(`\\s*!\\[${escapedName || '.*?'}\\]\\(${media.url.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\)\\s*`, 'g')
+    form.value.contenu = form.value.contenu.replace(regex, '\n\n')
+  } else {
+    // Match iframe de youtube ou tag video natif
+    const escapedUrl = media.url.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')
+    const iframeRegex = new RegExp(`\\s*<div class="video-container">\\s*<iframe src="[^"]*${escapedUrl}[^"]*".*?>\\s*</iframe>\\s*</div>\\s*`, 'g')
+    const videoRegex = new RegExp(`\\s*<video src="${escapedUrl}".*?>\\s*</video>\\s*`, 'g')
+    form.value.contenu = form.value.contenu.replace(iframeRegex, '\n\n').replace(videoRegex, '\n\n')
+  }
+
+  // Nettoyer les sauts de lignes multiples successifs créés par la suppression
+  form.value.contenu = form.value.contenu.replace(/\n{3,}/g, '\n\n').trim()
 }
 </script>
 
@@ -1361,5 +1375,10 @@ function reinsertMedia(media) {
   background: var(--brun);
   color: white;
   border-color: var(--brun);
+}
+.media-thumbnail-card .media-actions .btn-delete-media:hover {
+  background: #B1222A !important;
+  color: white !important;
+  border-color: #B1222A !important;
 }
 </style>
