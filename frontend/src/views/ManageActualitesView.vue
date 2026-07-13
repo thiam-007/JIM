@@ -179,11 +179,12 @@
                           <button type="button" class="btn-reinsert" @click="reinsertMedia(media)" title="Réinsérer au curseur">
                             <AppIcon name="plus" :size="12" /> Réinsérer
                           </button>
-                          <button type="button" class="btn-delete-media" @click="deleteMedia(media)" title="Supprimer le média" style="border-color: rgba(177, 34, 42, 0.2); color: #B1222A;">
-                            <AppIcon name="trash" :size="12" /> Supprimer
-                          </button>
                         </div>
                       </div>
+                      <!-- Bouton Supprimer positionné absolument dans le coin -->
+                      <button type="button" class="btn-delete-media-icon" @click="deleteMedia(media)" title="Supprimer le média">
+                        <AppIcon name="trash" :size="13" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1314,9 +1315,11 @@ function deleteMedia(media) {
   gap: 10px;
   background: white;
   padding: 8px;
+  padding-right: 36px; /* Espace pour le bouton de suppression absolu */
   border-radius: 8px;
   border: 1px solid rgba(132, 89, 54, 0.1);
   box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  position: relative; /* Nécessaire pour le positionnement absolu */
 }
 .media-thumbnail-card .thumb-wrap {
   width: 50px;
@@ -1376,9 +1379,25 @@ function deleteMedia(media) {
   color: white;
   border-color: var(--brun);
 }
-.media-thumbnail-card .media-actions .btn-delete-media:hover {
-  background: #B1222A !important;
-  color: white !important;
-  border-color: #B1222A !important;
+.media-thumbnail-card .btn-delete-media-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #B1222A;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  opacity: 0.6;
+}
+.media-thumbnail-card .btn-delete-media-icon:hover {
+  opacity: 1;
+  background: rgba(177, 34, 42, 0.08);
+  transform: scale(1.08);
 }
 </style>
