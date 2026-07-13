@@ -56,9 +56,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }))
 
-// Body parsing
-app.use(express.json({ limit: '200mb' }))
-app.use(express.urlencoded({ limit: '200mb', extended: true }))
+// Body parsing — limite 10 Mo (suffisant pour les images base64 compressées)
+// NOTE : Render free tier a ~512 Mo RAM. Une limite de 200 Mo causait des crashs OOM (502).
+app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ limit: '10mb', extended: true }))
 
 // HTTP Parameter Pollution protection
 app.use(hpp())

@@ -469,28 +469,41 @@ function onImageError(event) {
   event.target.src = imagePlaceholder
 }
 
+// ─── Compression d'image côté client (canvas) ──────────────────────────────
+// Redimensionne l'image à max 1600px de large et la compresse en JPEG 85%
+// avant l'envoi au serveur. Évite les crashs 502 sur Render (mémoire limitée).
+function compressImage(file, maxWidth = 1600, quality = 0.85) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width)
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(img.width  * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const compressed = canvas.toDataURL('image/jpeg', quality)
+        resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 function onFileChange(event, type) {
   const file = event.target.files[0]
   if (!file) return
 
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const base64 = e.target.result
+  compressImage(file).then(compressed => {
     if (type === 'cover') {
-      coverFile.value = {
-        base64,
-        name: file.name,
-        mimeType: file.type
-      }
+      coverFile.value = compressed
     } else {
-      detailFile.value = {
-        base64,
-        name: file.name,
-        mimeType: file.type
-      }
+      detailFile.value = compressed
     }
-  }
-  reader.readAsDataURL(file)
+  })
 }
 
 function removeFile(type) {
@@ -676,42 +689,44 @@ function triggerImageUpload() {
 async function uploadInlineMedia(event) {
   const file = event.target.files[0]
   if (!file) return
-  
+
   uploadingMedia.value = true
   formError.value = ''
   try {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target.result
-      try {
-        const res = await api.post('/api/actualites/upload', {
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type
-        })
-        
-        const fileUrl = res.url
-        const isImage = file.type.startsWith('image/')
-        const mediaType = isImage ? 'image' : 'video'
-        
-        insertAtCursor(mediaType, fileUrl, file.name)
-        
-        // Add to session media if not already present
-        if (!sessionMedias.value.some(m => m.url === fileUrl)) {
-          sessionMedias.value.push({
-            type: mediaType,
-            url: fileUrl,
-            name: file.name
-          })
-        }
-      } catch (uploadErr) {
-        formError.value = "Erreur lors du téléversement du média : " + (uploadErr.message || uploadErr)
-      } finally {
-        uploadingMedia.value = false
-        event.target.value = ''
-      }
+    // Compression avant envoi (évite 502 sur Render)
+    const isImage = file.type.startsWith('image/')
+    let payload
+    if (isImage) {
+      payload = await compressImage(file)
+    } else {
+      // Vidéo : pas de compression, lecture directe
+      payload = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+        reader.readAsDataURL(file)
+      })
     }
-    reader.readAsDataURL(file)
+
+    try {
+      const res = await api.post('/api/actualites/upload', {
+        file: payload.base64,
+        fileName: payload.name,
+        mimeType: payload.mimeType
+      })
+
+      const fileUrl = res.url
+      const mediaType = isImage ? 'image' : 'video'
+      insertAtCursor(mediaType, fileUrl, file.name)
+
+      if (!sessionMedias.value.some(m => m.url === fileUrl)) {
+        sessionMedias.value.push({ type: mediaType, url: fileUrl, name: file.name })
+      }
+    } catch (uploadErr) {
+      formError.value = "Erreur lors du téléversement du média : " + (uploadErr.message || uploadErr)
+    } finally {
+      uploadingMedia.value = false
+      event.target.value = ''
+    }
   } catch (err) {
     formError.value = "Erreur lecture fichier : " + err.message
     uploadingMedia.value = false

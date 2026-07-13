@@ -925,12 +925,18 @@ export function generateBulletinHtml(data) {
       <div class="edito-aside">
         <p class="aside-title">📌 En bref ce mois-ci</p>
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
-          ${editoBref.map(item => `
+          ${editoBref.map(item => {
+            const label = typeof item === 'string' ? item : (item.text || '');
+            const href  = typeof item === 'object' && item.url ? item.url : null;
+            const inner = href
+              ? `<a href="${href}" target="_blank" style="color:#F9B233;text-decoration:underline;font-weight:700;">${label}</a>`
+              : label;
+            return `
           <tr>
-            <td width="16" valign="top" style="color: #F9B233; font-size: 12px; padding-top: 1px;">▸</td>
-            <td valign="top" style="font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5; padding-bottom: 10px;">${item}</td>
-          </tr>
-          `).join('')}
+            <td width="16" valign="top" style="color:#F9B233;font-size:12px;padding-top:2px;">&#9658;</td>
+            <td valign="top" style="font-size:12px;color:rgba(255,255,255,0.9);line-height:1.6;padding-bottom:10px;">${inner}</td>
+          </tr>`;
+          }).join('')}
         </table>
       </div>
       ` : ''}
