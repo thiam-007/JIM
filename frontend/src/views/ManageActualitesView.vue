@@ -529,13 +529,19 @@ function onFileChange(event, type) {
   const file = event.target.files[0]
   if (!file) return
 
-  compressImage(file).then(compressed => {
-    if (type === 'cover') {
-      coverFile.value = compressed
-    } else {
-      detailFile.value = compressed
-    }
-  })
+  formError.value = ''
+  compressImage(file)
+    .then(compressed => {
+      if (type === 'cover') {
+        coverFile.value = compressed
+      } else {
+        detailFile.value = compressed
+      }
+    })
+    .catch(err => {
+      formError.value = `Erreur sur l'image de ${type === 'cover' ? 'couverture' : 'détail'} : ${err.message}`
+      event.target.value = ''
+    })
 }
 
 function removeFile(type) {
@@ -728,15 +734,44 @@ async function uploadInlineMedia(event) {
   const isImage = file.type.startsWith('image/')
 
   try {
-    // ── Étape 1 : préparer le payload (compression ou lecture brute) ──────────
     let payload
+
     if (isImage) {
+      // Vérifier d'abord si le navigateur peut afficher ce format d'image
+      const browserCanDisplay = await new Promise((resolve) => {
+        const testImg = new Image()
+        const objectUrl = URL.createObjectURL(file)
+        const timeout = setTimeout(() => {
+          URL.revokeObjectURL(objectUrl)
+          resolve(false) // timeout = format trop lourd, mais probablement valide
+        }, 5000)
+        testImg.onload = () => {
+          clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
+          resolve(true)
+        }
+        testImg.onerror = () => {
+          clearTimeout(timeout)
+          URL.revokeObjectURL(objectUrl)
+          resolve(false)
+        }
+        testImg.src = objectUrl
+      })
+
+      if (!browserCanDisplay) {
+        throw new Error(
+          `⚠️ Cette image ne peut pas être affichée par les navigateurs web (même si elle s'ouvre sur votre ordinateur). ` +
+          `Cela arrive souvent avec des JPEG en mode couleur CMYK. ` +
+          `Solution : ouvrez-la dans Windows Paint → "Fichier → Enregistrer sous → JPEG", puis réessayez. ` +
+          `Ou convertissez-la en ligne sur squoosh.app`
+        )
+      }
+
       try {
-        // Tentative de compression via canvas
         payload = await compressImage(file)
       } catch (compressErr) {
-        console.warn('[upload] Compression échouée, envoi du fichier brut :', compressErr.message)
-        // Fallback : lire le fichier original sans compression
+        // Compression impossible mais format web-safe → envoi du fichier brut
+        console.warn('[upload] Compression impossible, envoi sans compression :', compressErr.message)
         payload = await new Promise((resolve, reject) => {
           const reader = new FileReader()
           reader.onerror = () => reject(new Error('Impossible de lire le fichier'))
@@ -744,8 +779,9 @@ async function uploadInlineMedia(event) {
           reader.readAsDataURL(file)
         })
       }
+
     } else {
-      // Vidéo : lecture directe sans compression
+      // Vidéo : lecture directe
       payload = await new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.onerror = () => reject(new Error('Impossible de lire le fichier vidéo'))
@@ -754,7 +790,7 @@ async function uploadInlineMedia(event) {
       })
     }
 
-    // ── Étape 2 : envoi au backend ────────────────────────────────────────────
+    // Envoi au backend
     const res = await api.post('/api/actualites/upload', {
       file: payload.base64,
       fileName: payload.name,
@@ -770,9 +806,8 @@ async function uploadInlineMedia(event) {
     }
 
   } catch (err) {
-    formError.value = 'Erreur lors du téléversement : ' + (err.message || err)
+    formError.value = err.message || 'Erreur lors du téléversement'
   } finally {
-    // Toujours libérer le bouton, quoi qu'il arrive
     uploadingMedia.value = false
     event.target.value = ''
   }
