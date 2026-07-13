@@ -211,6 +211,20 @@ function emailShell(bodyContent, options = {}) {
       .header-logo-container { padding-right: 0 !important; margin-bottom: 16px !important; }
       .header-text-container { border-left: none !important; padding-left: 0 !important; }
       .hide-mobile { display: none !important; }
+      
+      /* Force le défilement horizontal fluide par glissement tactile sur mobile */
+      .carousel-scroll {
+        overflow-x: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+        display: block !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+      }
+      .carousel-item {
+        display: inline-block !important;
+        float: none !important;
+        white-space: normal !important;
+      }
     }
 
 
@@ -798,20 +812,22 @@ export function generateBulletinHtml(data) {
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
 
-    // ── Carte pour la grille MSO (Outlook Desktop) ──────────────────────────────
-    // Utilise <v:image> (VML natif Microsoft Office) au lieu de <img>.
-    // VML n'a PAS le bug de cache par dimensions : chaque <v:image> est rendu
-    // indépendamment par le moteur Word, quelle que soit sa taille.
-    // Le namespace xmlns:v est déclaré sur la balise <html> du shell.
-    const msoCardInner = (media) => {
+    // ── Carte de Galerie ──────────────────────────────────────────────────────
+    // Pour contourner le bug d'Outlook Desktop qui met en cache les images par dimensions
+    // exactes, on applique un décalage de 1 à 3 pixels en fonction de l'index de l'image.
+    // L'oeil humain ne verra pas la différence, mais Outlook verra des dimensions uniques (ex: 260x160, 261x160...)
+    // et chargera les bonnes images différentes.
+    const renderGalerieCard = (media, index) => {
+      const w = 260 + (index % 4);
+      const h = 160 + (Math.floor(index / 4) % 4);
+
       const btnHtml = media.type === 'video'
         ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
         : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
+      
       return `
       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
-        <v:image xmlns:v="urn:schemas-microsoft-com:vml"
-          src="${media.url}"
-          style="width:260px;height:160px;display:block;" />
+        <img src="${media.url}" width="${w}" height="${h}" style="width:100%;max-width:${w}px;height:${h}px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="${media.titre || 'Galerie'}" />
       </a>
       <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
       ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
@@ -819,25 +835,13 @@ export function generateBulletinHtml(data) {
     `;
     };
 
-    // ── Carte pour le carousel HTML (Gmail, Apple Mail, Outlook.com, mobile) ───
-    const carouselCardInner = (media) => {
-      const btnHtml = media.type === 'video'
-        ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
-        : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
-      return `
-      <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
-        <img src="${media.url}" width="260" height="160" style="width:100%;max-width:260px;height:160px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="${media.titre || 'Galerie'}" />
-      </a>
-      <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
-      ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
-      <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
-    `;
-    };
-
-    // Fallback Outlook / MSO : grille 2 colonnes en tables fixes, images VML
+    // Fallback Outlook / MSO : grille 2 colonnes en tables fixes, images standard avec offsets
     const rows = [];
     for (let i = 0; i < medias.length; i += 2) {
-      rows.push(medias.slice(i, i + 2));
+      rows.push({
+        left: { media: medias[i], index: i },
+        right: medias[i+1] ? { media: medias[i+1], index: i+1 } : null
+      });
     }
     const msoGrid = `
     <table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;table-layout:fixed;">
@@ -845,14 +849,14 @@ export function generateBulletinHtml(data) {
       <tr>
         <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
-            <tr><td style="padding:12px;text-align:center;">${msoCardInner(row[0])}</td></tr>
+            <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(row.left.media, row.left.index)}</td></tr>
           </table>
         </td>
         <td width="24" style="width:24px;"></td>
         <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
-          ${row[1] ? `
+          ${row.right ? `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
-            <tr><td style="padding:12px;text-align:center;">${msoCardInner(row[1])}</td></tr>
+            <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(row.right.media, row.right.index)}</td></tr>
           </table>` : ''}
         </td>
       </tr>`).join('')}
@@ -862,10 +866,10 @@ export function generateBulletinHtml(data) {
     // Carrousel horizontal : Gmail, Apple Mail, Outlook.com, Yahoo, mobile
     const carousel = `
     <div class="carousel-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;">
-      ${medias.map(media => `
+      ${medias.map((media, idx) => `
       <div class="carousel-item" style="display:inline-block;white-space:normal;vertical-align:top;width:85%;max-width:280px;margin-right:16px;">
         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);border-radius:8px;overflow:hidden;background:#FAF6F1;">
-          <tr><td style="padding:12px;text-align:center;">${carouselCardInner(media)}</td></tr>
+          <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(media, idx)}</td></tr>
         </table>
       </div>`).join('')}
     </div>
@@ -980,8 +984,9 @@ export function generateBulletinHtml(data) {
       <div class="zoom-media-gallery" style="margin-top: 24px;">
         <!--[if mso]>
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;table-layout:fixed;">
-          ${zoomMedia.map((media) => {
-            // VML natif Microsoft Office : pas de bug de cache par dimensions
+          ${zoomMedia.map((media, index) => {
+            const w = 540 + (index % 4);
+            const h = 260 + (Math.floor(index / 4) % 4);
             const btnHtml = media.type === 'video'
               ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#F9B233;color:#382116;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:8px 18px;border-radius:4px;border:1px solid #F9B233;">&#9658; Visionner la Vidéo</a>`
               : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:rgba(255,255,255,0.15);color:#FFFFFF;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:8px 18px;border-radius:4px;border:1px solid rgba(255,255,255,0.25);">Découvrir &#8594;</a>` : '');
@@ -992,9 +997,7 @@ export function generateBulletinHtml(data) {
                   <tr>
                     <td style="padding:12px;text-align:center;">
                       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;">
-                        <v:image xmlns:v="urn:schemas-microsoft-com:vml"
-                          src="${media.url}"
-                          style="width:540px;height:260px;display:block;" />
+                        <img src="${media.url}" width="${w}" height="${h}" style="width:100%;max-width:${w}px;height:${h}px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="Média Zoom" />
                       </a>
                       ${btnHtml ? `<div style="text-align:center;margin-top:12px;">${btnHtml}</div>` : ''}
                     </td>
@@ -1008,13 +1011,16 @@ export function generateBulletinHtml(data) {
         
         <!--[if !mso]><!-->
         <div class="carousel-scroll" style="overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap;">
-          ${zoomMedia.map(media => `
+          ${zoomMedia.map((media, idx) => {
+            const w = 540 + (idx % 4);
+            const h = 260 + (Math.floor(idx / 4) % 4);
+            return `
           <div class="carousel-item" style="display: inline-block; white-space: normal; vertical-align: top; width: 85%; max-width: 540px; margin-right: 16px;">
             <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background: rgba(255,255,255,0.06); border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); overflow: hidden;">
               <tr>
                 <td style="padding: 12px; text-align: center;">
                   <a href="${media.link || media.url}" target="_blank" style="text-decoration: none; display: block;">
-                    <img src="${media.url}" width="540" height="260" style="width: 100%; max-width: 540px; height: 260px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
+                    <img src="${media.url}" width="${w}" height="${h}" style="width: 100%; max-width:${w}px; height:${h}px; object-fit: cover; border-radius: 6px; display: block; margin: 0 auto;" alt="Média Zoom" />
                   </a>
                   ${media.type === 'video' ? `
                   <div style="text-align: center; margin-top: 12px;">
@@ -1029,7 +1035,7 @@ export function generateBulletinHtml(data) {
               </tr>
             </table>
           </div>
-          `).join('')}
+          `;}).join('')}
         </div>
         <!--<![endif]-->
       </div>
