@@ -1088,33 +1088,88 @@ function triggerZoomMediaUpload(index) {
   if (el) el.click()
 }
 
+// ─── Compression d'image côté client (canvas) ──────────────────────────────
+// Redimensionne l'image à max 1600px de large et la compresse en JPEG 85%
+// avant l'envoi au serveur. Évite les crashs 502/413 (Entity Too Large) sur Render.
+function compressImage(file, maxWidth = 1600, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file)
+    const img = new Image()
+
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, maxWidth / img.width)
+        const canvas = document.createElement('canvas')
+        canvas.width  = Math.round(img.width  * scale)
+        canvas.height = Math.round(img.height * scale)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl)
+          reject(new Error('Canvas non disponible dans ce navigateur'))
+          return
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const compressed = canvas.toDataURL('image/jpeg', quality)
+        URL.revokeObjectURL(objectUrl)
+        resolve({ base64: compressed, name: file.name.replace(/\.[^.]+$/, '.jpg'), mimeType: 'image/jpeg' })
+      } catch (canvasErr) {
+        URL.revokeObjectURL(objectUrl)
+        reject(new Error('Erreur lors de la compression : ' + canvasErr.message))
+      }
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Impossible de charger l’image (fichier corrompu ou format non supporté)'))
+    }
+
+    img.src = objectUrl
+  })
+}
+
 async function uploadZoomMediaFile(event, index) {
   const file = event.target.files[0]
   if (!file) return
   
   saving.value = true
   try {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target.result
+    const isImage = file.type.startsWith('image/')
+    let payload
+
+    if (isImage) {
       try {
-        const res = await api.post('/api/actualites/upload', {
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type
+        payload = await compressImage(file)
+      } catch (compressErr) {
+        console.warn('[upload] Compression échouée, envoi brut :', compressErr.message)
+        // Fallback brut
+        payload = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onerror = () => reject(new Error('Impossible de lire le fichier'))
+          reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+          reader.readAsDataURL(file)
         })
-        form.value.bulletin.zoomMedia[index].url = res.url
-      } catch (err) {
-        alert("Erreur upload: " + err.message)
-      } finally {
-        saving.value = false
-        event.target.value = ''
       }
+    } else {
+      // Vidéo ou autre
+      payload = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onerror = () => reject(new Error('Impossible de lire le fichier vidéo'))
+        reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+        reader.readAsDataURL(file)
+      })
     }
-    reader.readAsDataURL(file)
-  } catch (e) {
+
+    const res = await api.post('/api/actualites/upload', {
+      file: payload.base64,
+      fileName: payload.name,
+      mimeType: payload.mimeType
+    })
+    form.value.bulletin.zoomMedia[index].url = res.url
+  } catch (err) {
+    alert("Erreur upload: " + (err.message || err))
+  } finally {
     saving.value = false
-    alert(e.message)
+    event.target.value = ''
   }
 }
 
@@ -1151,27 +1206,42 @@ async function uploadGalerieMediaFile(event, index) {
   
   saving.value = true
   try {
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      const base64 = e.target.result
+    const isImage = file.type.startsWith('image/')
+    let payload
+
+    if (isImage) {
       try {
-        const res = await api.post('/api/actualites/upload', {
-          file: base64,
-          fileName: file.name,
-          mimeType: file.type
+        payload = await compressImage(file)
+      } catch (compressErr) {
+        console.warn('[upload] Compression échouée, envoi brut :', compressErr.message)
+        // Fallback brut
+        payload = await new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onerror = () => reject(new Error('Impossible de lire le fichier'))
+          reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+          reader.readAsDataURL(file)
         })
-        form.value.bulletin.galerie.medias[index].url = res.url
-      } catch (err) {
-        alert("Erreur upload: " + err.message)
-      } finally {
-        saving.value = false
-        event.target.value = ''
       }
+    } else {
+      payload = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onerror = () => reject(new Error('Impossible de lire le fichier vidéo'))
+        reader.onload = (e) => resolve({ base64: e.target.result, name: file.name, mimeType: file.type })
+        reader.readAsDataURL(file)
+      })
     }
-    reader.readAsDataURL(file)
-  } catch (e) {
+
+    const res = await api.post('/api/actualites/upload', {
+      file: payload.base64,
+      fileName: payload.name,
+      mimeType: payload.mimeType
+    })
+    form.value.bulletin.galerie.medias[index].url = res.url
+  } catch (err) {
+    alert("Erreur upload: " + (err.message || err))
+  } finally {
     saving.value = false
-    alert(e.message)
+    event.target.value = ''
   }
 }
 

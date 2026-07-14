@@ -812,30 +812,43 @@ export function generateBulletinHtml(data) {
   if (galerie && galerie.medias && galerie.medias.length > 0) {
     const medias = galerie.medias;
 
-    // ── Carte de Galerie ──────────────────────────────────────────────────────
-    // Pour contourner le bug d'Outlook Desktop qui met en cache les images par dimensions
-    // exactes, on applique un décalage de 1 à 3 pixels en fonction de l'index de l'image.
-    // L'oeil humain ne verra pas la différence, mais Outlook verra des dimensions uniques (ex: 260x160, 261x160...)
-    // et chargera les bonnes images différentes.
-    const renderGalerieCard = (media, index) => {
+    // ── Carte de Galerie pour Outlook (MSO) ───────────────────────────────────
+    // On force des styles de largeur/hauteur fixes absolus (ex: width:260px;height:160px) avec l'offset de 1px
+    // pour empêcher Outlook de recalculer l'image à 100% de la cellule parent (288px), ce qui dupliquerait le cache.
+    const renderMsoGalerieCard = (media, index) => {
       const w = 260 + (index % 4);
       const h = 160 + (Math.floor(index / 4) % 4);
-
       const btnHtml = media.type === 'video'
         ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
         : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
       
       return `
       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
-        <img src="${media.url}" width="${w}" height="${h}" style="width:100%;max-width:${w}px;height:${h}px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="${media.titre || 'Galerie'}" />
+        <img src="${media.url}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:block;margin:0 auto;border-radius:6px;" alt="Galerie" />
       </a>
       <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
       ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
       <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
-    `;
+      `;
     };
 
-    // Fallback Outlook / MSO : grille 2 colonnes en tables fixes, images standard avec offsets
+    // ── Carte de Galerie pour les clients web et mobiles standards ───────────
+    const renderCarouselGalerieCard = (media) => {
+      const btnHtml = media.type === 'video'
+        ? `<a href="${media.link || media.url}" target="_blank" style="display:inline-block;background:#B1222A;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #B1222A;">▶ Visionner</a>`
+        : (media.link ? `<a href="${media.link}" target="_blank" style="display:inline-block;background:#845936;color:#FFFFFF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:6px 16px;border-radius:4px;border:1px solid #845936;">En savoir plus</a>` : '');
+      
+      return `
+      <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
+        <img src="${media.url}" width="260" height="160" style="width:100%;max-width:260px;height:160px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="Galerie" />
+      </a>
+      <h4 style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700;color:#593716;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-size:12px;color:#6A4830;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
+      <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
+      `;
+    };
+
+    // Fallback Outlook / MSO : grille 2 colonnes en tables fixes, images standard avec offsets absolus en pixel
     const rows = [];
     for (let i = 0; i < medias.length; i += 2) {
       rows.push({
@@ -849,14 +862,14 @@ export function generateBulletinHtml(data) {
       <tr>
         <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
-            <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(row.left.media, row.left.index)}</td></tr>
+            <tr><td style="padding:12px;text-align:center;">${renderMsoGalerieCard(row.left.media, row.left.index)}</td></tr>
           </table>
         </td>
         <td width="24" style="width:24px;"></td>
         <td width="288" valign="top" style="padding-bottom:20px;width:288px;">
           ${row.right ? `
           <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);overflow:hidden;background:#FAF6F1;">
-            <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(row.right.media, row.right.index)}</td></tr>
+            <tr><td style="padding:12px;text-align:center;">${renderMsoGalerieCard(row.right.media, row.right.index)}</td></tr>
           </table>` : ''}
         </td>
       </tr>`).join('')}
@@ -866,10 +879,10 @@ export function generateBulletinHtml(data) {
     // Carrousel horizontal : Gmail, Apple Mail, Outlook.com, Yahoo, mobile
     const carousel = `
     <div class="carousel-scroll" style="overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;">
-      ${medias.map((media, idx) => `
+      ${medias.map((media) => `
       <div class="carousel-item" style="display:inline-block;white-space:normal;vertical-align:top;width:85%;max-width:280px;margin-right:16px;">
         <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border:1px solid rgba(132,89,54,0.15);border-radius:8px;overflow:hidden;background:#FAF6F1;">
-          <tr><td style="padding:12px;text-align:center;">${renderGalerieCard(media, idx)}</td></tr>
+          <tr><td style="padding:12px;text-align:center;">${renderCarouselGalerieCard(media)}</td></tr>
         </table>
       </div>`).join('')}
     </div>
@@ -997,7 +1010,8 @@ export function generateBulletinHtml(data) {
                   <tr>
                     <td style="padding:12px;text-align:center;">
                       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;">
-                        <img src="${media.url}" width="${w}" height="${h}" style="width:100%;max-width:${w}px;height:${h}px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="Média Zoom" />
+                        <!-- Largeur fixe en pixel absolu pour forcer Outlook à décharger le cache -->
+                        <img src="${media.url}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:block;margin:0 auto;border-radius:6px;" alt="Média Zoom" />
                       </a>
                       ${btnHtml ? `<div style="text-align:center;margin-top:12px;">${btnHtml}</div>` : ''}
                     </td>

@@ -18,6 +18,7 @@ import newsletterRouter from './routes/newsletter.js'
 import shareRouter from './routes/share.js'
 import revuePresseRouter from './routes/revuePresse.js'
 import heroSlidesRouter from './routes/heroSlides.js'
+import rssRouter from './routes/rss.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
@@ -139,6 +140,9 @@ app.use('/api/hero-slides', heroSlidesRouter)
 
 // Dynamic Open Graph sharing endpoint
 app.use('/api/share', shareRouter)
+
+// RSS feed: public endpoint for RSS campaigns (e.g. Brevo)
+app.use('/api/rss', rssRouter)
 
 // QR code PNG — public so that email clients can embed the image directly.
 // This must be registered BEFORE the auth-protected /api/invitations mount.
