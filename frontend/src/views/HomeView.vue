@@ -2393,33 +2393,32 @@ function formatTimeAgo(dateStr) {
   /* Hero Section Responsive */
   /* Hero Section Responsive */
   .hero-section {
-    padding: 20px;
-    height: 70vh;
-    min-height: 480px;
-    max-height: 580px;
+    padding: 30px 20px;
+    height: 50vh;
+    min-height: 380px;
+    max-height: 460px;
     border-radius: 0;
     margin-left: -20px;
     width: calc(100% + 40px);
     margin-top: -10px;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
   }
   .hero-img {
     object-position: center center;
   }
+  .hero-overlay {
+    background: rgba(18, 21, 38, 0.65) !important; /* Uniform dark tint over entire slide on mobile */
+  }
   .hero-content {
-    background: rgba(18, 21, 38, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    padding: 24px;
-    border-radius: 20px;
+    background: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    display: block;
     width: 100%;
-    box-sizing: border-box;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
   }
   .hero-text-wrapper {
     min-height: auto;
@@ -2435,49 +2434,70 @@ function formatTimeAgo(dateStr) {
   .hero-badge {
     font-size: 0.65rem;
     padding: 4px 10px;
-    transform: none;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    display: inline-block;
   }
   .hero-title {
     font-size: 1.45rem;
     line-height: 1.25;
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     letter-spacing: 0.5px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
   }
   .text-light {
     font-size: 1.1rem;
   }
   .hero-subtitle {
-    font-size: 0.88rem;
+    font-size: 0.86rem;
     margin: 0;
-    line-height: 1.45;
+    line-height: 1.4;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
   }
   .hero-dots {
     position: relative;
-    bottom: auto;
-    left: auto;
-    margin-top: 16px;
+    margin-top: 14px;
     justify-content: flex-start;
   }
   .hero-ctas-bottom {
     position: relative;
-    bottom: auto;
-    right: auto;
-    margin-top: 20px;
+    margin-top: 18px;
     width: 100%;
     flex-direction: row;
     justify-content: stretch;
     align-items: center;
     gap: 12px;
     z-index: 5;
+    bottom: auto;
+    right: auto;
   }
   .hero-ctas-bottom .btn-primary-custom, 
   .hero-ctas-bottom .btn-secondary-custom {
     flex: 1;
     width: auto;
     justify-content: center;
-    padding: 12px 16px;
-    font-size: 0.85rem;
+    padding: 11px 14px;
+    font-size: 0.82rem;
+  }
+
+  @media (max-width: 480px) {
+    .hero-section {
+      height: 52vh;
+      min-height: 420px;
+    }
+    .hero-dots {
+      justify-content: center;
+      margin-top: 16px;
+    }
+    .hero-ctas-bottom {
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .hero-ctas-bottom .btn-primary-custom, 
+    .hero-ctas-bottom .btn-secondary-custom {
+      width: 100%;
+    }
   }
   
   /* Rest of the fixes */
