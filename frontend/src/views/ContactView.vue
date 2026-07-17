@@ -113,7 +113,7 @@
             </div>
             <div class="direct-contact-item mt-2">
               <h4>Partenaires institutionnels</h4>
-              <p class="text-muted">Expertise France, CCFG, Ministère de la Culture, du Tourisme et de l'Artisanat de Guinée.</p>
+              <p class="text-muted">Expertise France, Ambassade de la France en Guinée et en Sierra Leone, CCFG, Ministère de la Culture, du Tourisme et de l'Artisanat de Guinée.</p>
             </div>
           </div>
         </div>

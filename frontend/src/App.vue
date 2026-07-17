@@ -51,6 +51,13 @@
               <div class="header-logo-tag">PATRIMOINE & NUMÉRIQUE</div>
             </div>
           </RouterLink>
+          <div class="theme-switcher">
+            <button @click="changeTheme('indigo')" class="theme-dot theme-dot-indigo" :class="{ active: currentTheme === 'indigo' }" title="Thème Bleu Indigo"></button>
+            <button @click="changeTheme('terracotta')" class="theme-dot theme-dot-terracotta" :class="{ active: currentTheme === 'terracotta' }" title="Thème Terracotta"></button>
+            <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
+            <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
+            <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
+          </div>
           <RouterLink class="header-contact-btn" to="/contact">
             <AppIcon name="mail" :size="16" />
             <span>Contact</span>
@@ -214,7 +221,14 @@
           </div>
         </div>
         <div class="footer-bottom">
-          &copy; {{ new Date().getFullYear() }} Musée Virtuel de Guinée · MVG event's
+          <span>&copy; {{ new Date().getFullYear() }} Musée Virtuel de Guinée · MVG event's</span>
+          <div class="theme-switcher footer-theme-switcher">
+            <button @click="changeTheme('indigo')" class="theme-dot theme-dot-indigo" :class="{ active: currentTheme === 'indigo' }" title="Thème Bleu Indigo"></button>
+            <button @click="changeTheme('terracotta')" class="theme-dot theme-dot-terracotta" :class="{ active: currentTheme === 'terracotta' }" title="Thème Terracotta"></button>
+            <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
+            <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
+            <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
+          </div>
         </div>
       </footer>
       
@@ -383,6 +397,18 @@ function onScroll() {
   isScrolledDown.value = scrollProgress.value > 50
 }
 
+// Theme Switcher Logic
+const currentTheme = ref(localStorage.getItem('mvg_theme') || 'indigo')
+
+function changeTheme(theme) {
+  currentTheme.value = theme
+  localStorage.setItem('mvg_theme', theme)
+  const html = document.documentElement
+  // Remove any classes starting with theme-
+  html.className = html.className.split(' ').filter(c => !c.startsWith('theme-')).join(' ')
+  html.classList.add('theme-' + theme)
+}
+
 function handleScrollBtn() {
   if (isScrolledDown.value) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -392,6 +418,7 @@ function handleScrollBtn() {
 }
 
 onMounted(() => {
+  changeTheme(currentTheme.value)
   if (isAdminDomain.value) {
     window.addEventListener('open-login', openLogin)
   }
@@ -415,27 +442,139 @@ onUnmounted(() => {
   --brand-forest: #3e502a;
   --brand-red: #da373d;
 
-  /* Semantic mapping for design tokens */
-  --or: var(--brand-terracotta);
-  --rouge: var(--brand-red);
+  /* Default theme (Indigo) variables */
   --brun: var(--brand-indigo);
+  --or: var(--brand-terracotta);
   --terre: var(--brand-terracotta);
+  --rouge: var(--brand-red);
   --gold: #f9b233;
   --blanc: #FFFFFF;
-  --noir: #121526; /* Deep navy-black */
-  --creme: #f4f7f5; /* Soft sage-cream */
+  --noir: #121526;
+  --creme: #f4f7f5;
   --surface: rgba(255,255,255,.88);
-  --shadow: 0 12px 40px rgba(40, 51, 111, .15); /* Tinted with indigo */
+  --shadow: 0 12px 40px rgba(40, 51, 111, .15);
   --radius: 20px;
   --trans: all .28s cubic-bezier(.4, 0, .2, 1);
+
+  /* Background gradients variables */
+  --body-radial-tint: rgba(40, 51, 111, .06);
+  --body-bg-1: #fbfdfc;
+  --body-bg-2: #f0f4f2;
+  --body-bg-3: #e2e8e5;
+
+  --header-grad-1: rgba(40, 51, 111, 0.97);
+  --header-grad-2: rgba(31, 40, 88, 0.95);
+  --header-grad-3: rgba(18, 23, 50, 1);
+
+  --footer-grad-1: rgba(40, 51, 111, 0.97);
+  --footer-grad-2: rgba(31, 40, 88, 0.95);
+  --footer-grad-3: rgba(18, 23, 50, 1);
 }
+
+/* Theme 2: Terracotta */
+html.theme-terracotta {
+  --brun: var(--brand-terracotta);
+  --or: var(--brand-indigo);
+  --terre: var(--brand-indigo);
+  --creme: #fbf5f2;
+  --noir: #25130c;
+  --shadow: 0 12px 40px rgba(180, 83, 50, .15);
+  
+  --body-radial-tint: rgba(180, 83, 50, .06);
+  --body-bg-1: #fdfaf8;
+  --body-bg-2: #f5ece8;
+  --body-bg-3: #ebdcd5;
+
+  --header-grad-1: rgba(180, 83, 50, 0.97);
+  --header-grad-2: rgba(150, 63, 35, 0.95);
+  --header-grad-3: rgba(70, 25, 12, 1);
+
+  --footer-grad-1: rgba(180, 83, 50, 0.97);
+  --footer-grad-2: rgba(150, 63, 35, 0.95);
+  --footer-grad-3: rgba(70, 25, 12, 1);
+}
+
+/* Theme 3: Forest Green */
+html.theme-forest {
+  --brun: var(--brand-forest);
+  --or: var(--brand-terracotta);
+  --terre: var(--brand-terracotta);
+  --creme: #f5f7f3;
+  --noir: #12190d;
+  --shadow: 0 12px 40px rgba(62, 80, 42, .15);
+
+  --body-radial-tint: rgba(62, 80, 42, .06);
+  --body-bg-1: #fafbfa;
+  --body-bg-2: #edf0ea;
+  --body-bg-3: #dee3da;
+
+  --header-grad-1: rgba(62, 80, 42, 0.97);
+  --header-grad-2: rgba(48, 64, 32, 0.95);
+  --header-grad-3: rgba(22, 30, 15, 1);
+
+  --footer-grad-1: rgba(62, 80, 42, 0.97);
+  --footer-grad-2: rgba(48, 64, 32, 0.95);
+  --footer-grad-3: rgba(22, 30, 15, 1);
+}
+
+/* Theme 4: Sage Green */
+html.theme-sage {
+  --brun: #4a5d54;
+  --or: var(--brand-terracotta);
+  --terre: var(--brand-terracotta);
+  --creme: #f3f6f5;
+  --noir: #111614;
+  --shadow: 0 12px 40px rgba(74, 93, 84, .15);
+
+  --body-radial-tint: rgba(74, 93, 84, .06);
+  --body-bg-1: #fafbfa;
+  --body-bg-2: #ebf0ee;
+  --body-bg-3: #dde5e2;
+
+  --header-grad-1: rgba(74, 93, 84, 0.97);
+  --header-grad-2: rgba(58, 74, 66, 0.95);
+  --header-grad-3: rgba(25, 32, 28, 1);
+
+  --footer-grad-1: rgba(74, 93, 84, 0.97);
+  --footer-grad-2: rgba(58, 74, 66, 0.95);
+  --footer-grad-3: rgba(25, 32, 28, 1);
+}
+
+/* Theme 5: Rouge Vif */
+html.theme-red {
+  --brun: var(--brand-red);
+  --or: var(--brand-indigo);
+  --terre: var(--brand-indigo);
+  --creme: #fcf2f3;
+  --noir: #260f10;
+  --shadow: 0 12px 40px rgba(218, 55, 61, .15);
+
+  --body-radial-tint: rgba(218, 55, 61, .06);
+  --body-bg-1: #fdf8f8;
+  --body-bg-2: #f6e6e6;
+  --body-bg-3: #ebd5d6;
+
+  --header-grad-1: rgba(218, 55, 61, 0.97);
+  --header-grad-2: rgba(180, 40, 45, 0.95);
+  --header-grad-3: rgba(80, 15, 18, 1);
+
+  --footer-grad-1: rgba(218, 55, 61, 0.97);
+  --footer-grad-2: rgba(180, 40, 45, 0.95);
+  --footer-grad-3: rgba(80, 15, 18, 1);
+}
+
+/* Smooth theme transitions */
+html, body, header, .main-footer, .header-logo-tag, .header-contact-btn, .sidebar-link, a, button, .card, .view-container {
+  transition: background 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body { min-height: 100%; }
 body {
   margin: 0;
   font-family: 'Alexandria', Tahoma, Arial, Verdana, sans-serif;
-  background: radial-gradient(circle at top left, rgba(40, 51, 111, .06), transparent 28%),
-              linear-gradient(180deg, #fbfdfc 0%, #f0f4f2 60%, #e2e8e5 100%);
+  background: radial-gradient(circle at top left, var(--body-radial-tint), transparent 28%),
+              linear-gradient(180deg, var(--body-bg-1) 0%, var(--body-bg-2) 60%, var(--body-bg-3) 100%);
   color: var(--noir);
 }
 html { scroll-behavior: smooth; }
@@ -447,7 +586,7 @@ button, input, textarea, select { font: inherit; }
 /* ─── Header ─── */
 header {
   background:
-    linear-gradient(135deg, rgba(40, 51, 111, 0.97) 0%, rgba(31, 40, 88, 0.95) 50%, rgba(18, 23, 50, 1) 100%),
+    linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 50%, var(--header-grad-3) 100%),
     url('/images/motif-removebg-preview.png') center/auto 120% repeat;
   color: var(--blanc);
   padding: 24px 30px;
@@ -528,6 +667,47 @@ header:hover .header-logo-tag {
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
+/* Theme Switcher Toolbar */
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 6px 10px;
+  border-radius: 99px;
+  margin-right: 18px;
+  backdrop-filter: blur(8px);
+  transition: var(--trans);
+}
+.theme-switcher:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.theme-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: var(--trans);
+  outline: none;
+}
+.theme-dot:hover {
+  transform: scale(1.25);
+}
+.theme-dot.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  transform: scale(1.15);
+}
+.theme-dot-indigo { background: #28336f; }
+.theme-dot-terracotta { background: #b45332; }
+.theme-dot-forest { background: #3e502a; }
+.theme-dot-sage { background: #bdcec8; }
+.theme-dot-red { background: #da373d; }
+
 .header-contact-btn {
   display: flex;
   align-items: center;
@@ -1356,7 +1536,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 /* ─── Footer ─── */
 .main-footer {
   background:
-    linear-gradient(135deg, rgba(40, 51, 111, 0.97) 0%, rgba(31, 40, 88, 0.95) 50%, rgba(18, 23, 50, 1) 100%),
+    linear-gradient(135deg, var(--footer-grad-1) 0%, var(--footer-grad-2) 50%, var(--footer-grad-3) 100%),
     url('/images/motif-removebg-preview.png') center/auto 120% repeat;
   border-top: 2px solid var(--or);
   padding: 40px 20px 20px;
@@ -1464,12 +1644,29 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 
 /* Footer Bottom */
 .footer-bottom {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
   padding-top: 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   font-size: 0.8rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.6);
+}
+@media (max-width: 600px) {
+  .footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+  }
+}
+.footer-theme-switcher {
+  margin-right: 0;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
 }
 
 /* ─── Scroll Top Button ─── */
