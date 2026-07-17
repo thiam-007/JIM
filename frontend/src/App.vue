@@ -411,19 +411,27 @@ onUnmounted(() => {
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Anton&family=Cinzel:wght@600;800&family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap');
 
 :root {
-  --or: #845936;
-  --rouge: #B1222A;
-  --brun: #593716;
-  --terre: #8C3B2A;
-  --gold: #F9B233;
+  /* Brand Graphic Charter Colors */
+  --brand-terracotta: #b45332;
+  --brand-indigo: #28336f;
+  --brand-sage: #bdcec8;
+  --brand-forest: #3e502a;
+  --brand-red: #da373d;
+
+  /* Semantic mapping for design tokens */
+  --or: var(--brand-terracotta);
+  --rouge: var(--brand-red);
+  --brun: var(--brand-indigo);
+  --terre: var(--brand-terracotta);
+  --gold: #f9b233;
   --blanc: #FFFFFF;
-  --noir: #1a1008;
-  --creme: #fdf6ed;
+  --noir: #121526; /* Deep navy-black */
+  --creme: #f4f7f5; /* Soft sage-cream */
   --surface: rgba(255,255,255,.88);
-  --shadow: 0 12px 40px rgba(89, 55, 22, .15);
+  --shadow: 0 12px 40px rgba(40, 51, 111, .15); /* Tinted with indigo */
   --radius: 20px;
   --trans: all .28s cubic-bezier(.4, 0, .2, 1);
 }
@@ -431,13 +439,13 @@ onUnmounted(() => {
 html, body { min-height: 100%; }
 body {
   margin: 0;
-  font-family: Tahoma, Arial, Verdana, sans-serif;
-  background: radial-gradient(circle at top left, rgba(249, 178, 51, .08), transparent 28%),
-              linear-gradient(180deg, #fef9f2 0%, #f7e8d8 60%, #e8ddd0 100%);
+  font-family: 'Alexandria', Tahoma, Arial, Verdana, sans-serif;
+  background: radial-gradient(circle at top left, rgba(40, 51, 111, .06), transparent 28%),
+              linear-gradient(180deg, #fbfdfc 0%, #f0f4f2 60%, #e2e8e5 100%);
   color: var(--noir);
 }
 html { scroll-behavior: smooth; }
-::selection { background: rgba(249, 178, 51, .35); color: var(--noir); }
+::selection { background: rgba(180, 83, 50, 0.25); color: var(--noir); }
 button, input, textarea, select { font: inherit; }
 .app-wrapper { display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 .app-shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 28px; width: 100%; flex: 1; }
@@ -445,7 +453,7 @@ button, input, textarea, select { font: inherit; }
 /* ─── Header ─── */
 header {
   background:
-    linear-gradient(135deg, rgba(46, 26, 11, 0.96) 0%, rgba(77, 43, 19, 0.94) 50%, rgba(20, 12, 6, 1) 100%),
+    linear-gradient(135deg, rgba(40, 51, 111, 0.97) 0%, rgba(31, 40, 88, 0.95) 50%, rgba(18, 23, 50, 1) 100%),
     url('/images/motif-removebg-preview.png') center/auto 120% repeat;
   color: var(--blanc);
   padding: 24px 30px;
@@ -453,7 +461,7 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 2px solid var(--gold);
+  border-bottom: 2px solid var(--or);
   animation: fadeInDown 0.5s ease-out;
   overflow: hidden;
   width: 100%;
@@ -517,7 +525,7 @@ header:hover .logo-badge img {
   display: flex; align-items: baseline; gap: 12px;
 }
 .logo-pre {
-  font-family: 'Cinzel', serif;
+  font-family: 'Alexandria', sans-serif;
   font-size: 2.1rem; font-weight: 800; color: var(--gold);
   letter-spacing: 4px;
   text-shadow: 0 2px 4px rgba(0,0,0,0.4);
@@ -528,7 +536,7 @@ header:hover .logo-pre {
   text-shadow: 0 0 15px rgba(249, 178, 51, 0.65);
 }
 .logo-title-wrap h1 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Alexandria', sans-serif;
   font-size: 2.1rem; font-weight: 300;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -543,7 +551,7 @@ header:hover .logo-title-wrap h1 {
   font-weight: 400;
 }
 .logo-text span {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Alexandria', sans-serif;
   font-size: 0.9rem;
   font-weight: 400;
   color: rgba(255,255,255,.75);
@@ -718,7 +726,7 @@ header:hover .logo-text span {
   justify-content: center;
 }
 .sidebar-title-text {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Alexandria', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--brun);
