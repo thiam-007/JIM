@@ -45,16 +45,15 @@
       <header>
         <div class="header-inner">
           <RouterLink class="header-branding" to="/">
-            <div class="logo-badge">
-              <img src="/images/logo.jpeg" alt="MVG" />
+            <div class="header-logo-wrap">
+              <img src="/images/logo-white.png" alt="Musée Virtuel de Guinée" class="header-logo-img" />
+              <div class="header-logo-divider"></div>
+              <div class="header-logo-tag">PATRIMOINE & NUMÉRIQUE</div>
             </div>
-            <div class="logo-text">
-              <div class="logo-title-wrap">
-                <span class="logo-pre">MVG</span>
-                <h1>event's</h1>
-              </div>
-              <span>Explorer, préserver et transmettre le patrimoine à l'ère du numérique</span>
-            </div>
+          </RouterLink>
+          <RouterLink class="header-contact-btn" to="/contact">
+            <AppIcon name="mail" :size="16" />
+            <span>Contact</span>
           </RouterLink>
         </div>
       </header>
@@ -179,17 +178,11 @@
         <div class="footer-container">
           <!-- À gauche : Logo -->
           <div class="footer-col footer-logo">
-            <RouterLink class="header-branding" to="/" style="align-items: flex-start;">
-              <div class="logo-badge" style="width: 80px; height: 80px; align-self: center;">
-                <img src="/images/logo.jpeg" alt="MVG" style="width: 68px; height: 68px;" />
-              </div>
-              <div class="logo-text">
-                <div class="logo-title-wrap">
-                  <span class="logo-pre" style="font-size: 1.6rem;">MVG</span>
-                  <h1 style="font-size: 1.6rem;">event's</h1>
-                </div>
-                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; color: rgba(255,255,255,0.7); display: block; margin-top: 6px; line-height: 1.4;">Explorer, préserver et transmettre le patrimoine à l'ère du numérique</span>
-              </div>
+            <RouterLink class="header-branding" to="/" style="align-items: flex-start; flex-direction: column; gap: 4px;">
+              <img src="/images/logo-white.png" alt="Musée Virtuel de Guinée" class="footer-logo-img" />
+              <span style="font-size: 0.8rem; line-height: 1.5; color: rgba(255, 255, 255, 0.7); max-width: 380px; display: block; text-align: left;">
+                Explorer, préserver et transmettre le patrimoine culturel guinéen.
+              </span>
             </RouterLink>
           </div>
 
@@ -200,6 +193,7 @@
               <li><RouterLink to="/">Accueil</RouterLink></li>
               <li><RouterLink to="/a-propos">À propos</RouterLink></li>
               <li><RouterLink to="/evenements">Événements</RouterLink></li>
+              <li><RouterLink to="/contact">Contact</RouterLink></li>
             </ul>
           </div>
 
@@ -493,77 +487,82 @@ header::after {
   0%   { left: -60%; }
   60%, 100% { left: 120%; }
 }
-.logo-badge {
-  width: 120px; height: 120px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  border: 2.5px solid rgba(249, 178, 51, 0.25);
-  border-radius: 50%;
-  padding: 4px;
-  background: rgba(0, 0, 0, 0.2);
-  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-  animation: float 3s ease-in-out infinite;
+.header-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
-header:hover .logo-badge {
-  transform: scale(1.05) rotate(4deg);
-  border-color: var(--gold);
-  box-shadow: 0 0 25px rgba(249, 178, 51, 0.35);
+.header-logo-img {
+  height: 96px;
+  width: auto;
+  object-fit: contain;
+  transition: transform 0.4s ease, filter 0.4s ease;
 }
-.logo-badge img {
-  width: 106px; height: 106px;
-  object-fit: cover;
-  border-radius: 50%;
-  display: block;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,.25));
-  transition: all 0.5s ease;
+header:hover .header-logo-img {
+  transform: scale(1.03);
+  filter: drop-shadow(0 0 15px rgba(180, 83, 50, 0.35));
 }
-header:hover .logo-badge img {
-  filter: drop-shadow(0 4px 12px rgba(249, 178, 51, 0.25));
+.header-logo-divider {
+  width: 1px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.25);
 }
-.logo-text { flex: 1; }
-.logo-title-wrap {
-  display: flex; align-items: baseline; gap: 12px;
-}
-.logo-pre {
+.header-logo-tag {
   font-family: 'Alexandria', sans-serif;
-  font-size: 2.1rem; font-weight: 800; color: var(--gold);
-  letter-spacing: 4px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-header:hover .logo-pre {
-  color: #ffffff;
-  text-shadow: 0 0 15px rgba(249, 178, 51, 0.65);
-}
-.logo-title-wrap h1 {
-  font-family: 'Alexandria', sans-serif;
-  font-size: 2.1rem; font-weight: 300;
+  font-size: 1.15rem;
+  font-weight: 300;
   letter-spacing: 5px;
+  color: var(--or);
   text-transform: uppercase;
-  line-height: 1.15;
-  margin: 0;
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.4s ease;
 }
-header:hover .logo-title-wrap h1 {
+header:hover .header-logo-tag {
+  color: #ffffff;
   letter-spacing: 7px;
-  font-weight: 400;
+  text-shadow: 0 0 15px rgba(180, 83, 50, 0.5);
 }
-.logo-text span {
+
+.footer-logo-img {
+  height: 88px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
+}
+.header-contact-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: #ffffff;
   font-family: 'Alexandria', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 400;
-  color: rgba(255,255,255,.75);
-  letter-spacing: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
   text-transform: uppercase;
-  display: block;
-  margin-top: 6px;
-  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  flex-shrink: 0;
 }
-header:hover .logo-text span {
-  color: var(--gold);
-  letter-spacing: 5px;
+.header-contact-btn:hover {
+  background: var(--brand-terracotta);
+  border-color: var(--brand-terracotta);
+  box-shadow: 0 6px 20px rgba(180, 83, 50, 0.45);
+  transform: translateY(-2px);
+}
+.header-contact-btn:active {
+  transform: translateY(0);
+}
+@media (max-width: 768px) {
+  .header-contact-btn {
+    padding: 10px;
+  }
+  .header-contact-btn span {
+    display: none;
+  }
 }
 .jim-badge {
   background: rgba(255,255,255,.18); color: var(--blanc);
@@ -1544,31 +1543,18 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     gap: 12px;
     text-align: left;
   }
-  header .logo-badge {
-    width: 55px; height: 55px;
-    border-width: 1.5px;
+  header .header-logo-wrap {
+    gap: 12px;
   }
-  header .logo-badge img {
-    width: 48px; height: 48px;
+  header .header-logo-img {
+    height: 64px;
   }
-  header .logo-pre {
-    font-size: 1.15rem;
-    letter-spacing: 1px;
+  header .header-logo-divider {
+    height: 32px;
   }
-  header .logo-title-wrap h1 {
-    font-size: 1.15rem;
-    letter-spacing: 1px;
-  }
-  header .logo-title-wrap {
-    justify-content: flex-start;
-    gap: 6px;
-  }
-  header .logo-text span {
-    font-size: 0.65rem;
-    letter-spacing: 1px;
-    margin-top: 2px;
-    display: block;
-    line-height: 1.3;
+  header .header-logo-tag {
+    font-size: 0.85rem;
+    letter-spacing: 2px;
   }
 
   /* Footer Responsive */
@@ -1591,30 +1577,13 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     text-align: left;
   }
   .footer-logo .header-branding {
-    flex-direction: row;
+    flex-direction: column;
     text-align: left;
     justify-content: flex-start;
-    align-items: center;
+    align-items: flex-start;
   }
-  /* Ajustement de la taille du logo dans le footer pour mobile */
-  .footer-logo .logo-badge {
-    width: 65px; height: 65px;
-    border-width: 1.5px;
-  }
-  .footer-logo .logo-badge img {
-    width: 58px; height: 58px;
-  }
-  .footer-logo .logo-pre {
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-  }
-  .footer-logo .logo-title-wrap h1 {
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-  }
-  .footer-logo .logo-text span {
-    font-size: 0.7rem;
-    letter-spacing: 1px;
+  .footer-logo-img {
+    height: 64px;
   }
 }
 

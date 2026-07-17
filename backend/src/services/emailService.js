@@ -9,16 +9,21 @@ const transporter = nodemailer.createTransport({
 })
 
 function getFromAddress() {
-  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée" <${process.env.EMAIL_USER}>` : 'Musée Virtuel de Guinée <musee@expertisefrance.fr>'
+  return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée (musee@expertisefrance.fr)" <${process.env.EMAIL_USER}>` : '"Musée Virtuel de Guinée" <musee@expertisefrance.fr>'
 }
 
 const originalSendMail = transporter.sendMail.bind(transporter)
 transporter.sendMail = async (mailOptions) => {
+  // Enforce replies redirecting to musee@expertisefrance.fr
+  if (!mailOptions.replyTo) {
+    mailOptions.replyTo = 'musee@expertisefrance.fr'
+  }
+
   if (process.env.BREVO_API_KEY) {
     try {
       const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'musee@expertisefrance.fr'
       const payload = {
-        sender: { name: "Musée Virtuel de Guinée", email: senderEmail },
+        sender: { name: "Musée Virtuel de Guinée (musee@expertisefrance.fr)", email: senderEmail },
         to: [{ email: mailOptions.to }],
         subject: mailOptions.subject,
         htmlContent: mailOptions.html
@@ -255,8 +260,8 @@ function emailShell(bodyContent, options = {}) {
         <td style="padding: 36px 40px 32px;" class="mobile-padding">
           <table width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td width="90" valign="top" align="center" style="width:90px;" class="mobile-stack header-logo-container">
-                <img src="${frontendUrl}/images/logo.jpeg" alt="Musée Virtuel de Guinée" width="90" height="90" style="width: 90px; height: 90px; object-fit: cover; border-radius: 50%; border: 2px solid #b45332; display: block; margin: 0 auto;" />
+              <td width="120" valign="middle" align="center" style="width:120px;" class="mobile-stack header-logo-container">
+                <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png" alt="Musée Virtuel de Guinée" width="120" style="width: 120px; max-width: 100%; height: auto; display: block; margin: 0 auto;" />
               </td>
               <td width="24" style="width: 24px;" class="hide-mobile"></td>
               <td valign="middle" style="border-left: 3px solid #b45332; padding-left: 24px;" class="mobile-stack header-text-container mobile-center">
@@ -278,10 +283,10 @@ function emailShell(bodyContent, options = {}) {
   <!-- FOOTER -->
   <div class="footer mobile-padding">
     <div class="footer-inner">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid rgba(180,83,50,0.2); padding-bottom: 20px; margin-bottom: 18px;">
+       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid rgba(180,83,50,0.2); padding-bottom: 20px; margin-bottom: 18px;">
         <tr>
           <td valign="top" align="center" style="padding-bottom: 16px;">
-            <img src="${frontendUrl}/images/logo.jpeg" alt="MVG" width="70" height="70" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid #b45332; display: block; margin: 0 auto; object-fit: cover;">
+            <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png" alt="MVG" width="100" style="width: 100px; display: block; margin: 0 auto; height: auto;">
             <p style="margin: 12px auto 0; font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.5; max-width: 240px; text-align: center;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
           </td>
         </tr>
@@ -1010,7 +1015,6 @@ export function generateBulletinHtml(data) {
                   <tr>
                     <td style="padding:12px;text-align:center;">
                       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;">
-                        <!-- Largeur fixe en pixel absolu pour forcer Outlook à décharger le cache -->
                         <img src="${media.url}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:block;margin:0 auto;border-radius:6px;" alt="Média Zoom" />
                       </a>
                       ${btnHtml ? `<div style="text-align:center;margin-top:12px;">${btnHtml}</div>` : ''}
