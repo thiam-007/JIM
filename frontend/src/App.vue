@@ -57,6 +57,7 @@
             <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
             <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
             <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
+            <button @click="changeTheme('secondary')" class="theme-dot theme-dot-secondary" :class="{ active: currentTheme === 'secondary' }" title="Palette Secondaire (Marron, Ocre, Olive)"></button>
           </div>
           <RouterLink class="header-contact-btn" to="/contact">
             <AppIcon name="mail" :size="16" />
@@ -228,6 +229,7 @@
             <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
             <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
             <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
+            <button @click="changeTheme('secondary')" class="theme-dot theme-dot-secondary" :class="{ active: currentTheme === 'secondary' }" title="Palette Secondaire (Marron, Ocre, Olive)"></button>
           </div>
         </div>
       </footer>
@@ -563,6 +565,29 @@ html.theme-red {
   --footer-grad-3: rgba(80, 15, 18, 1);
 }
 
+/* Theme 6: Palette Secondaire Recommandée */
+html.theme-secondary {
+  --brun: #57362A; /* Marron Chocolat */
+  --or: #C46529; /* Orange Ocre */
+  --terre: #C46529; /* Orange Ocre */
+  --creme: #fcf9f7; /* Very light warm cream */
+  --noir: #261611; /* Very dark chocolate */
+  --shadow: 0 12px 40px rgba(87, 54, 42, .15);
+
+  --body-radial-tint: rgba(196, 101, 41, .06);
+  --body-bg-1: #fdfbfb;
+  --body-bg-2: #f4eee9;
+  --body-bg-3: #eae0d8;
+
+  --header-grad-1: rgba(87, 54, 42, 0.98);
+  --header-grad-2: rgba(108, 101, 45, 0.95); /* Vert Olive Clair gradient */
+  --header-grad-3: rgba(38, 22, 17, 1);
+
+  --footer-grad-1: rgba(87, 54, 42, 0.98);
+  --footer-grad-2: rgba(108, 101, 45, 0.95);
+  --footer-grad-3: rgba(38, 22, 17, 1);
+}
+
 /* Smooth theme transitions */
 html, body, header, .main-footer, .header-logo-tag, .header-contact-btn, .sidebar-link, a, button, .card, .view-container {
   transition: background 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
@@ -707,6 +732,7 @@ header:hover .header-logo-tag {
 .theme-dot-forest { background: #3e502a; }
 .theme-dot-sage { background: #bdcec8; }
 .theme-dot-red { background: #da373d; }
+.theme-dot-secondary { background: linear-gradient(135deg, #57362A 0%, #C46529 50%, #6C652D 100%); }
 
 .header-contact-btn {
   display: flex;
