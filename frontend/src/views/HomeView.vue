@@ -2391,43 +2391,93 @@ function formatTimeAgo(dateStr) {
 /* Responsive fixes for new elements */
 @media (max-width: 768px) {
   /* Hero Section Responsive */
+  /* Hero Section Responsive */
   .hero-section {
-    padding: 30px 20px;
-    height: 45vh;
-    min-height: 280px;
-    max-height: 400px;
+    padding: 20px;
+    height: 70vh;
+    min-height: 480px;
+    max-height: 580px;
     border-radius: 0;
     margin-left: -20px;
     width: calc(100% + 40px);
     margin-top: -10px;
+    display: flex;
+    align-items: center;
   }
   .hero-img {
-    object-position: center 25%;
+    object-position: center center;
+  }
+  .hero-content {
+    background: rgba(18, 21, 38, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 24px;
+    border-radius: 20px;
+    width: 100%;
+    box-sizing: border-box;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hero-text-wrapper {
+    min-height: auto;
+    position: relative;
+    width: 100%;
+  }
+  .hero-copy-shell {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    padding-bottom: 0;
   }
   .hero-badge {
     font-size: 0.65rem;
     padding: 4px 10px;
-    transform: translateY(-5px);
-    margin-bottom: 8px;
+    transform: none;
+    margin-bottom: 12px;
   }
   .hero-title {
-    font-size: 1.4rem;
+    font-size: 1.45rem;
+    line-height: 1.25;
+    margin: 0 0 10px 0;
     letter-spacing: 0.5px;
   }
   .text-light {
     font-size: 1.1rem;
   }
   .hero-subtitle {
-    font-size: 0.9rem;
+    font-size: 0.88rem;
+    margin: 0;
+    line-height: 1.45;
+  }
+  .hero-dots {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    margin-top: 16px;
+    justify-content: flex-start;
   }
   .hero-ctas-bottom {
-    right: 20px;
-    bottom: 20px;
-    flex-direction: column;
-    gap: 8px;
+    position: relative;
+    bottom: auto;
+    right: auto;
+    margin-top: 20px;
+    width: 100%;
+    flex-direction: row;
+    justify-content: stretch;
+    align-items: center;
+    gap: 12px;
+    z-index: 5;
   }
-  .hero-copy-shell {
-    padding-bottom: 20px;
+  .hero-ctas-bottom .btn-primary-custom, 
+  .hero-ctas-bottom .btn-secondary-custom {
+    flex: 1;
+    width: auto;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 0.85rem;
   }
   
   /* Rest of the fixes */
@@ -2456,16 +2506,6 @@ function formatTimeAgo(dateStr) {
   }
   .hero-ctas {
     justify-content: flex-start;
-  }
-  .btn-primary-custom, .btn-secondary-custom {
-    width: max-content;
-    padding: 10px 20px;
-    font-size: 0.85rem;
-    justify-content: center;
-    align-self: flex-start;
-  }
-  .hero-ctas-bottom {
-    align-items: flex-end;
   }
   
   /* Newsletter Mobile Fix */

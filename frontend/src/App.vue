@@ -1730,7 +1730,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     padding: 16px 20px;
   }
   header .header-inner {
-    flex-direction: row; /* garder en ligne si possible, sinon colonne mais aligné à gauche */
+    flex-direction: row;
     text-align: left;
     gap: 12px;
   }
@@ -1781,6 +1781,22 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   }
   .footer-logo-img {
     height: 64px;
+  }
+}
+
+@media (max-width: 600px) {
+  header .header-logo-divider,
+  header .header-logo-tag {
+    display: none !important;
+  }
+  .theme-switcher {
+    gap: 6px;
+    padding: 4px 6px;
+    margin-right: 6px;
+  }
+  .theme-dot {
+    width: 12px;
+    height: 12px;
   }
 }
 
