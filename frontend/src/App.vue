@@ -1357,9 +1357,9 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 /* ─── Footer ─── */
 .main-footer {
   background:
-    linear-gradient(135deg, rgba(46, 26, 11, 0.96) 0%, rgba(77, 43, 19, 0.94) 50%, rgba(20, 12, 6, 1) 100%),
+    linear-gradient(135deg, rgba(40, 51, 111, 0.97) 0%, rgba(31, 40, 88, 0.95) 50%, rgba(18, 23, 50, 1) 100%),
     url('/images/motif-removebg-preview.png') center/auto 120% repeat;
-  border-top: 2px solid var(--gold);
+  border-top: 2px solid var(--or);
   padding: 40px 20px 20px;
   margin-top: 40px;
   color: var(--blanc);
@@ -1384,7 +1384,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
   font-weight: 800;
   text-transform: uppercase;
   margin-bottom: 16px;
-  color: var(--gold);
+  color: var(--or);
 }
 
 /* Logo Column */
@@ -1429,7 +1429,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 
 .footer-links a:hover,
 .footer-links a.router-link-active {
-  color: var(--gold);
+  color: var(--or);
   padding-left: 5px;
 }
 
@@ -1457,10 +1457,10 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 }
 
 .social-icon:hover {
-  background: var(--gold);
+  background: var(--or);
   color: var(--brun);
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(249, 178, 51, 0.3);
+  box-shadow: 0 6px 15px rgba(180, 83, 50, 0.3);
 }
 
 /* Footer Bottom */
