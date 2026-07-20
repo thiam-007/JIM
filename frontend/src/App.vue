@@ -167,14 +167,12 @@
       <div class="partners-marquee-section">
         <div class="marquee-content">
           <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-          <img src="/images/partenaires/ccfg.png" alt="CCFG" />
           <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
           <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
           <img src="/images/partenaires/meae.png" alt="MEAE" />
           <img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" />
           <!-- Duplicate for loop -->
           <img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" />
-          <img src="/images/partenaires/ccfg.png" alt="CCFG" />
           <img src="/images/partenaires/expertise-france.png" alt="Expertise France" />
           <img src="/images/partenaires/mcta.jpg" alt="MCTA" />
           <img src="/images/partenaires/meae.png" alt="MEAE" />
