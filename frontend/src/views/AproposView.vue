@@ -160,20 +160,20 @@
       </div>
     </section>
 
-    <!-- ─── Le Mot de la Cheffe de Projet (Vidéo) ─── -->
+    <!-- ─── Le Projet en Vidéo ─── -->
     <section class="ap-video-section" v-reveal="280">
       <div class="video-card form-card">
         <div class="video-grid">
           <div class="video-info-side">
             <div class="fh fh-a" style="margin-bottom: 16px;">
               <div class="fh-icon"><AppIcon name="play-circle" :size="24" /></div>
-              <div class="fh-title">Le Mot de la Cheffe de Projet</div>
+              <div class="fh-title">Le Projet en Vidéo</div>
             </div>
             <p class="vision-lead" style="margin-bottom: 16px;">
-              Découvrez la vision derrière le Musée Virtuel de Guinée à travers les mots de notre Cheffe de Projet, <strong>Ida El-Majdoubi Yassir</strong>.
+              Découvrez le projet du Musée Virtuel de Guinée en images.
             </p>
             <p class="vision-text">
-              Dans cette courte intervention, elle revient sur les origines du projet, les défis rencontrés sur le terrain et l'importance de la numérisation pour la préservation du patrimoine guinéen pour les générations futures.
+              À travers cette vidéo, explorez les coulisses des chantiers de collections, les actions de numérisation 3D et le travail de valorisation culturelle mené sur le terrain pour préserver et diffuser le patrimoine guinéen.
             </p>
           </div>
           <div class="video-player-side">
@@ -181,64 +181,12 @@
             <video 
               class="project-video" 
               controls 
-              poster="/images/team/Ida.png"
+              poster="/images/side-photo.jpeg"
               preload="none"
             >
               <!-- <source src="VOTRE_LIEN_VIDEO.mp4" type="video/mp4" /> -->
               Votre navigateur ne supporte pas la balise vidéo.
             </video>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ─── Équipe du Projet ─── -->
-    <section class="ap-team-section" v-reveal="300">
-      <div class="section-title-wrap">
-        <h2>Équipe de projet</h2>
-        <div class="section-divider"></div>
-      </div>
-
-      <div class="team-level-card form-card">
-        <div class="team-grid team-grid-lead">
-          <div
-            v-for="member in teamMembers.filter((item) => item.level === 1)"
-            :key="member.name"
-            class="team-card lead-card team-card-centered"
-          >
-            <div class="team-avatar">
-              <img v-if="member.photo" :src="member.photo" :alt="member.name" />
-              <span v-else class="team-avatar-placeholder">Photo</span>
-            </div>
-            <div class="team-info">
-              <div class="team-name-block">
-                <h3>{{ member.name }}</h3>
-              </div>
-              <p class="team-role">{{ member.role }}</p>
-              <p>{{ member.description }}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="team-level-card form-card">
-        <div class="team-grid">
-          <div
-            v-for="member in teamMembers.filter((item) => item.level === 2)"
-            :key="member.name"
-            class="team-card"
-          >
-            <div class="team-avatar">
-              <img v-if="member.photo" :src="member.photo" :alt="member.name" />
-              <span v-else class="team-avatar-placeholder">Photo</span>
-            </div>
-            <div class="team-info">
-              <div class="team-name-block">
-                <h3>{{ member.name }}</h3>
-              </div>
-              <p class="team-role">{{ member.role }}</p>
-              <p>{{ member.description }}</p>
-            </div>
           </div>
         </div>
       </div>
@@ -261,7 +209,6 @@
             <div class="logo-item"><img src="/images/partenaires/ambassade-france-guinee.png" alt="Ambassade de France en Guinée" /></div>
             <div class="logo-item"><img src="/images/partenaires/expertise-france.png" alt="Expertise France" /></div>
             <div class="logo-item"><img src="/images/partenaires/musee-national-guinee.jpg" alt="Musée National de Guinée" /></div>
-            <div class="logo-item"><img src="/images/partenaires/ccfg.png" alt="CCFG" /></div>
             <div class="logo-item"><img src="/images/partenaires/mcta.jpg" alt="MCTA" /></div>
           </div>
 
@@ -282,48 +229,6 @@ import AppIcon from '../components/AppIcon.vue'
 
 const activeTabIdx = ref(0)
 
-const teamMembers = [
-  {
-    name: 'Ida El-Majdoubi Yassir',
-    role: 'Cheffe de projet - Expertise France',
-    description: 'Coordonne la vision, les partenaires et le suivi global du projet.',
-    initials: 'CP',
-    photo: '/images/team/Ida.png',
-    level: 1
-  },
-  {
-    name: 'Adramet Barry',
-    role: 'Expert en patrimoine et médiation culturelle - Expertise France',
-    description: 'Valorise le patrimoine et structure les contenus culturels.',
-    initials: 'EP',
-    photo: '/images/team/Adramet.jpeg',
-    level: 2
-  },
-  {
-    name: 'Marie Jeanne Loua',
-    role: 'Chargée opérationnelle - Expertise France',
-    description: 'Assure le suivi quotidien et l’organisation des actions.',
-    initials: 'CO',
-    photo: '/images/team/MJ1.jpeg',
-    level: 2
-  },
-  {
-    name: 'Djibril Dia',
-    role: 'Chargé communication et diffusion',
-    description: 'Renforce la visibilité du projet et sa communication.',
-    initials: 'CC',
-    photo: '/images/team/DD.jpeg',
-    level: 2
-  },
-  {
-    name: 'Cheick Ahmed Thiam',
-    role: 'Stagiaire assistant projet et événementiel - Expertise France',
-    description: 'Appuie l’organisation des événements et des activités du projet.',
-    initials: 'SA',
-    photo: '/images/team/thiam.jpeg',
-    level: 2
-  }
-]
 
 const activityTabs = [
   {
@@ -367,7 +272,7 @@ const activityTabs = [
     items: [
       { name: 'Plateforme digitale interactive', subtext: 'Mise en ligne des pièces numérisées avec des fiches scientifiques complètes.' },
       { name: 'Expositions & Visites 3D', subtext: 'Parcours virtuels immersifs pour explorer les galeries à distance.' },
-      { name: 'Médiation culturelle', subtext: 'Organisation d\'ateliers, de conférences et d\'événements au CCFG.' }
+      { name: 'Médiation culturelle', subtext: 'Organisation d\'ateliers, de conférences et d\'événements.' }
     ]
   },
   {
@@ -843,117 +748,6 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   outline: none;
 }
 
-/* Team */
-.ap-team-section {
-  margin-top: 20px;
-}
-.team-level-card {
-  padding: 24px;
-  border-radius: 22px;
-  margin-bottom: 18px;
-}
-.team-level-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1rem;
-  font-weight: 800;
-  color: var(--brun);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 16px;
-}
-.team-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-}
-.team-grid-lead {
-  grid-template-columns: minmax(220px, 360px);
-  justify-content: center;
-}
-.team-card {
-  background: rgba(255,255,255,0.75);
-  border: 1px solid rgba(132,89,54,0.12);
-  border-radius: 18px;
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  align-items: center;
-  text-align: center;
-}
-.lead-card {
-  background: linear-gradient(135deg, rgba(249,178,51,0.16), rgba(255,255,255,0.9));
-}
-.team-card-centered {
-  justify-content: center;
-  text-align: center;
-  align-items: center;
-}
-.team-avatar {
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  margin: 0 auto;
-  background: linear-gradient(135deg, var(--or), var(--rouge));
-  color: white;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  flex-shrink: 0;
-  box-shadow: 0 8px 16px rgba(132,89,54,0.14);
-}
-.team-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.team-avatar span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-}
-.team-avatar-placeholder {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  opacity: 0.95;
-}
-.team-name-block {
-  margin-bottom: 4px;
-}
-.team-name-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--rouge);
-  margin-bottom: 4px;
-}
-.team-info h3 {
-  margin: 0 0 6px;
-  font-size: 1rem;
-  color: var(--brun);
-}
-.team-info p {
-  margin: 0;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  color: #5e4632;
-}
-.team-role {
-  font-weight: 700;
-  color: var(--or);
-  margin-bottom: 4px;
-}
 
 /* Partners & Contacts */
 .approach-text {
