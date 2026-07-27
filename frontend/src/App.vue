@@ -455,6 +455,7 @@ onUnmounted(() => {
   --shadow: 0 12px 40px rgba(40, 51, 111, .15);
   --radius: 20px;
   --trans: all .28s cubic-bezier(.4, 0, .2, 1);
+  --theme-motif: url('/images/motifs/motif-logo.svg');
 
   /* Background gradients variables */
   --body-radial-tint: rgba(40, 51, 111, .06);
@@ -586,6 +587,76 @@ html.theme-secondary {
   --footer-grad-3: rgba(38, 22, 17, 1);
 }
 
+/* --- Intégration des Motifs Secondaires --- */
+
+/* Motif 2 : Grille & Croix sur les formulaires, modales et boîtes de dialogue */
+.form-card, .admin-login-box, .modal-box {
+  position: relative;
+  z-index: 1;
+}
+.form-card > *, .admin-login-box > *, .modal-box > * {
+  position: relative;
+  z-index: 1;
+}
+.form-card::before, .admin-login-box::before, .modal-box::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/motifs/motif-foret1.svg');
+  background-size: 240px;
+  background-repeat: repeat;
+  opacity: 0.04;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* Motif 3 : Diagonales sur les cartes d'actualités et événements */
+.news-card, .ev-card {
+  position: relative;
+  z-index: 1;
+}
+.news-card > *, .ev-card > * {
+  position: relative;
+  z-index: 1;
+}
+.news-card::before, .ev-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/images/motifs/motif-foret2.svg');
+  background-size: 150px;
+  background-repeat: repeat;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+  border-radius: inherit;
+}
+
+/* Motif 4 : Arcs & Triangles sur les bannières d'en-tête de page (Spécificité accrue) */
+html body .ap-hero-section .ap-hero-overlay,
+html body .page-header-section .header-overlay {
+  background-image: 
+    linear-gradient(90deg, rgba(26,16,8,0.85) 0%, rgba(26,16,8,0.45) 45%, rgba(89,55,22,0.15) 100%),
+    url('/images/motifs/motif-foret3.svg') !important;
+  background-size: auto, 240px !important;
+  background-repeat: no-repeat, repeat !important;
+  background-blend-mode: overlay !important;
+  opacity: 1 !important;
+}
+
+/* Motif 5 : Kindely sur les lignes séparatrices de sections */
+.section-divider {
+  width: 120px !important;
+  height: 8px !important;
+  background-color: transparent !important;
+  background-image: url('/images/motifs/motif-kindely.svg') !important;
+  background-size: contain !important;
+  background-repeat: repeat-x !important;
+  border-radius: 0 !important;
+  opacity: 0.8;
+}
+
 /* Smooth theme transitions */
 html, body, header, .main-footer, .header-logo-tag, .header-contact-btn, .sidebar-link, a, button, .card, .view-container {
   transition: background 0.4s ease, background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
@@ -610,7 +681,7 @@ button, input, textarea, select { font: inherit; }
 header {
   background:
     linear-gradient(135deg, var(--header-grad-1) 0%, var(--header-grad-2) 50%, var(--header-grad-3) 100%),
-    url('/images/motif-removebg-preview.png') center/auto 120% repeat;
+    var(--theme-motif) center/auto 120% repeat;
   color: var(--blanc);
   padding: 24px 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, .3);
@@ -1187,7 +1258,12 @@ footer em { color: var(--rouge); font-style: normal; }
 .fh { padding: 28px 32px 24px; position: relative; overflow: hidden; }
 .fh::before {
   content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(60deg, rgba(255,255,255,.06) 0, rgba(255,255,255,.06) 1px, transparent 1px, transparent 18px);
+  background-image: url('/images/motifs/motif-foret3.svg');
+  background-size: 180px;
+  background-repeat: repeat;
+  opacity: 0.06;
+  filter: brightness(0) invert(1);
+  pointer-events: none;
 }
 .fh-a { background: linear-gradient(135deg, var(--brun), var(--or)); }
 .fh-s { background: linear-gradient(135deg, var(--rouge), var(--terre)); }
@@ -1561,7 +1637,7 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 .main-footer {
   background:
     linear-gradient(135deg, var(--footer-grad-1) 0%, var(--footer-grad-2) 50%, var(--footer-grad-3) 100%),
-    url('/images/motif-removebg-preview.png') center/auto 120% repeat;
+    var(--theme-motif) center/auto 120% repeat;
   border-top: 2px solid var(--or);
   padding: 40px 20px 20px;
   margin-top: 40px;
