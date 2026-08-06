@@ -1842,8 +1842,30 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
-  .nav-tabs { border-radius: 20px; }
-  .nav-tab { min-width: unset; padding: 10px 14px; font-size: .72rem; }
+  .nav-wrapper {
+    padding: 0 10px;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100vw;
+  }
+  .nav-tabs {
+    border-radius: 20px;
+    overflow-x: auto;
+    white-space: nowrap;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    scrollbar-width: none; /* Firefox */
+  }
+  .nav-tabs::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+  .nav-tab {
+    min-width: unset;
+    padding: 10px 14px;
+    font-size: .8rem;
+    flex-shrink: 0;
+  }
   .stats-summary { grid-template-columns: 1fr 1fr; }
 }
 

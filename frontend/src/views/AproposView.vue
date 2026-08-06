@@ -184,7 +184,7 @@
               poster="/images/side-photo.jpeg"
               preload="none"
             >
-              <!-- <source src="VOTRE_LIEN_VIDEO.mp4" type="video/mp4" /> -->
+              <source :src="'/videos/projet.mp4'" type="video/mp4" />
               Votre navigateur ne supporte pas la balise vidéo.
             </video>
           </div>

@@ -1081,30 +1081,40 @@ html.theme-musee .thumb-item.active {
 
 .gal-search-icon {
   position: absolute;
-  left: 14px;
+  left: 18px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--brun);
   opacity: .5;
   pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 .gal-search-input {
   width: 100%;
-  padding: 12px 16px 12px 40px;
-  border: 2px solid #e8ddd0;
+  padding: 14px 20px 14px 46px;
+  border: 1px solid rgba(132, 89, 54, 0.15);
   border-radius: 999px;
-  font-size: .92rem;
-  background: var(--creme);
+  font-size: .95rem;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
   color: var(--noir);
   outline: none;
-  transition: all .25s;
+  box-shadow: 0 4px 12px rgba(89, 55, 22, 0.04);
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
 
 .gal-search-input:focus {
   border-color: var(--or);
   background: #fff;
-  box-shadow: 0 0 0 4px rgba(249,178,51,.1);
+  box-shadow: 0 8px 24px rgba(249,178,51,.15);
+  transform: translateY(-1px);
+}
+
+.gal-search-input:focus + .gal-search-icon, 
+.gal-search-wrap:focus-within .gal-search-icon {
+  color: var(--or);
+  opacity: 1;
 }
 
 .category-tabs {
@@ -1309,11 +1319,33 @@ html.theme-musee .gal-card-desc {
   max-width: 900px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid rgba(132, 89, 54, 0.2);
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+  background: white;
+  transform: scale(0.98);
+  animation: modal-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-pop {
+  to { transform: scale(1); }
 }
 
 html.theme-musee .gal-3d-modal-box {
   border-color: rgba(212, 175, 55, 0.3) !important;
+  background: var(--noir-bleute) !important;
+}
+
+.gal-3d-modal-box .fh {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(132, 89, 54, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+html.theme-musee .gal-3d-modal-box .fh {
+  background: rgba(18, 20, 32, 0.95);
+  border-bottom-color: rgba(212, 175, 55, 0.2);
 }
 
 .sketchfab-iframe {
@@ -1324,18 +1356,33 @@ html.theme-musee .gal-3d-modal-box {
 
 .btn-close-modal {
   position: absolute;
-  right: 16px;
-  top: 16px;
-  background: transparent;
+  right: 20px;
+  top: 20px;
+  background: rgba(132, 89, 54, 0.08);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   color: var(--brun);
   cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+}
+
+html.theme-musee .btn-close-modal {
+  color: var(--or);
+  background: rgba(212, 175, 55, 0.1);
 }
 
 .btn-close-modal:hover {
-  opacity: 1;
+  background: rgba(132, 89, 54, 0.15);
+  transform: rotate(90deg) scale(1.1);
+}
+
+html.theme-musee .btn-close-modal:hover {
+  background: rgba(212, 175, 55, 0.2);
 }
 
 /* Pagination styles */
