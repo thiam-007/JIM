@@ -59,6 +59,11 @@
               <span v-if="!actu.date_evenement" class="status-badge status-a_venir">À venir</span>
               <span v-else>{{ formatDate(actu.date_evenement) }}</span>
             </div>
+            <div class="actu-card-stats" style="margin-top: 6px; font-size: 0.75rem; color: #777; display: flex; gap: 10px; align-items: center; font-weight: 600;">
+              <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <AppIcon name="eye" :size="12" /> {{ (actu.views || 0).toLocaleString('fr-FR') }}
+              </span>
+            </div>
           </div>
         </div>
         

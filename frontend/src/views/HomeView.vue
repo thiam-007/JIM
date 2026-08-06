@@ -61,7 +61,7 @@
 
         <div class="kpi-grid">
           <!-- Card 1: Total Evenements -->
-          <div class="kpi-card glass">
+          <div class="kpi-card glass" v-tilt-3d>
             <div class="kpi-header">
               <span class="kpi-title">Total Événements</span>
               <div class="kpi-icon-wrap or"><AppIcon name="calendar" :size="20" /></div>
@@ -73,7 +73,7 @@
           </div>
 
           <!-- Card 2: Abonnés Newsletter -->
-          <div class="kpi-card glass">
+          <div class="kpi-card glass" v-tilt-3d>
             <div class="kpi-header">
               <span class="kpi-title">Abonnés</span>
               <div class="kpi-icon-wrap vert"><AppIcon name="users" :size="20" /></div>
@@ -86,7 +86,7 @@
 
 
           <!-- Card 4: Campagnes envoyées -->
-          <div class="kpi-card glass">
+          <div class="kpi-card glass" v-tilt-3d>
             <div class="kpi-header">
               <span class="kpi-title">Campagnes</span>
               <div class="kpi-icon-wrap rouge"><AppIcon name="mail" :size="20" /></div>
@@ -274,7 +274,7 @@
         <div class="formats-grid">
           <div class="format-card glass">
             <div class="format-icon theme-or"><AppIcon name="search" :size="24" /></div>
-            <h3>Collecte & Conservation</h3>
+            <h3>Collecte &amp; Conservation</h3>
             <p>Missions régionales, documentation anthropologique, captation audiovisuelle et restauration.</p>
             <RouterLink to="/a-propos" class="format-link">En savoir plus <AppIcon name="arrow-right" :size="12" /></RouterLink>
           </div>
@@ -321,7 +321,7 @@
           <div class="showcase-grid">
             <div class="showcase-image-wrap">
               <img src="/images/stand-mvg.jpeg" alt="Exposition MVG" class="showcase-img" loading="lazy" />
-              <div class="img-overlay-badge">Galerie & Expositions Digitaux</div>
+              <div class="img-overlay-badge">Galerie &amp; Expositions Digitaux</div>
             </div>
             <div class="showcase-info">
               <span class="focus-pre"><AppIcon name="globe" :size="12" /> Immersion</span>
@@ -338,6 +338,98 @@
       </section>
 
 
+
+      <!-- ─── Galerie 3D du Patrimoine ─── -->
+      <section class="gallery-3d-section" v-reveal="210">
+        <div class="section-title-wrap text-center">
+          <h2>Galerie 3D du Patrimoine</h2>
+          <div class="section-divider mx-auto"></div>
+          <p class="section-subtitle-3d">Explorez virtuellement nos trésors d'art et écoutez leurs histoires</p>
+        </div>
+
+        <div class="carousel-3d-viewport">
+          <div class="carousel-3d-container">
+            <div 
+              v-for="(item, index) in gallery3DItems" 
+              :key="item.id"
+              class="card-3d"
+              :class="getCard3DClass(index)"
+              @click="setActive3DCard(index)"
+            >
+              <div class="card-3d-inner glass">
+                <div class="card-3d-image-wrap">
+                  <img :src="item.image" :alt="item.name" class="card-3d-img" />
+                  <div class="card-3d-badge">{{ item.category }}</div>
+                </div>
+                <div class="card-3d-info">
+                  <h3>{{ item.name }}</h3>
+                  <p>{{ item.desc }}</p>
+                  <button class="btn-3d-action" @click.stop="playArtifactSound(item)">
+                    <AppIcon :name="playingArtifactId === item.id ? 'square' : 'headphones'" :size="14" />
+                    <span>{{ playingArtifactId === item.id ? 'Pause' : 'Écouter l\'histoire' }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Commandes de navigation -->
+          <div class="carousel-3d-controls">
+            <button class="ctrl-btn prev" @click="prev3DCard" aria-label="Précédent">
+              <AppIcon name="chevron-left" :size="20" />
+            </button>
+            <button class="ctrl-btn next" @click="next3DCard" aria-label="Suivant">
+              <AppIcon name="chevron-right" :size="20" />
+            </button>
+          </div>
+
+          <!-- Bouton de redirection vers la Galerie 3D complète -->
+          <div class="carousel-3d-explore-more" style="margin-top: 30px; text-align: center;">
+            <RouterLink to="/galerie-3d" class="btn-primary-custom inline-flex align-center gap-2" style="padding: 12px 24px; text-decoration: none;">
+              <AppIcon name="external-link" :size="16" />
+              <span>Visiter la Galerie 3D Complète (12 œuvres)</span>
+            </RouterLink>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─── Livre d'Or Preview ─── -->
+      <section class="livre-dor-preview-section" v-reveal="225">
+        <div class="section-title-wrap text-center">
+          <h2>Livre d'Or du Musée</h2>
+          <div class="section-divider mx-auto"></div>
+          <p class="section-subtitle-3d">Les impressions et témoignages des visiteurs du monde entier</p>
+        </div>
+
+        <div class="ld-static-grid">
+          <div
+            v-for="msg in guestbookPreview"
+            :key="msg.id"
+            class="ld-clean-card form-card"
+          >
+            <div class="ld-card-top">
+              <div class="ld-quote-mark">“</div>
+              <span class="ld-clean-date">{{ msg.date }}</span>
+            </div>
+            
+            <p class="ld-clean-text">{{ msg.text }}</p>
+
+            <div class="ld-clean-author-row">
+              <GuestbookAvatar :genre="msg.genre || 'homme'" :size="36" />
+              <div class="ld-clean-author-info">
+                <span class="ld-clean-name">{{ msg.author }}</span>
+                <span class="ld-clean-location"><AppIcon name="map-pin" :size="11" /> {{ msg.location }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ld-preview-cta text-center mt-3">
+          <RouterLink to="/livre-d-or" class="btn-primary-custom inline-flex">
+            <AppIcon name="book-open" :size="16" /> Consulter le Livre d'Or &amp; Partager un témoignage
+          </RouterLink>
+        </div>
+      </section>
 
       <!-- ─── Actualités & Revue de Presse ─── -->
       <section class="news-and-press-section" v-reveal="230">
@@ -542,6 +634,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
+import GuestbookAvatar from '../components/GuestbookAvatar.vue'
 
 const router = useRouter()
 const api = useApiStore()
@@ -763,18 +856,268 @@ watch(() => api.isConnected, async (newVal) => {
   }
 }, { immediate: true })
 
+// ─── Livre d'Or Preview Logic ───
+// ─── Livre d'Or Preview Logic ───
+const guestbookDefaultMessages = [
+  { id: 1, author: 'Mamadou Diallo', location: 'Labé, Guinée', genre: 'homme', text: 'Une fierté immense de voir nos richesses culturelles modélisées avec cette qualité. La case de Fougoumba est splendide !', date: '27 Juil. 2026' },
+  { id: 2, author: 'Sarah Jenkins', location: 'Londres, UK', genre: 'femme', text: 'Stunning design! The audio guide and 3D models are world-class. It feels like visiting Conakry from home.', date: '26 Juil. 2026' },
+  { id: 3, author: 'Aissata Camara', location: 'Conakry, Guinée', genre: 'femme', text: 'Le masque Nimba est impressionnant en 3D. Merci pour cette initiative de digitalisation de notre patrimoine.', date: '25 Juil. 2026' },
+  { id: 4, author: 'Jean-Pierre Dubois', location: 'Paris, France', genre: 'homme', text: 'Une expérience musée immersive magnifique. La constellation de particules et le son de Kora apportent une vraie âme au site.', date: '24 Juil. 2026' },
+]
+
+const guestbookPreview = ref([])
+
+async function loadGuestbookPreview() {
+  let list = []
+  try {
+    const data = await api.get('/api/livre-dor')
+    if (Array.isArray(data) && data.length > 0) {
+      list = data
+      localStorage.setItem('mvg_guestbook', JSON.stringify(data))
+    } else {
+      const saved = localStorage.getItem('mvg_guestbook')
+      if (saved) { try { list = JSON.parse(saved) } catch(e) { list = guestbookDefaultMessages } }
+      else { list = guestbookDefaultMessages }
+    }
+  } catch (err) {
+    const saved = localStorage.getItem('mvg_guestbook')
+    if (saved) { try { list = JSON.parse(saved) } catch(e) { list = guestbookDefaultMessages } }
+    else { list = guestbookDefaultMessages }
+  }
+
+  guestbookPreview.value = list.slice(0, 4)
+}
+
 // Lifecycle
 onMounted(() => {
   api.fetchHeroSlides()
   startHeroAutoplay()
+  loadGuestbookPreview()
   if (api.isConnected) {
     startMonitoring()
   }
 })
 
+// ─── Galerie 3D du Patrimoine Logic ───
+const active3DIdx = ref(0)
+const playingArtifactId = ref(null)
+let currentUtterance = null
+
+const gallery3DItems = ref([
+  {
+    id: 'rg1991806',
+    sketchfabId: 'f37ff264e47e4d218e21eb1656a6c393',
+    name: 'R.G. 1991.806.MNG',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/R.G. 1991.806.MNG.png',
+    desc: 'Masque anthropomorphe traditionnel de la Guinée Forestière sculpté à la main.',
+    story: 'Ce masque anthropomorphe en bois sombre provient des collections historiques du Musée National de Guinée sous le code R.G 1991.806. Il était utilisé en Guinée Forestière au cours des rites de passage et d\'initiation des jeunes adultes, transmettant force spirituelle et autorité ancestrales.',
+    freq: 220.00
+  },
+  {
+    id: 'rg19948',
+    sketchfabId: 'fdd8453ae341409a8097c0b684990923',
+    name: 'R.G. 1994.8.MNG',
+    category: 'Statues & Effigies',
+    image: '/images/galerie-3d/cover/nimba_portée.png',
+    desc: 'Statue en bois de Basse-Guinée, symbole protecteur du village et du foyer.',
+    story: 'Répertoriée sous le code R.G 1994.8, cette statue anthropomorphe incarne un esprit de protection. Disposée à l\'entrée des habitations familiales en Basse-Guinée, elle chassait les forces négatives et assurait la fécondité et la prospérité.',
+    freq: 246.94
+  },
+  {
+    id: 'rg2004082',
+    sketchfabId: 'e6e9ee2dcfa343e1a472e1df84934b8f',
+    name: 'R.G. 2004.082.MNG',
+    category: 'Objets Sacrés & Royaux',
+    image: '/images/galerie-3d/rg2004082.jpg',
+    desc: 'Support rituel orné destiné à recevoir des offrandes sacrées.',
+    story: 'Cet objet rituel (R.G 2004.082) en bois sculpté est le témoin d\'anciennes pratiques spirituelles guinéennes. Utilisé lors des prières communautaires, il recevait les libations destinées à apaiser les ancêtres et les dieux de la nature.',
+    freq: 261.63
+  },
+  {
+    id: 'rg20040092',
+    sketchfabId: '0e17527f2bc148cb8c48a7da980f9ad5',
+    name: 'R.G. 2004.0092.MNG',
+    category: 'Céramiques & Calebasses',
+    image: '/images/galerie-3d/cover/R.G. 2004.0092.MNG.png',
+    desc: 'Calebasse traditionnelle polie et gravée de motifs géométriques peuls.',
+    story: 'Enregistrée sous la référence R.G 2004.0092, cette calebasse est typique du savoir-faire artisanal du Fouta Djallon. Ornée de motifs géométriques gravés au fer chaud, elle servait à conserver le lait frais ou le miel.',
+    freq: 293.66
+  },
+  {
+    id: 'fougoumba',
+    sketchfabId: 'c4435b6577114ed28f19b6db75ce38cb',
+    name: 'Case de Fougoumba',
+    category: 'Architecture & Sites',
+    image: '/images/galerie-3d/cover/Case de Fougoumba.png',
+    desc: 'La case sacrée où se tenait le couronnement solennel des Almamys du Fouta.',
+    story: 'La case de Fougoumba est un monument historique exceptionnel situé dans la préfecture de Dalaba. C\'est dans ce temple sacré à toit de chaume géant que s\'effectuait le rituel traditionnel de couronnement des souverains de l\'État théocratique du Fouta Djallon.',
+    freq: 329.63
+  },
+  {
+    id: 'dalaba',
+    sketchfabId: 'a03dd58bbdbd4505b54c83d453fb6731',
+    name: 'Habitation de Dalaba',
+    category: 'Architecture & Sites',
+    image: '/images/galerie-3d/cover/dalaba.png',
+    desc: 'Case traditionnelle à toiture conique en paille typique de Moyenne-Guinée.',
+    story: 'Cette modélisation 3D reproduit les habitations cylindriques à toit de chaume typiques de Moyenne-Guinée. Leurs structures épaisses et le chaume permettent de conserver une température agréable face aux fortes amplitudes thermiques des hauteurs du Fouta.',
+    freq: 349.23
+  },
+  {
+    id: 'rg1991394',
+    sketchfabId: 'b9d3456de8cd429589c982cbe5eb3471',
+    name: 'R.G. 1991.394.MNG',
+    category: 'Céramiques & Calebasses',
+    image: '/images/galerie-3d/cover/R.G. 1991.394.MNG.png',
+    desc: 'Jarre traditionnelle en terre cuite pour la conservation de l\'eau fraîche.',
+    story: 'Cette jarre en argile modelée à la main (R.G 1991.394) provient de la Haute-Guinée. Sa surface texturée et ses légers décors peints servaient à la fois d\'esthétique et d\'isolation thermique pour rafraîchir l\'eau potable du foyer.',
+    freq: 392.00
+  },
+  {
+    id: 'nimba',
+    sketchfabId: '8039d20c33d04a9c8100adad66442d77',
+    name: 'Le Grand Masque Nimba',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/nimba.png',
+    desc: 'Masque d\'épaule baga monumental représentant la déesse de la maternité et de la récolte.',
+    story: 'Le masque Nimba (ou D\'mba) est l\'œuvre emblématique de la Guinée maritime. Représentant l\'idéal féminin de bonté et de force chez les Baga, ce masque d\'épaule géant est porté pour célébrer le travail de la terre, les moissons et les naissances.',
+    freq: 440.00
+  },
+  {
+    id: 'atshiol',
+    sketchfabId: 'ea7b4ee811614c32aab14272a55d1a0a',
+    name: 'Le Masque Atshiol',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/asthiol.png',
+    desc: 'Masque cimier traditionnel zoomorphe représentant l\'esprit suprême protecteur.',
+    story: 'Le masque Atshiol (A-Tshol) est une entité spirituelle majeure chez les peuples côtiers baga. Sculpté sous une forme combinant bec d\'oiseau et tête de reptile, il veillait à la cohésion sociale et intervenait lors des décisions de justice importantes.',
+    freq: 493.88
+  },
+  {
+    id: 'nimbaporte',
+    sketchfabId: '661008aadd844d689be698aaae368c78',
+    name: 'Nimba Porté avec Costume',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/nimba_portée.png',
+    desc: 'Modélisation du danseur rituel revêtu du costume intégral en fibres de raphia.',
+    story: 'Cette reconstitution montre le masque Nimba en pleine action rituelle. Le porteur dissimule son corps sous une épaisse jupe de fibres végétales de raphia. Ses yeux regardent à travers des fentes taillées au niveau de la poitrine de la structure en bois.',
+    freq: 523.25
+  },
+  {
+    id: 'kouranko',
+    sketchfabId: 'bd6e7d8723e345eabf1fcb6741b89906',
+    name: 'Le Masque Kouranko',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/masque_kouranko.png',
+    desc: 'Masque zoomorphe en bois noirci utilisé par les confréries de chasseurs.',
+    story: 'Ce masque provient des traditions du peuple Kouranko en Haute-Guinée. Porté par les confréries de chasseurs, il facilitait la connexion spirituelle avec les forces de la nature sauvage pour bénir et protéger les expéditions de traque.',
+    freq: 587.33
+  },
+  {
+    id: 'simogui',
+    sketchfabId: '29f19921327d4bef8a013cc71b7db034',
+    name: 'Le Masque Simogui',
+    category: 'Masques Rituels',
+    image: '/images/galerie-3d/cover/simogui.png',
+    desc: 'Masque serpentiforme vertical incarnant l\'esprit de l\'eau.',
+    story: 'Le masque Simogui représente le python ou serpent d\'eau stylisé. Mesurant parfois près d\'un mètre prés de cinquante de hauteur, il dansait lors des cérémonies d\'initiation côtières pour attirer la bienveillance des esprits de l\'eau sur les récoltes rizicoles.',
+    freq: 659.25
+  }
+])
+
+function getCard3DClass(index) {
+  const len = gallery3DItems.value.length
+  const diff = (index - active3DIdx.value + len) % len
+  if (diff === 0) return 'active'
+  if (diff === 1) return 'right'
+  if (diff === len - 1) return 'left'
+  return 'hidden'
+}
+
+function setActive3DCard(index) {
+  if (active3DIdx.value === index) {
+    router.push({ name: 'Galerie3D', query: { item: gallery3DItems.value[index].id } })
+  } else {
+    active3DIdx.value = index
+  }
+}
+
+function prev3DCard() {
+  const len = gallery3DItems.value.length
+  active3DIdx.value = (active3DIdx.value - 1 + len) % len
+}
+
+function next3DCard() {
+  const len = gallery3DItems.value.length
+  active3DIdx.value = (active3DIdx.value + 1) % len
+}
+
+function playKoraPluck(frequency) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const osc = audioCtx.createOscillator()
+    const gainNode = audioCtx.createGain()
+    const filter = audioCtx.createBiquadFilter()
+
+    osc.type = 'triangle'
+    osc.frequency.setValueAtTime(frequency, audioCtx.currentTime)
+    
+    gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2)
+
+    filter.type = 'lowpass'
+    filter.frequency.setValueAtTime(1000, audioCtx.currentTime)
+    filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.0)
+
+    osc.connect(filter)
+    filter.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+
+    osc.start()
+    osc.stop(audioCtx.currentTime + 1.5)
+  } catch (e) {
+    console.error("Audio Context error:", e)
+  }
+}
+
+function playArtifactSound(item) {
+  if (playingArtifactId.value === item.id) {
+    if (window.speechSynthesis) window.speechSynthesis.cancel()
+    playingArtifactId.value = null
+    return
+  }
+
+  if (window.speechSynthesis) window.speechSynthesis.cancel()
+  playingArtifactId.value = item.id
+
+  playKoraPluck(item.freq)
+
+  if (window.speechSynthesis) {
+    currentUtterance = new SpeechSynthesisUtterance(item.story)
+    currentUtterance.lang = 'fr-FR'
+    currentUtterance.rate = 1.0
+    currentUtterance.pitch = 0.95
+
+    currentUtterance.onend = () => {
+      playingArtifactId.value = null
+    }
+    currentUtterance.onerror = () => {
+      playingArtifactId.value = null
+    }
+
+    window.speechSynthesis.speak(currentUtterance)
+  } else {
+    setTimeout(() => {
+      playingArtifactId.value = null
+    }, 3000)
+  }
+}
+
 onUnmounted(() => {
   stopHeroAutoplay()
   stopMonitoring()
+  if (window.speechSynthesis) window.speechSynthesis.cancel()
 })
 
 // Load KPI & Activities
@@ -2550,4 +2893,348 @@ function formatTimeAgo(dateStr) {
     padding: 12px 20px;
   }
 }
+
+/* ─── Galerie 3D du Patrimoine Styles ─── */
+.gallery-3d-section {
+  padding: 40px 0;
+  overflow: hidden;
+  perspective: 1200px;
+}
+.section-subtitle-3d {
+  font-size: 0.95rem;
+  color: var(--brun);
+  opacity: 0.8;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.carousel-3d-viewport {
+  position: relative;
+  width: 100%;
+  height: 480px;
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.carousel-3d-container {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-3d {
+  position: absolute;
+  width: 320px;
+  height: 365px;
+  transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s, z-index 0.6s;
+  transform-style: preserve-3d;
+  cursor: pointer;
+}
+.card-3d-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius);
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  box-shadow: 0 15px 35px rgba(89, 55, 22, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+html.theme-musee .card-3d-inner {
+  background: rgba(18, 20, 32, 0.9) !important;
+  border-color: rgba(212, 175, 55, 0.25) !important;
+}
+
+.card-3d-image-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  background: rgba(132, 89, 54, 0.05);
+}
+.card-3d-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 0.5s ease;
+}
+.card-3d:hover .card-3d-img {
+  transform: scale(1.05);
+}
+.card-3d-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--brun);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.card-3d-info {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.card-3d-info h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: var(--brun);
+}
+.card-3d-info p {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: #666;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+html.theme-musee .card-3d-info p {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.btn-3d-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--brun), var(--or));
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.25s, filter 0.25s;
+  box-shadow: 0 4px 12px rgba(89, 55, 22, 0.15);
+}
+.btn-3d-action:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+/* ─── Positions 3D du carrousel ─── */
+.card-3d.active {
+  transform: translateX(0) translateZ(100px) rotateY(0deg);
+  opacity: 1;
+  z-index: 3;
+}
+.card-3d.right {
+  transform: translateX(200px) translateZ(0px) rotateY(-35deg) scale(0.9);
+  opacity: 0.65;
+  z-index: 2;
+}
+.card-3d.left {
+  transform: translateX(-200px) translateZ(0px) rotateY(35deg) scale(0.9);
+  opacity: 0.65;
+  z-index: 2;
+}
+.card-3d.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateZ(-200px) scale(0.5);
+}
+
+.carousel-3d-controls {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+}
+.ctrl-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(132, 89, 54, 0.25);
+  background: white;
+  color: var(--brun);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  box-shadow: 0 4px 12px rgba(89, 55, 22, 0.05);
+}
+html.theme-musee .ctrl-btn {
+  background: var(--blanc) !important;
+  color: var(--brun) !important;
+  border-color: rgba(212, 175, 55, 0.3) !important;
+}
+
+.ctrl-btn:hover {
+  background: var(--brun);
+  color: white;
+  border-color: var(--brun);
+  transform: scale(1.05);
+}
+
+@media(max-width: 768px) {
+  .carousel-3d-viewport {
+    height: 440px;
+  }
+  .card-3d {
+    width: 260px;
+    height: 320px;
+  }
+  .card-3d.right {
+    transform: translateX(110px) translateZ(0px) rotateY(-35deg) scale(0.85);
+  }
+  .card-3d.left {
+    transform: translateX(-110px) translateZ(0px) rotateY(35deg) scale(0.85);
+  }
+}
+
+/* ─── Livre d'Or Institutional Clean Section ─── */
+.livre-dor-preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.ld-static-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.ld-clean-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1.5px solid rgba(132, 89, 54, 0.16);
+  border-radius: 20px;
+  padding: 24px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 20px rgba(89, 55, 22, 0.06);
+  transition: all 0.28s ease;
+  position: relative;
+}
+
+html.theme-musee .ld-clean-card {
+  background: rgba(20, 23, 40, 0.92) !important;
+  border-color: rgba(212, 175, 55, 0.2) !important;
+}
+
+.ld-clean-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(89, 55, 22, 0.14);
+  border-color: var(--or);
+}
+
+html.theme-musee .ld-clean-card:hover {
+  box-shadow: 0 12px 32px rgba(212, 175, 55, 0.16) !important;
+}
+
+.ld-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ld-quote-mark {
+  font-size: 2.4rem;
+  font-family: Georgia, serif;
+  color: var(--or);
+  line-height: 0.7;
+}
+
+.ld-clean-date {
+  font-size: 0.72rem;
+  color: #a0a0a0;
+  font-weight: 600;
+}
+
+.ld-clean-text {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--noir);
+  font-style: italic;
+  margin: 0 0 20px 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+html.theme-musee .ld-clean-text {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.ld-clean-author-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(132, 89, 54, 0.12);
+  padding-top: 14px;
+}
+
+html.theme-musee .ld-clean-author-row {
+  border-color: rgba(212, 175, 55, 0.16) !important;
+}
+
+.ld-clean-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.ld-clean-name {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: var(--brun);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+html.theme-musee .ld-clean-name {
+  color: var(--or) !important;
+}
+
+.ld-clean-location {
+  font-size: 0.72rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+html.theme-musee .ld-clean-location {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+@media (max-width: 1024px) {
+  .ld-static-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .ld-static-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
+
+

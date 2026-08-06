@@ -154,4 +154,98 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
+// ─── Increment view count (PUBLIC) ────────────────────────────────────────────
+router.post('/:id/view', async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    // Fetch current views
+    const { data: article, error: fetchErr } = await supabase
+      .from('actualites')
+      .select('id, views')
+      .eq('id', id)
+      .single()
+
+    if (fetchErr || !article) return res.status(404).json({ error: 'Article introuvable' })
+
+    const { data, error } = await supabase
+      .from('actualites')
+      .update({ views: (article.views || 0) + 1 })
+      .eq('id', id)
+      .select('id, views')
+      .single()
+
+    if (error) throw error
+    res.json({ views: data.views })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Get article rating stats (PUBLIC) ────────────────────────────────────────
+router.get('/:id/rating', async (req, res, next) => {
+  try {
+    const { id } = req.params
+
+    const { data, error } = await supabase
+      .from('article_ratings')
+      .select('rating')
+      .eq('article_id', id)
+
+    if (error) throw error
+
+    const count = (data || []).length
+    const avg = count > 0
+      ? Math.round((data.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10
+      : 0
+
+    res.json({ avg, count })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// ─── Submit a rating (PUBLIC, once per IP per article) ────────────────────────
+router.post('/:id/rate', async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const { rating } = req.body
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'La note doit être entre 1 et 5' })
+    }
+
+    // Hash the IP to preserve privacy
+    const rawIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket.remoteAddress || 'unknown'
+    const ipHash = crypto.createHash('sha256').update(rawIp).digest('hex')
+
+    // Upsert: if the same IP already voted, update their rating
+    const { data, error } = await supabase
+      .from('article_ratings')
+      .upsert(
+        { article_id: id, rating: parseInt(rating), ip_hash: ipHash },
+        { onConflict: 'article_id,ip_hash' }
+      )
+      .select()
+      .single()
+
+    if (error) throw error
+
+    // Return updated stats
+    const { data: allRatings } = await supabase
+      .from('article_ratings')
+      .select('rating')
+      .eq('article_id', id)
+
+    const count = (allRatings || []).length
+    const avg = count > 0
+      ? Math.round((allRatings.reduce((sum, r) => sum + r.rating, 0) / count) * 10) / 10
+      : 0
+
+    res.json({ success: true, avg, count, userRating: parseInt(rating) })
+  } catch (err) {
+    next(err)
+  }
+})
+
 export default router

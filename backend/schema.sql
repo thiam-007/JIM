@@ -69,8 +69,19 @@ CREATE TABLE IF NOT EXISTS actualites (
   image_url TEXT,
   image_detail_url TEXT,
   date_evenement TIMESTAMPTZ DEFAULT NOW(),
+  views INTEGER DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- article_ratings (une note par IP par article)
+CREATE TABLE IF NOT EXISTS article_ratings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  article_id UUID NOT NULL REFERENCES actualites(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  ip_hash TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(article_id, ip_hash)
 );
 
 -- users
@@ -225,5 +236,24 @@ CREATE TABLE IF NOT EXISTS hero_slides (
 
 CREATE TRIGGER trg_hero_slides_updated
   BEFORE UPDATE ON hero_slides
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- Livre d'Or
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS livre_dor (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  author VARCHAR NOT NULL,
+  location VARCHAR,
+  genre VARCHAR DEFAULT 'homme',
+  text TEXT NOT NULL,
+  date VARCHAR,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TRIGGER trg_livre_dor_updated
+  BEFORE UPDATE ON livre_dor
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 

@@ -18,7 +18,7 @@
 
     <!-- ─── Introduction & Vision ─── -->
     <section class="ap-intro-section" v-reveal="100">
-      <div class="form-card intro-card">
+      <div class="form-card intro-card" v-tilt-3d>
         <div class="fh fh-a">
           <div class="fh-icon"><AppIcon name="info" :size="24" /></div>
           <div class="fh-title">Vision & Missions</div>
@@ -42,28 +42,28 @@
       </div>
 
       <div class="objectives-grid">
-        <div class="obj-card form-card">
+        <div class="obj-card form-card" v-tilt-3d>
           <div class="obj-num">01</div>
           <div class="obj-icon"><AppIcon name="file-text" :size="24" /></div>
           <h3>Documenter & Préserver</h3>
           <p>Inventorier et documenter scientifiquement les patrimoines culturels matériels et immatériels guinéens.</p>
         </div>
 
-        <div class="obj-card form-card">
+        <div class="obj-card form-card" v-tilt-3d>
           <div class="obj-num">02</div>
           <div class="obj-icon"><AppIcon name="users" :size="24" /></div>
           <h3>Rendre Accessible</h3>
           <p>Diffuser notre héritage culturel auprès de tous les publics locaux et internationaux sans barrière physique.</p>
         </div>
 
-        <div class="obj-card form-card">
+        <div class="obj-card form-card" v-tilt-3d>
           <div class="obj-num">03</div>
           <div class="obj-icon"><AppIcon name="star" :size="24" /></div>
           <h3>Soutenir l'Éducation</h3>
           <p>Créer des supports interactifs pour la recherche universitaire, l'apprentissage scolaire et la création artistique.</p>
         </div>
 
-        <div class="obj-card form-card">
+        <div class="obj-card form-card" v-tilt-3d>
           <div class="obj-num">04</div>
           <div class="obj-icon"><AppIcon name="globe" :size="24" /></div>
           <h3>Promouvoir à l'Étranger</h3>
@@ -74,7 +74,7 @@
 
     <!-- ─── Focus : Chantier des Collections ─── -->
     <section class="ap-collections-section" v-reveal="200">
-      <div class="form-card collections-card">
+      <div class="form-card collections-card" v-tilt-3d>
         <div class="collections-grid">
           <div class="collections-image-wrap">
             <img src="/images/side-photo.jpeg" alt="Chantier des collections" class="collections-img" />

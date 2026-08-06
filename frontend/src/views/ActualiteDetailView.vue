@@ -33,6 +33,17 @@
               <AppIcon name="share-2" :size="14" /> Partager
             </button>
           </div>
+          <!-- Views counter -->
+          <div class="article-stats mt-2">
+            <span class="stat-chip">
+              <AppIcon name="eye" :size="13" />
+              {{ currentViews.toLocaleString('fr-FR') }} lecture{{ currentViews !== 1 ? 's' : '' }}
+            </span>
+            <span v-if="ratingData.count > 0" class="stat-chip">
+              <AppIcon name="star" :size="13" style="color: #f59e0b;" />
+              {{ ratingData.avg }}/5 ({{ ratingData.count }} avis)
+            </span>
+          </div>
           <p class="article-lead mt-3">{{ currentNews.description }}</p>
           <div class="article-divider"></div>
           <div class="article-content markdown-body" v-html="renderMarkdown(currentNews.contenu)"></div>
@@ -42,6 +53,35 @@
             <div class="author-details">
               <span class="author-label">Écrit par</span>
               <strong class="author-name">{{ currentNews.auteur }}</strong>
+            </div>
+          </div>
+
+          <!-- ─── Star Rating Block ─── -->
+          <div class="rating-block mt-4">
+            <div class="rating-header">
+              <AppIcon name="star" :size="18" style="color: #f59e0b;" />
+              <span>Notez cet article</span>
+            </div>
+            <div class="stars-row">
+              <button
+                v-for="star in 5"
+                :key="star"
+                class="star-btn"
+                :class="{ filled: star <= (hoverStar || userRating), hovered: star <= hoverStar }"
+                @mouseenter="hoverStar = star"
+                @mouseleave="hoverStar = 0"
+                @click="submitRating(star)"
+                :aria-label="`Donner ${star} étoile${star > 1 ? 's' : ''}`"
+              >
+                ★
+              </button>
+            </div>
+            <div class="rating-feedback" v-if="ratingMessage">
+              <AppIcon name="check-circle" :size="14" style="color: #16a34a;" />
+              {{ ratingMessage }}
+            </div>
+            <div class="rating-summary" v-if="ratingData.count > 0">
+              Note moyenne : <strong>{{ ratingData.avg }}/5</strong> — {{ ratingData.count }} avis
             </div>
           </div>
         </div>
@@ -80,7 +120,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
@@ -90,11 +130,47 @@ const route = useRoute()
 const router = useRouter()
 const api = useApiStore()
 
+// ─── Reactive state ───────────────────────────────────────────────────────────
+const currentViews = ref(0)
+const ratingData = ref({ avg: 0, count: 0 })
+const userRating = ref(0)
+const hoverStar = ref(0)
+const ratingMessage = ref('')
+
 onMounted(async () => {
   if (api.actualites.length === 0) {
     await api.fetchActualites()
   }
+  await initArticleStats()
 })
+
+// Re-init when route changes (navigating between articles)
+watch(() => route.params.id, async () => {
+  userRating.value = 0
+  ratingMessage.value = ''
+  await initArticleStats()
+})
+
+async function initArticleStats() {
+  const id = route.params.id
+  if (!id) return
+
+  // Increment view count
+  const viewRes = await api.viewArticle(id)
+  if (viewRes?.views != null) currentViews.value = viewRes.views
+  else {
+    const art = api.actualites.find(a => String(a.id) === String(id))
+    if (art) currentViews.value = art.views || 0
+  }
+
+  // Load rating stats
+  const rating = await api.getArticleRating(id)
+  if (rating) ratingData.value = rating
+
+  // Restore user's previous rating from localStorage
+  const saved = localStorage.getItem(`rating_${id}`)
+  if (saved) userRating.value = parseInt(saved)
+}
 
 // Find current news item
 const currentNews = computed(() => {
@@ -154,6 +230,21 @@ async function shareNews() {
     } catch (err) {
       alert("Impossible de copier le lien.")
     }
+  }
+}
+
+async function submitRating(star) {
+  const id = route.params.id
+  if (!id) return
+
+  userRating.value = star
+  localStorage.setItem(`rating_${id}`, String(star))
+
+  const result = await api.rateArticle(id, star)
+  if (result) {
+    ratingData.value = { avg: result.avg, count: result.count }
+    ratingMessage.value = `Merci pour votre avis ! Vous avez donné ${star} étoile${star > 1 ? 's' : ''}.`
+    setTimeout(() => { ratingMessage.value = '' }, 4000)
   }
 }
 </script>
@@ -475,6 +566,89 @@ async function shareNews() {
   transform: translateY(-2px);
   filter: brightness(1.08);
   box-shadow: 0 10px 24px rgba(89, 55, 22, 0.35);
+}
+
+/* ─── Article stats chips ─── */
+.article-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(132, 89, 54, 0.07);
+  border: 1px solid rgba(132, 89, 54, 0.15);
+  border-radius: 99px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--brun);
+}
+
+/* ─── Star Rating Block ─── */
+.rating-block {
+  background: rgba(132, 89, 54, 0.04);
+  border: 1px solid rgba(132, 89, 54, 0.12);
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-top: 32px;
+}
+.rating-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--brun);
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.stars-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.star-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #d1d5db;
+  transition: color 0.15s, transform 0.15s;
+  line-height: 1;
+  padding: 0 2px;
+}
+.star-btn.filled,
+.star-btn.hovered {
+  color: #f59e0b;
+}
+.star-btn:hover {
+  transform: scale(1.2);
+}
+.rating-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+}
+.rating-summary {
+  font-size: 0.82rem;
+  color: #666;
+}
+.rating-summary strong {
+  color: var(--brun);
 }
 
 @media (max-width: 900px) {

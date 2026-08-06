@@ -29,6 +29,8 @@ const routes = [
   { path: '/contact', name: 'Contact', component: ContactView },
   { path: '/revue-presse', name: 'RevuePresse', component: RevuePresseView },
   { path: '/actualites/:id', name: 'ActualiteDetail', component: ActualiteDetailView },
+  { path: '/galerie-3d', name: 'Galerie3D', component: () => import('../views/Galerie3DView.vue') },
+  { path: '/livre-d-or', name: 'LivreDor', component: () => import('../views/LivreDorView.vue') },
 
   { path: '/evenements', name: 'Evenements', component: EvenementsView },
   { path: '/invites', name: 'Invites', component: InvitesView },
@@ -39,6 +41,7 @@ const routes = [
   { path: '/admin/newsletters', name: 'ManageNewsletters', component: ManageNewslettersView },
   { path: '/admin/revue-presse', name: 'ManageRevuePresse', component: ManageRevuePresseView },
   { path: '/admin/hero-slides', name: 'ManageHeroSlides', component: ManageHeroSlidesView },
+  { path: '/admin/livre-dor', name: 'ManageLivreDor', component: () => import('../views/ManageLivreDorView.vue') },
   { path: '/profil', name: 'Profile', component: ProfileView }
 ]
 
@@ -56,7 +59,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const apiStore = useApiStore()
-  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters', 'ManageRevuePresse', 'ManageHeroSlides']
+  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'Profile', 'ManageNewsletters', 'ManageRevuePresse', 'ManageHeroSlides', 'ManageLivreDor']
   if (protectedRoutes.includes(to.name) && !apiStore.isConnected) {
     next({ name: 'Home' })
   } else {

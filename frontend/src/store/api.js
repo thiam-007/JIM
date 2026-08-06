@@ -142,7 +142,8 @@ export const useApiStore = defineStore('api', {
           date_evenement: item.date_evenement || null,
           publieLe: item.date_evenement || item.created_at || new Date().toISOString(),
           imageUrl: item.image_url || '/images/side-photo.jpeg',
-          imageDetailUrl: item.image_detail_url || item.image_url || '/images/side-photo.jpeg'
+          imageDetailUrl: item.image_detail_url || item.image_url || '/images/side-photo.jpeg',
+          views: item.views || 0
         }))
       } catch (err) {
         console.error('Erreur chargement Supabase actualites :', err)
@@ -151,6 +152,39 @@ export const useApiStore = defineStore('api', {
         this.loading = false
       }
     },
+
+    // ─── View counter ────────────────────────────────────────────────────────
+    async viewArticle(id) {
+      try {
+        const data = await this.post(`/api/actualites/${id}/view`, {})
+        // Update views count in local state
+        const article = this.actualites.find(a => String(a.id) === String(id))
+        if (article && data?.views != null) article.views = data.views
+        return data
+      } catch (err) {
+        console.error('Erreur incrémentation vues :', err)
+      }
+    },
+
+    // ─── Rating ──────────────────────────────────────────────────────────────
+    async getArticleRating(id) {
+      try {
+        return await this.get(`/api/actualites/${id}/rating`)
+      } catch (err) {
+        console.error('Erreur récupération note :', err)
+        return { avg: 0, count: 0 }
+      }
+    },
+
+    async rateArticle(id, rating) {
+      try {
+        return await this.post(`/api/actualites/${id}/rate`, { rating })
+      } catch (err) {
+        console.error('Erreur notation article :', err)
+        return null
+      }
+    },
+
     async fetchHeroSlides() {
       this.loading = true
       try {

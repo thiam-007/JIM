@@ -58,6 +58,7 @@
             <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
             <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
             <button @click="changeTheme('secondary')" class="theme-dot theme-dot-secondary" :class="{ active: currentTheme === 'secondary' }" title="Palette Secondaire (Marron, Ocre, Olive)"></button>
+            <button @click="changeTheme('musee')" class="theme-dot theme-dot-musee" :class="{ active: currentTheme === 'musee' }" title="Mode Musée (Noir & Or)"></button>
           </div>
           <RouterLink class="header-contact-btn" to="/contact">
             <AppIcon name="mail" :size="16" />
@@ -97,6 +98,9 @@
           </RouterLink>
           <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageHeroSlides' }" to="/admin/hero-slides" @click="isAdminSidebarOpen = false">
             <AppIcon name="image" :size="16" /> Carrousel
+          </RouterLink>
+          <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageLivreDor' }" to="/admin/livre-dor" @click="isAdminSidebarOpen = false">
+            <AppIcon name="book-open" :size="16" /> Livre d'Or
           </RouterLink>
           <RouterLink class="sidebar-link" :class="{ active: route.name === 'Profile' }" to="/profil" @click="isAdminSidebarOpen = false">
             <AppIcon name="user" :size="16" /> Mon Profil
@@ -138,6 +142,12 @@
           </RouterLink>
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
             <AppIcon name="calendar" :size="16" /> Événement
+          </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Galerie3D' }" to="/galerie-3d">
+            <AppIcon name="box" :size="16" /> Galerie 3D
+          </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'LivreDor' }" to="/livre-d-or">
+            <AppIcon name="book-open" :size="16" /> Livre d'Or
           </RouterLink>
         </nav>
         </div>
@@ -199,6 +209,8 @@
               <li><RouterLink to="/">Accueil</RouterLink></li>
               <li><RouterLink to="/a-propos">À propos</RouterLink></li>
               <li><RouterLink to="/evenements">Événements</RouterLink></li>
+              <li><RouterLink to="/galerie-3d">Galerie 3D</RouterLink></li>
+              <li><RouterLink to="/livre-d-or">Livre d'Or</RouterLink></li>
               <li><RouterLink to="/contact">Contact</RouterLink></li>
             </ul>
           </div>
@@ -228,6 +240,7 @@
             <button @click="changeTheme('sage')" class="theme-dot theme-dot-sage" :class="{ active: currentTheme === 'sage' }" title="Thème Vert Sauge"></button>
             <button @click="changeTheme('red')" class="theme-dot theme-dot-red" :class="{ active: currentTheme === 'red' }" title="Thème Rouge Vif"></button>
             <button @click="changeTheme('secondary')" class="theme-dot theme-dot-secondary" :class="{ active: currentTheme === 'secondary' }" title="Palette Secondaire (Marron, Ocre, Olive)"></button>
+            <button @click="changeTheme('musee')" class="theme-dot theme-dot-musee" :class="{ active: currentTheme === 'musee' }" title="Mode Musée (Noir & Or)"></button>
           </div>
         </div>
       </footer>
@@ -277,12 +290,15 @@
         </svg>
         <AppIcon :name="isScrolledDown ? 'chevron-up' : 'chevron-down'" :size="20" class="scroll-icon" />
       </button>
+
+      <!-- Canvas de Particules Réseau Culturel -->
+      <canvas ref="particlesCanvas" class="particles-bg"></canvas>
     </template>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink, RouterView } from 'vue-router'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useApiStore } from './store/api.js'
@@ -417,17 +433,148 @@ function handleScrollBtn() {
   }
 }
 
+// Particles Canvas Logic
+const particlesCanvas = ref(null)
+let particlesCleanUp = null
+let themeOrColor = '#f9b233'
+let themeBrunColor = '#28336f'
+
+watch(currentTheme, () => {
+  setTimeout(() => {
+    const html = document.documentElement
+    themeOrColor = getComputedStyle(html).getPropertyValue('--or').trim() || '#f9b233'
+    themeBrunColor = getComputedStyle(html).getPropertyValue('--brun').trim() || '#28336f'
+  }, 80)
+}, { immediate: true })
+
+function initParticles() {
+  const canvas = particlesCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  let animationId = null
+  let width = (canvas.width = window.innerWidth)
+  let height = (canvas.height = window.innerHeight)
+
+  const particles = []
+  const maxParticles = Math.min(60, Math.floor((width * height) / 25000))
+  const mouse = { x: null, y: null, radius: 160 }
+
+  class Particle {
+    constructor() {
+      this.x = Math.random() * width
+      this.y = Math.random() * height
+      this.vx = (Math.random() - 0.5) * 0.4
+      this.vy = (Math.random() - 0.5) * 0.4
+      this.radius = Math.random() * 2 + 1
+    }
+    update() {
+      this.x += this.vx
+      this.y += this.vy
+
+      if (this.x < 0 || this.x > width) this.vx *= -1
+      if (this.y < 0 || this.y > height) this.vy *= -1
+
+      if (mouse.x !== null && mouse.y !== null) {
+        const dx = mouse.x - this.x
+        const dy = mouse.y - this.y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < mouse.radius) {
+          const force = (mouse.radius - dist) / mouse.radius
+          this.x -= (dx / dist) * force * 0.7
+          this.y -= (dy / dist) * force * 0.7
+        }
+      }
+    }
+    draw() {
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2)
+      ctx.globalAlpha = 0.22
+      ctx.fillStyle = themeOrColor
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+
+  for (let i = 0; i < maxParticles; i++) {
+    particles.push(new Particle())
+  }
+
+  function connect() {
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x
+        const dy = particles[i].y - particles[j].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+
+        if (dist < 120) {
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(particles[i].x, particles[i].y)
+          ctx.lineTo(particles[j].x, particles[j].y)
+          ctx.globalAlpha = 0.12 * (1 - dist / 120)
+          ctx.strokeStyle = themeBrunColor
+          ctx.lineWidth = 0.8
+          ctx.stroke()
+          ctx.restore()
+        }
+      }
+    }
+  }
+
+  function handleResize() {
+    if (!canvas) return
+    width = canvas.width = window.innerWidth
+    height = canvas.height = window.innerHeight
+  }
+
+  function handleMouseMove(e) {
+    mouse.x = e.clientX
+    mouse.y = e.clientY
+  }
+
+  function handleMouseLeave() {
+    mouse.x = null
+    mouse.y = null
+  }
+
+  window.addEventListener('resize', handleResize, { passive: true })
+  window.addEventListener('mousemove', handleMouseMove, { passive: true })
+  document.addEventListener('mouseleave', handleMouseLeave, { passive: true })
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height)
+    particles.forEach((p) => {
+      p.update()
+      p.draw()
+    })
+    connect()
+    animationId = requestAnimationFrame(animate)
+  }
+
+  animate()
+
+  particlesCleanUp = () => {
+    cancelAnimationFrame(animationId)
+    window.removeEventListener('resize', handleResize)
+    window.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseleave', handleMouseLeave)
+  }
+}
+
 onMounted(() => {
   changeTheme(currentTheme.value)
   if (isAdminDomain.value) {
     window.addEventListener('open-login', openLogin)
   }
   window.addEventListener('scroll', onScroll, { passive: true })
+  initParticles()
 })
 
 onUnmounted(() => {
   window.removeEventListener('open-login', openLogin)
   window.removeEventListener('scroll', onScroll)
+  if (particlesCleanUp) particlesCleanUp()
 })
 </script>
 
@@ -456,6 +603,7 @@ onUnmounted(() => {
   --radius: 20px;
   --trans: all .28s cubic-bezier(.4, 0, .2, 1);
   --theme-motif: url('/images/motifs/motif-logo.svg');
+  --hover-glow: rgba(40, 51, 111, 0.22);
 
   /* Background gradients variables */
   --body-radial-tint: rgba(40, 51, 111, .06);
@@ -480,6 +628,7 @@ html.theme-terracotta {
   --creme: #fbf5f2;
   --noir: #25130c;
   --shadow: 0 12px 40px rgba(180, 83, 50, .15);
+  --hover-glow: rgba(180, 83, 50, 0.22);
   
   --body-radial-tint: rgba(180, 83, 50, .06);
   --body-bg-1: #fdfaf8;
@@ -503,6 +652,7 @@ html.theme-forest {
   --creme: #f5f7f3;
   --noir: #12190d;
   --shadow: 0 12px 40px rgba(62, 80, 42, .15);
+  --hover-glow: rgba(62, 80, 42, 0.22);
 
   --body-radial-tint: rgba(62, 80, 42, .06);
   --body-bg-1: #fafbfa;
@@ -526,6 +676,7 @@ html.theme-sage {
   --creme: #f3f6f5;
   --noir: #111614;
   --shadow: 0 12px 40px rgba(74, 93, 84, .15);
+  --hover-glow: rgba(74, 93, 84, 0.22);
 
   --body-radial-tint: rgba(74, 93, 84, .06);
   --body-bg-1: #fafbfa;
@@ -549,6 +700,7 @@ html.theme-red {
   --creme: #fcf2f3;
   --noir: #260f10;
   --shadow: 0 12px 40px rgba(218, 55, 61, .15);
+  --hover-glow: rgba(218, 55, 61, 0.22);
 
   --body-radial-tint: rgba(218, 55, 61, .06);
   --body-bg-1: #fdf8f8;
@@ -572,6 +724,7 @@ html.theme-secondary {
   --creme: #fcf9f7; /* Very light warm cream */
   --noir: #261611; /* Very dark chocolate */
   --shadow: 0 12px 40px rgba(87, 54, 42, .15);
+  --hover-glow: rgba(87, 54, 42, 0.22);
 
   --body-radial-tint: rgba(196, 101, 41, .06);
   --body-bg-1: #fdfbfb;
@@ -587,7 +740,89 @@ html.theme-secondary {
   --footer-grad-3: rgba(38, 22, 17, 1);
 }
 
-/* --- Intégration des Motifs Secondaires --- */
+/* Theme 7: Mode Musée (Dark & Gold) */
+html.theme-musee {
+  --brun: #d4af37; /* Or chaud */
+  --or: #f9b233;
+  --terre: #c5a02c;
+  --creme: #06070a; /* Fond ultra-sombre */
+  --blanc: #121420; /* Surfaces de cartes sombres */
+  --noir: #ffffff; /* Texte en blanc */
+  --surface: rgba(18, 20, 32, 0.82);
+  --shadow: 0 12px 40px rgba(212, 175, 55, 0.08);
+  --hover-glow: rgba(212, 175, 55, 0.28);
+  
+  --body-radial-tint: rgba(212, 175, 55, 0.05);
+  --body-bg-1: #090a10;
+  --body-bg-2: #05060a;
+  --body-bg-3: #020305;
+
+  --header-grad-1: rgba(9, 10, 16, 0.98);
+  --header-grad-2: rgba(18, 20, 32, 0.95);
+  --header-grad-3: rgba(5, 6, 10, 1);
+
+  --footer-grad-1: rgba(9, 10, 16, 0.98);
+  --footer-grad-2: rgba(18, 20, 32, 0.95);
+  --footer-grad-3: rgba(5, 6, 10, 1);
+}
+
+/* Thème Musee Dot Switcher */
+.theme-dot-musee {
+  background: linear-gradient(135deg, #090a10 0%, #d4af37 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Ajustements de lisibilité des textes pour le Mode Musée */
+html.theme-musee .news-card-desc,
+html.theme-musee .ev-card-desc,
+html.theme-musee .vision-text,
+html.theme-musee p,
+html.theme-musee .upcoming-desc,
+html.theme-musee .v-obj-item p {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* --- Intégration des Motifs Secondaires & Effets Immersifs --- */
+
+/* Arrière-plan de particules interactives Canvas */
+.particles-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Effets Glow (Surbrillance Thématique) et transitions 3D sur les cartes */
+.news-card, .ev-card, .format-card, .showcase-card, .kpi-card, .form-card, .press-sidebar-item, .v-obj-item {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.4s ease, border-color 0.4s ease, background 0.4s ease !important;
+}
+.news-card:hover, .ev-card:hover, .format-card:hover, .showcase-card:hover, .kpi-card:hover, .form-card:hover, .press-sidebar-item:hover, .v-obj-item:hover {
+  box-shadow: 0 20px 45px var(--hover-glow), 0 0 20px rgba(249, 178, 51, 0.12) !important;
+  border-color: var(--or) !important;
+}
+
+/* Profondeur tridimensionnelle pour les couches internes */
+.news-card, .ev-card, .format-card, .showcase-card {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+.news-card > *, .ev-card > *, .format-card > *, .showcase-card > * {
+  transform-style: preserve-3d;
+}
+/* Décalage en Z au survol pour l'effet holographique 3D */
+.news-card:hover .news-card-title,
+.ev-card:hover .ev-card-title,
+.format-card:hover h3,
+.showcase-card:hover .focus-main-title {
+  transform: translateZ(35px) !important;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+.news-card:hover .news-img-wrap,
+.ev-card:hover .ev-card-img-wrap,
+.showcase-card:hover .showcase-image-wrap {
+  transform: translateZ(15px) !important;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
 
 /* Motif 2 : Grille & Croix sur les formulaires, modales et boîtes de dialogue */
 .form-card, .admin-login-box, .modal-box {

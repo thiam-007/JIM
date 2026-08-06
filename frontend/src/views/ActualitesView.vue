@@ -55,6 +55,7 @@
             v-for="news in paginatedActualites" 
           :key="news.id" 
           class="news-card glass"
+          v-tilt-3d
           @click="readNews(news.id)"
           v-reveal="150"
         >
@@ -65,9 +66,14 @@
           <div class="news-content-wrap">
             <h3 class="news-card-title">{{ news.titre }}</h3>
             <p class="news-card-desc">{{ news.description }}</p>
-            <span class="news-link">
-              Lire l'article <AppIcon name="chevron-right" :size="14" />
-            </span>
+            <div class="news-card-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: auto;">
+              <span class="news-views" style="font-size: 0.75rem; color: #777; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                <AppIcon name="eye" :size="12" /> {{ (news.views || 0).toLocaleString('fr-FR') }}
+              </span>
+              <span class="news-link">
+                Lire l'article <AppIcon name="chevron-right" :size="14" />
+              </span>
+            </div>
           </div>
         </div>
 

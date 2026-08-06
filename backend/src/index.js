@@ -18,6 +18,7 @@ import newsletterRouter from './routes/newsletter.js'
 import shareRouter from './routes/share.js'
 import revuePresseRouter from './routes/revuePresse.js'
 import heroSlidesRouter from './routes/heroSlides.js'
+import livreDorRouter from './routes/livreDor.js'
 import rssRouter from './routes/rss.js'
 
 // Services (for the public QR endpoint)
@@ -137,6 +138,9 @@ app.use('/api/newsletter', newsletterRouter)
 
 // Hero slides: public endpoint
 app.use('/api/hero-slides', heroSlidesRouter)
+
+// Livre d'or: public endpoints (admin protected inside router)
+app.use('/api/livre-dor', livreDorRouter)
 
 // Dynamic Open Graph sharing endpoint
 app.use('/api/share', shareRouter)

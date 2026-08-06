@@ -56,6 +56,7 @@
           v-for="evt in paginatedEvents"
         :key="evt.id"
         class="ev-card"
+        v-tilt-3d
         @click="goToEvent(evt)"
       >
         <div v-if="evt.image_url" class="ev-card-img-wrap">
