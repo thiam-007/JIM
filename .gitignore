@@ -39,3 +39,6 @@ Thumbs.db
 
 # Frontend specific
 /frontend/dev-dist/
+
+# Media Files
+*.mp4
