@@ -1053,29 +1053,95 @@ function next3DCard() {
   active3DIdx.value = (active3DIdx.value + 1) % len
 }
 
-function playKoraPluck(frequency) {
+let ambientAudioCtx = null
+let ambientGainNode = null
+let ambientOscillators = []
+
+function stopAmbientSound() {
+  if (ambientGainNode && ambientAudioCtx) {
+    try {
+      ambientGainNode.gain.cancelScheduledValues(ambientAudioCtx.currentTime)
+      ambientGainNode.gain.setValueAtTime(ambientGainNode.gain.value, ambientAudioCtx.currentTime)
+      ambientGainNode.gain.linearRampToValueAtTime(0, ambientAudioCtx.currentTime + 1.5)
+      
+      ambientOscillators.forEach(osc => {
+        try { osc.stop(ambientAudioCtx.currentTime + 1.6) } catch (e) {}
+      })
+      ambientOscillators = []
+    } catch (e) {
+      console.error(e)
+    }
+  }
+}
+
+function startAmbientSound(baseFreq) {
   try {
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = audioCtx.createOscillator()
-    const gainNode = audioCtx.createGain()
-    const filter = audioCtx.createBiquadFilter()
+    if (!ambientAudioCtx) {
+      ambientAudioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    if (ambientAudioCtx.state === 'suspended') {
+      ambientAudioCtx.resume()
+    }
 
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(frequency, audioCtx.currentTime)
+    stopAmbientSound()
+
+    ambientGainNode = ambientAudioCtx.createGain()
+    ambientGainNode.connect(ambientAudioCtx.destination)
     
-    gainNode.gain.setValueAtTime(0.8, audioCtx.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.2)
+    ambientGainNode.gain.setValueAtTime(0, ambientAudioCtx.currentTime)
+    ambientGainNode.gain.linearRampToValueAtTime(0.12, ambientAudioCtx.currentTime + 2)
 
-    filter.type = 'lowpass'
-    filter.frequency.setValueAtTime(1000, audioCtx.currentTime)
-    filter.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.0)
+    // Drone 1 (Root note)
+    const osc1 = ambientAudioCtx.createOscillator()
+    osc1.type = 'sine'
+    osc1.frequency.setValueAtTime(baseFreq / 2, ambientAudioCtx.currentTime)
+    osc1.connect(ambientGainNode)
+    osc1.start()
+    ambientOscillators.push(osc1)
 
-    osc.connect(filter)
-    filter.connect(gainNode)
-    gainNode.connect(audioCtx.destination)
+    // Drone 2 (Fifth)
+    const osc2 = ambientAudioCtx.createOscillator()
+    osc2.type = 'triangle'
+    osc2.frequency.setValueAtTime((baseFreq / 2) * 1.5, ambientAudioCtx.currentTime)
+    const osc2Gain = ambientAudioCtx.createGain()
+    osc2Gain.gain.setValueAtTime(0.04, ambientAudioCtx.currentTime)
+    
+    const lfo = ambientAudioCtx.createOscillator()
+    lfo.type = 'sine'
+    lfo.frequency.setValueAtTime(0.15, ambientAudioCtx.currentTime) 
+    const lfoGain = ambientAudioCtx.createGain()
+    lfoGain.gain.setValueAtTime(0.02, ambientAudioCtx.currentTime)
+    lfo.connect(lfoGain)
+    lfoGain.connect(osc2Gain.gain)
+    lfo.start()
+    ambientOscillators.push(lfo)
 
-    osc.start()
-    osc.stop(audioCtx.currentTime + 1.5)
+    osc2.connect(osc2Gain)
+    osc2Gain.connect(ambientGainNode)
+    osc2.start()
+    ambientOscillators.push(osc2)
+
+    // Initial Pluck
+    const pluck = ambientAudioCtx.createOscillator()
+    const pluckGain = ambientAudioCtx.createGain()
+    const pluckFilter = ambientAudioCtx.createBiquadFilter()
+
+    pluck.type = 'sine'
+    pluck.frequency.setValueAtTime(baseFreq, ambientAudioCtx.currentTime)
+    
+    pluckGain.gain.setValueAtTime(0.5, ambientAudioCtx.currentTime)
+    pluckGain.gain.exponentialRampToValueAtTime(0.001, ambientAudioCtx.currentTime + 3)
+
+    pluckFilter.type = 'bandpass'
+    pluckFilter.frequency.setValueAtTime(baseFreq * 2, ambientAudioCtx.currentTime)
+    
+    pluck.connect(pluckFilter)
+    pluckFilter.connect(pluckGain)
+    pluckGain.connect(ambientGainNode)
+    
+    pluck.start()
+    pluck.stop(ambientAudioCtx.currentTime + 3.5)
+    
   } catch (e) {
     console.error("Audio Context error:", e)
   }
@@ -1084,14 +1150,16 @@ function playKoraPluck(frequency) {
 function playArtifactSound(item) {
   if (playingArtifactId.value === item.id) {
     if (window.speechSynthesis) window.speechSynthesis.cancel()
+    stopAmbientSound()
     playingArtifactId.value = null
     return
   }
 
   if (window.speechSynthesis) window.speechSynthesis.cancel()
+  stopAmbientSound()
   playingArtifactId.value = item.id
 
-  playKoraPluck(item.freq)
+  startAmbientSound(item.freq)
 
   if (window.speechSynthesis) {
     currentUtterance = new SpeechSynthesisUtterance(item.story)
@@ -1100,23 +1168,27 @@ function playArtifactSound(item) {
     currentUtterance.pitch = 0.95
 
     currentUtterance.onend = () => {
+      stopAmbientSound()
       playingArtifactId.value = null
     }
     currentUtterance.onerror = () => {
+      stopAmbientSound()
       playingArtifactId.value = null
     }
 
     window.speechSynthesis.speak(currentUtterance)
   } else {
     setTimeout(() => {
+      stopAmbientSound()
       playingArtifactId.value = null
-    }, 3000)
+    }, 5000)
   }
 }
 
 onUnmounted(() => {
   stopHeroAutoplay()
   stopMonitoring()
+  stopAmbientSound()
   if (window.speechSynthesis) window.speechSynthesis.cancel()
 })
 
