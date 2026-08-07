@@ -581,12 +581,52 @@ html.theme-musee .genre-pill {
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .page-header-section { padding: 24px; min-height: 200px; border-radius: 16px; margin-top: 0; }
   .header-title { font-size: 1.7rem; }
-  .guestbook-container { height: 500px; }
-  .guestbook-card { width: 170px; margin-top: -85px; margin-left: -85px; padding: 13px; }
+  
+  /* Désactiver la vue 3D sur mobile pour privilégier une liste scrollable propre */
+  .guestbook-container { 
+    height: auto; 
+    min-height: 50vh;
+    padding: 16px;
+    display: block; 
+    overflow: visible;
+  }
+  
+  .guestbook-cloud {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    height: auto;
+    transform: none !important;
+    transform-style: flat;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .guestbook-card { 
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100% !important; 
+    margin: 0 !important; 
+    padding: 20px; 
+    transform: none !important;
+    cursor: default;
+  }
+
+  .card-pin {
+    display: none; /* Inutile en mode liste */
+  }
+
+  .speed-control {
+    display: none; /* Inutile s'il n'y a pas d'animation */
+  }
+  
   .card-modal-box { max-width: 95%; }
-  .fab-signature { padding: 9px 14px; font-size: 0.80rem; }
+  .fab-signature { padding: 12px 18px; font-size: 0.90rem; bottom: 20px; right: 20px; }
 }
 </style>
