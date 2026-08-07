@@ -177,16 +177,13 @@
             </p>
           </div>
           <div class="video-player-side">
-            <!-- Remplacer le src="" par le lien réel de la vidéo (ex: Supabase, YouTube, Vimeo) -->
-            <video 
-              class="project-video" 
-              controls 
-              poster="/images/side-photo.jpeg"
-              preload="none"
-            >
-              <source :src="'/videos/Teaser Musee Virtuel de Guinee.mp4'" type="video/mp4" />
-              Votre navigateur ne supporte pas la balise vidéo.
-            </video>
+            <iframe 
+              src="https://player.vimeo.com/video/1216398699?title=0&byline=0&portrait=0" 
+              class="project-video"
+              style="border:none; width: 100%; height: 100%; min-height: 300px;" 
+              allow="autoplay; fullscreen; picture-in-picture" 
+              allowfullscreen>
+            </iframe>
           </div>
         </div>
       </div>
