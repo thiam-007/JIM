@@ -22,12 +22,16 @@ JIM/
 ## ✨ Fonctionnalités Clés
 
 ### 🌐 Vitrine & Site Public (Frontend)
+- **Écran de Chargement Global** : Animation d'introduction technologique avec objets 3D transparents et réseau de particules pour une immersion immédiate.
 - **Accueil & Hero Slider** : Présentation animée et dynamique de l'événement et du Musée.
+- **Galerie 3D Immersive** : Exploration détaillée d'une douzaine d'artefacts culturels (masques, cases, statues) avec visionneuse 3D (via Sketchfab).
+- **Carte Interactive** : Visualisation géographique et culturelle des artefacts sur une carte de la Guinée (propulsée par Leaflet).
+- **Audio-guide Narratif** : Lecture vocale (Text-To-Speech) de l'histoire des œuvres accompagnée d'une nappe sonore générative apaisante (Web Audio API).
+- **Réalité Augmentée (AR)** : Projection des œuvres dans l'espace de l'utilisateur via QR codes.
 - **Événements & Ateliers** : Liste et détails des ateliers et conférences prévus avec possibilité d'inscription.
-- **Actualités** : Publication d'articles et actualités liés au Musée et à l'événement.
-- **Revue de Presse** : Articles et mentions média externes du MVG.
+- **Actualités & Revue de Presse** : Publication d'articles liés au Musée et mentions médias externes.
+- **Livre d'Or** : Espace d'expression publique où les visiteurs peuvent laisser un témoignage après leur visite.
 - **Inscription & RSVP** : Formulaires d'inscription publique ou via invitation dédiée pour les VIP.
-- **Contact & Newsletter** : Envoi de messages de contact et abonnement à la newsletter.
 - **PWA (Progressive Web App)** : Installable sur mobile et tablette avec détection automatique et notification in-app de mise à jour.
 
 ### 🛡️ Back-office Admin & Tableau de Bord

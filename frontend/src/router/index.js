@@ -31,6 +31,7 @@ const routes = [
   { path: '/actualites/:id', name: 'ActualiteDetail', component: ActualiteDetailView },
   { path: '/galerie-3d', name: 'Galerie3D', component: () => import('../views/Galerie3DView.vue') },
   { path: '/livre-d-or', name: 'LivreDor', component: () => import('../views/LivreDorView.vue') },
+  { path: '/carte', name: 'CarteInteractive', component: () => import('../views/CarteInteractiveView.vue') },
 
   { path: '/evenements', name: 'Evenements', component: EvenementsView },
   { path: '/invites', name: 'Invites', component: InvitesView },

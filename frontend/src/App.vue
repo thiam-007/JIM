@@ -1,5 +1,16 @@
 <template>
   <div class="app-wrapper">
+    <!-- Écran de chargement global -->
+    <transition name="fade">
+      <div v-if="isAppLoading" class="global-app-loader">
+        <canvas ref="loaderCanvas" class="loader-particles-bg"></canvas>
+        <div class="loader-content">
+          <img src="/images/logo-white.png" alt="Musée Virtuel de Guinée" class="loader-logo" />
+          <div class="loader-spinner"></div>
+        </div>
+      </div>
+    </transition>
+
     <!-- Si domaine administration et non connecté : écran de connexion plein écran dédié -->
     <div v-if="isAdminDomain && !apiStore.isConnected" class="admin-login-fullscreen">
       <div class="admin-login-box modal-box modal-confirm form-card">
@@ -145,6 +156,9 @@
           </RouterLink>
           <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Galerie3D' }" to="/galerie-3d">
             <AppIcon name="box" :size="16" /> Galerie 3D
+          </RouterLink>
+          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'CarteInteractive' }" to="/carte">
+            <AppIcon name="map-pin" :size="16" /> Carte
           </RouterLink>
           <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'LivreDor' }" to="/livre-d-or">
             <AppIcon name="book-open" :size="16" /> Livre d'Or
@@ -306,6 +320,157 @@ import AppIcon from './components/AppIcon.vue'
 import { animate } from 'animejs'
 
 const isAdminSidebarOpen = ref(false)
+const isAppLoading = ref(true)
+
+const loaderCanvas = ref(null)
+let loaderParticlesCleanUp = null
+
+function initLoaderParticles() {
+  const canvas = loaderCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  let animationId = null
+  let width = (canvas.width = window.innerWidth)
+  let height = (canvas.height = window.innerHeight)
+
+  const imageUrls = [
+    '/images/galerie-3d/cover/nimba.png',
+    '/images/galerie-3d/cover/nimba_portée.png',
+    '/images/galerie-3d/cover/asthiol.png',
+    '/images/galerie-3d/cover/simogui.png',
+    '/images/galerie-3d/cover/dalaba.png',
+    '/images/galerie-3d/cover/masque_kouranko.png'
+  ]
+  const loadedImages = []
+  imageUrls.forEach(url => {
+    const img = new Image()
+    img.src = url
+    loadedImages.push(img)
+  })
+
+  // 1. Particules "Images 3D"
+  const imageParticles = []
+  const maxImages = 15
+
+  class ImageParticle {
+    constructor() {
+      this.img = loadedImages[Math.floor(Math.random() * loadedImages.length)]
+      this.size = Math.random() * 80 + 60 // 60px à 140px
+      this.x = Math.random() * width
+      this.y = Math.random() * height
+      this.vx = (Math.random() - 0.5) * 1.0
+      this.vy = (Math.random() - 0.5) * 1.0
+      this.rotation = Math.random() * Math.PI * 2
+      this.vrot = (Math.random() - 0.5) * 0.015
+    }
+    update() {
+      this.x += this.vx
+      this.y += this.vy
+      this.rotation += this.vrot
+      if (this.x < -150) this.x = width + 150
+      if (this.x > width + 150) this.x = -150
+      if (this.y < -150) this.y = height + 150
+      if (this.y > height + 150) this.y = -150
+    }
+    draw() {
+      if (this.img.complete && this.img.naturalHeight !== 0) {
+        ctx.save()
+        ctx.translate(this.x, this.y)
+        ctx.rotate(this.rotation)
+        ctx.globalAlpha = 0.12 // Très transparent pour ne pas gêner le logo
+        ctx.drawImage(this.img, -this.size / 2, -this.size / 2, this.size, this.size)
+        ctx.restore()
+      }
+    }
+  }
+
+  for (let i = 0; i < maxImages; i++) {
+    imageParticles.push(new ImageParticle())
+  }
+
+  // 2. Particules "Réseau Technologique"
+  const smallParticles = []
+  const maxSmallParticles = 50
+  for (let i = 0; i < maxSmallParticles; i++) {
+    smallParticles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 1.5,
+      vy: (Math.random() - 0.5) * 1.5,
+      radius: Math.random() * 2 + 1
+    })
+  }
+
+  function drawSmallParticles() {
+    smallParticles.forEach(p => {
+      p.x += p.vx
+      p.y += p.vy
+      if (p.x < 0 || p.x > width) p.vx *= -1
+      if (p.y < 0 || p.y > height) p.vy *= -1
+      
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
+      ctx.fillStyle = 'rgba(249, 178, 51, 0.7)'
+      ctx.fill()
+    })
+    
+    for (let i = 0; i < smallParticles.length; i++) {
+      for (let j = i + 1; j < smallParticles.length; j++) {
+        const dx = smallParticles[i].x - smallParticles[j].x
+        const dy = smallParticles[i].y - smallParticles[j].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < 130) {
+          ctx.beginPath()
+          ctx.moveTo(smallParticles[i].x, smallParticles[i].y)
+          ctx.lineTo(smallParticles[j].x, smallParticles[j].y)
+          ctx.strokeStyle = `rgba(249, 178, 51, ${0.2 * (1 - dist / 130)})`
+          ctx.lineWidth = 1
+          ctx.stroke()
+        }
+      }
+    }
+  }
+
+  function handleResize() {
+    if (!canvas) return
+    width = canvas.width = window.innerWidth
+    height = canvas.height = window.innerHeight
+  }
+  window.addEventListener('resize', handleResize)
+
+  function animate() {
+    ctx.clearRect(0, 0, width, height)
+    
+    // Dessiner les images 3D
+    imageParticles.forEach(p => {
+      p.update()
+      p.draw()
+    })
+
+    // Dessiner le réseau technologique par dessus
+    drawSmallParticles()
+
+    animationId = requestAnimationFrame(animate)
+  }
+  animate()
+
+  loaderParticlesCleanUp = () => {
+    cancelAnimationFrame(animationId)
+    window.removeEventListener('resize', handleResize)
+  }
+}
+
+onMounted(() => {
+  if (isAppLoading.value) {
+    setTimeout(() => {
+      initLoaderParticles()
+    }, 50)
+  }
+  setTimeout(() => {
+    isAppLoading.value = false
+    if (loaderParticlesCleanUp) loaderParticlesCleanUp()
+  }, 5000)
+})
 
 function onPageEnter(el, done) {
   animate(el, {
@@ -1867,6 +2032,59 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
     flex-shrink: 0;
   }
   .stats-summary { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── Global App Loader ─── */
+.global-app-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: radial-gradient(circle at center, #1a1614 0%, #080706 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  overflow: hidden;
+}
+.loader-particles-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.loader-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  position: relative;
+  z-index: 2;
+}
+.loader-logo {
+  height: 150px;
+  animation: pulse-logo 2.5s infinite ease-in-out;
+  filter: drop-shadow(0 0 20px rgba(249, 178, 51, 0.2));
+}
+.loader-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--or);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes pulse-logo {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 
 /* ─── Admin Fullscreen Login ─── */
