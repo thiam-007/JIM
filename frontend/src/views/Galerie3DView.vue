@@ -1131,6 +1131,10 @@ html.theme-musee .thumb-item.active {
 /* ──────────────────────────────────────────────────────── */
 /* ─── STYLES DU MODE CATALOGUE PAGINÉ ─────────────────── */
 /* ──────────────────────────────────────────────────────── */
+.gal-controls {
+  margin-bottom: 32px;
+}
+
 .gal-search-row {
   display: flex;
   flex-direction: column;
@@ -1148,6 +1152,7 @@ html.theme-musee .thumb-item.active {
 .gal-search-wrap {
   position: relative;
   flex: 1;
+  min-width: 250px;
   max-width: 400px;
 }
 
@@ -1176,11 +1181,30 @@ html.theme-musee .thumb-item.active {
   transition: all 0.3s cubic-bezier(.4,0,.2,1);
 }
 
+.theme-musee .gal-search-input,
+.theme-secondary .gal-search-input {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-color: rgba(249, 178, 51, 0.3);
+}
+
+.theme-musee .gal-search-icon,
+.theme-secondary .gal-search-icon {
+  color: var(--or);
+  opacity: 0.8;
+}
+
 .gal-search-input:focus {
   border-color: var(--or);
   background: #fff;
   box-shadow: 0 8px 24px rgba(249,178,51,.15);
   transform: translateY(-1px);
+}
+
+.theme-musee .gal-search-input:focus,
+.theme-secondary .gal-search-input:focus {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .gal-search-input:focus + .gal-search-icon, 

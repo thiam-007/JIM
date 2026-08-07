@@ -176,14 +176,15 @@
               À travers cette vidéo, explorez les coulisses des chantiers de collections, les actions de numérisation 3D et le travail de valorisation culturelle mené sur le terrain pour préserver et diffuser le patrimoine guinéen.
             </p>
           </div>
-          <div class="video-player-side">
-            <iframe 
-              src="https://player.vimeo.com/video/1216398699?title=0&byline=0&portrait=0" 
-              class="project-video"
-              style="border:none; width: 100%; height: 100%; min-height: 300px;" 
-              allow="autoplay; fullscreen; picture-in-picture" 
-              allowfullscreen>
-            </iframe>
+          <div class="video-player-side" style="padding:0; background:transparent;">
+            <div style="padding:56.25% 0 0 0;position:relative;width:100%;height:0;">
+              <iframe 
+                src="https://player.vimeo.com/video/1216398699?title=0&byline=0&portrait=0&playsinline=1" 
+                style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" 
+                allow="autoplay; fullscreen; picture-in-picture" 
+                allowfullscreen>
+              </iframe>
+            </div>
           </div>
         </div>
       </div>
