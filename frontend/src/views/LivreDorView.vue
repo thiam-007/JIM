@@ -585,13 +585,13 @@ html.theme-musee .genre-pill {
   .page-header-section { padding: 24px; min-height: 200px; border-radius: 16px; margin-top: 0; }
   .header-title { font-size: 1.7rem; }
   
-  /* Désactiver la vue 3D sur mobile pour privilégier une liste scrollable propre */
+  /* Affichage en carrousel horizontal scrollable sur mobile */
   .guestbook-container { 
-    height: auto; 
-    min-height: 50vh;
-    padding: 16px;
-    display: block; 
-    overflow: visible;
+    height: 480px;
+    padding: 16px 0;
+    display: flex; 
+    align-items: center;
+    overflow: hidden;
   }
   
   .guestbook-cloud {
@@ -599,31 +599,46 @@ html.theme-musee .genre-pill {
     top: auto;
     left: auto;
     width: 100%;
-    height: auto;
+    height: 100%;
     transform: none !important;
     transform-style: flat;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 16px;
+    padding: 20px 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Cacher la barre de scroll sur Webkit pour un look plus propre */
+  .guestbook-cloud::-webkit-scrollbar {
+    display: none;
   }
 
   .guestbook-card { 
     position: relative;
     top: auto;
     left: auto;
-    width: 100% !important; 
+    min-width: 80vw !important; 
+    max-width: 80vw !important;
+    height: 100% !important;
     margin: 0 !important; 
     padding: 20px; 
     transform: none !important;
     cursor: default;
+    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
   }
 
   .card-pin {
-    display: none; /* Inutile en mode liste */
+    display: none;
   }
 
   .speed-control {
-    display: none; /* Inutile s'il n'y a pas d'animation */
+    display: none;
   }
   
   .card-modal-box { max-width: 95%; }
