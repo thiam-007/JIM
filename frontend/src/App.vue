@@ -134,7 +134,7 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
             <AppIcon name="home" :size="16" /> Accueil
           </RouterLink>
-          <div v-if="!isAdminDomain" class="nav-dropdown-wrapper">
+          <div v-if="!isAdminDomain" class="nav-dropdown-wrapper" tabindex="0" @click="void(0)">
             <div class="nav-tab nav-tab-dropdown" :class="{ active: route.name === 'Apropos' || route.name === 'RevuePresse' }">
               <AppIcon name="info" :size="16" /> Le Projet
               <AppIcon name="chevron-down" :size="14" class="dropdown-icon" />
@@ -1334,7 +1334,8 @@ header:hover .header-logo-tag {
   z-index: 100;
   border: 1px solid rgba(132, 89, 54, 0.1);
 }
-.nav-dropdown-wrapper:hover .nav-dropdown-menu {
+.nav-dropdown-wrapper:hover .nav-dropdown-menu,
+.nav-dropdown-wrapper:focus-within .nav-dropdown-menu {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
