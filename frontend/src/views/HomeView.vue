@@ -1510,6 +1510,10 @@ function formatTimeAgo(dateStr) {
   box-shadow: 0 15px 35px rgba(89,55,22,0.15);
   margin-top: 10px;
   padding: 60px 60px;
+  background: #000;
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
 }
 .hero-bg {
   position: absolute; inset: 0; z-index: 1;
