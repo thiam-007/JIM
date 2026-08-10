@@ -1515,8 +1515,11 @@ function formatTimeAgo(dateStr) {
   position: absolute; inset: 0; z-index: 1;
 }
 .hero-slide {
-  position: absolute; inset: 0;
+  position: absolute; 
+  top: -2%; left: -2%; width: 104%; height: 104%;
   animation: heroPulse 9s ease-in-out infinite;
+  /* Prevent caret blinking just in case */
+  caret-color: transparent;
 }
 .hero-img {
   width: 100%; height: 100%; object-fit: cover;
