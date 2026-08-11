@@ -1238,6 +1238,21 @@ header:hover .header-logo-tag {
   .header-contact-btn span {
     display: none;
   }
+  .nav-tabs {
+    border-radius: 24px;
+    padding: 8px;
+  }
+  .nav-tab {
+    min-width: 110px;
+    padding: 10px 14px;
+    font-size: 0.74rem;
+  }
+  .btn-primary-custom,
+  .btn-secondary-custom,
+  .btn-focus-action {
+    white-space: normal;
+    text-align: center;
+  }
 }
 .jim-badge {
   background: rgba(255,255,255,.18); color: var(--blanc);

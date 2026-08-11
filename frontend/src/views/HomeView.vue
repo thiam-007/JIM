@@ -2480,6 +2480,9 @@ function formatTimeAgo(dateStr) {
   .text-light { font-size: 1.2rem; }
   .focus-title { font-size: 1.25rem; }
   .kpi-grid { grid-template-columns: 1fr; }
+  .visitor-objectives-grid { grid-template-columns: 1fr; }
+  .newsletter-input-group { flex-direction: column; max-width: 100%; }
+  .btn-newsletter { width: 100%; text-align: center; justify-content: center; }
   .modal-actions { flex-direction: column-reverse; }
   .btn-cancel, .modal-submit { width: 100%; text-align: center; justify-content: center; }
 }
