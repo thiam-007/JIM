@@ -64,9 +64,16 @@ router.post('/login', loginLimiter, async (req, res, next) => {
     }
 
     // Verify hashed password
-    const isValid = verifyPassword(password, user.password_hash)
+    const { isValid, needsUpgrade } = verifyPassword(password, user.password_hash)
     if (!isValid) {
       return res.status(401).json({ error: 'Identifiants incorrects' })
+    }
+
+    // Auto-upgrade password hash if using old format/low iterations
+    if (needsUpgrade) {
+      const newHash = hashPassword(password)
+      // Fire and forget (don't block login if it fails)
+      supabase.from('users').update({ password_hash: newHash }).eq('id', user.id).then()
     }
 
     const token = jwt.sign(
@@ -116,7 +123,7 @@ router.put('/password', authMiddleware, async (req, res, next) => {
       return res.status(404).json({ error: 'Utilisateur introuvable' })
     }
 
-    const isValid = verifyPassword(currentPassword, user.password_hash)
+    const { isValid } = verifyPassword(currentPassword, user.password_hash)
     if (!isValid) {
       return res.status(401).json({ error: 'Mot de passe actuel incorrect' })
     }

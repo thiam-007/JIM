@@ -54,8 +54,14 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
     // Clean mimeType or set default
     const finalMime = mimeType || 'image/jpeg'
 
+    // Validate extension
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg'
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm']
+    if (!allowedExtensions.includes(fileExtension)) {
+      return res.status(400).json({ error: `Extension non autorisée. Formats acceptés : ${allowedExtensions.join(', ')}` })
+    }
+
     // Generate unique name
-    const fileExtension = fileName.split('.').pop() || 'jpg'
     const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`
 
     const bucketName = bucket || process.env.SUPABASE_NEWS_BUCKET || 'actualites'

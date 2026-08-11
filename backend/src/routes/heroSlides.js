@@ -59,7 +59,14 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
     const fileBuffer = Buffer.from(base64Data, 'base64')
 
     const finalMime = mimeType || 'image/jpeg'
-    const fileExtension = fileName.split('.').pop() || 'jpg'
+    
+    // Validate extension
+    const fileExtension = fileName.split('.').pop()?.toLowerCase() || 'jpg'
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'mp4', 'webm']
+    if (!allowedExtensions.includes(fileExtension)) {
+      return res.status(400).json({ error: `Extension non autorisée. Formats acceptés : ${allowedExtensions.join(', ')}` })
+    }
+    
     const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`
     const bucketName = 'hero_slides' // Ensure this bucket exists in Supabase!
 
