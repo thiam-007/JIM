@@ -811,4 +811,38 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   .partners-logos-wrap { gap: 20px; }
   .logo-item img { height: 38px; }
 }
+
+/* Fixes for mobile clipping and long-word wrapping (iPhone / small screens) */
+/* Add safe-area inset padding so Safari bottom UI doesn't cover content */
+.ap-wrapper {
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+}
+
+/* Extra bottom padding for main/app shell to avoid overlap with mobile controls */
+.app-shell, main {
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+}
+
+/* Allow card transforms (tilt) to render without being clipped on small screens */
+@media (max-width: 780px) {
+  .form-card {
+    overflow: visible; /* cards should not clip internal content on mobile */
+  }
+}
+
+/* Ensure long words (emails, long labels) break instead of overflowing or being visually cut */
+.approach-text,
+.collections-info p,
+.contact-link,
+.focus-main-title,
+.tab-headline,
+.ap-hero-title,
+.focus-pre {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  white-space: normal;
+}
+
 </style>
