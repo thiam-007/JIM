@@ -598,6 +598,7 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
 
 .tab-content {
   background: #fff;
+  padding: 32px;
 }
 .tab-content-inner {
   display: grid;
@@ -756,6 +757,7 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
 .approach-text {
   max-width: 700px;
   margin: 0 auto 28px;
+  padding: 0 20px;
   font-size: 0.94rem;
   line-height: 1.6;
   color: var(--brun);
@@ -808,6 +810,8 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   .vision-lead { font-size: 1rem; }
   .collections-info { padding: 20px; }
   .tab-btn { padding: 12px 14px; font-size: 0.74rem; }
+  .tab-content { padding: 20px 16px; }
+  .tab-text-side { word-break: break-word; }
   .partners-logos-wrap { gap: 20px; }
   .logo-item img { height: 38px; }
 }
