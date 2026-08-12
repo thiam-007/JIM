@@ -556,6 +556,9 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden; /* Ensure it doesn't stretch past screen */
 }
 .tabs-header {
   display: flex;
@@ -563,6 +566,8 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   border-bottom: 1.5px solid rgba(132,89,54,0.12);
   overflow-x: auto;
   scrollbar-width: none; /* Firefox */
+  width: 100%;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
 }
 .tabs-header::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
