@@ -75,13 +75,13 @@
               >
                 ★
               </button>
+              <div class="rating-summary-inline" v-if="ratingData.count > 0">
+                <strong>{{ ratingData.avg }}/5</strong> ({{ ratingData.count }} avis)
+              </div>
             </div>
             <div class="rating-feedback" v-if="ratingMessage">
               <AppIcon name="check-circle" :size="14" style="color: #16a34a;" />
               {{ ratingMessage }}
-            </div>
-            <div class="rating-summary" v-if="ratingData.count > 0">
-              Note moyenne : <strong>{{ ratingData.avg }}/5</strong> — {{ ratingData.count }} avis
             </div>
           </div>
         </div>
@@ -610,6 +610,7 @@ async function submitRating(star) {
 }
 .stars-row {
   display: flex;
+  align-items: center;
   gap: 6px;
   margin-bottom: 12px;
 }
@@ -643,11 +644,12 @@ async function submitRating(star) {
   padding: 6px 12px;
   margin-bottom: 10px;
 }
-.rating-summary {
-  font-size: 0.82rem;
+.rating-summary-inline {
+  margin-left: 10px;
+  font-size: 0.95rem;
   color: #666;
 }
-.rating-summary strong {
+.rating-summary-inline strong {
   color: var(--brun);
 }
 
