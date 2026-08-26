@@ -339,7 +339,14 @@ function initLoaderParticles() {
     '/images/galerie-3d/cover/asthiol.png',
     '/images/galerie-3d/cover/simogui.png',
     '/images/galerie-3d/cover/dalaba.png',
-    '/images/galerie-3d/cover/masque_kouranko.png'
+    '/images/galerie-3d/cover/masque_kouranko.png',
+    '/images/guinea_nimba_mask_1787587704233.jpg',
+    '/images/guinea_toma_mask_1787587715352.jpg',
+    '/images/guinea_bansonyi_sculpture_1787587726005.jpg',
+    '/images/guinea_malinke_balafon_1787594753780.jpg',
+    '/images/guinea_susu_djembe_1787594764115.jpg',
+    '/images/guinea_fulani_hat_1787594825036.jpg',
+    '/images/guinea_lepi_textile_1787595184497.jpg'
   ]
   const loadedImages = []
   imageUrls.forEach(url => {
