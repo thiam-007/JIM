@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import supabase from '../config/supabase.js'
 import { uploadExternalUrlToSupabase } from '../utils/imageUploader.js'
+import { authMiddleware, optionalAuth, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
 
 // ─── List all evenements ───────────────────────────────────────────────────────
-router.get('/', async (req, res, next) => {
+router.get('/', optionalAuth, async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('evenements')
@@ -17,7 +18,9 @@ router.get('/', async (req, res, next) => {
 
     if (error) throw error
 
-    const eventsWithStats = data.map(evt => {
+    const visibleEvents = req.user ? data : data.filter(event => event.statut === 'publie')
+
+    const eventsWithStats = visibleEvents.map(evt => {
       const invitations = evt.invitations || []
       const total = invitations.length
       const confirms = invitations.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
@@ -40,7 +43,7 @@ router.get('/', async (req, res, next) => {
 })
 
 // ─── Get dashboard stats ──────────────────────────────────────────────────────
-router.get('/dashboard/stats', async (req, res, next) => {
+router.get('/dashboard/stats', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { data: events, error: evError } = await supabase
       .from('evenements')
@@ -94,7 +97,7 @@ router.get('/dashboard/stats', async (req, res, next) => {
 })
 
 // ─── Get recent activity feed ────────────────────────────────────────────────
-router.get('/dashboard/activities', async (req, res, next) => {
+router.get('/dashboard/activities', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { data: checkins, error: ckError } = await supabase
       .from('checkins')
@@ -204,7 +207,7 @@ router.get('/dashboard/activities', async (req, res, next) => {
 })
 
 // ─── Create evenement ─────────────────────────────────────────────────────────
-router.post('/', async (req, res, next) => {
+router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
 
@@ -226,7 +229,7 @@ router.post('/', async (req, res, next) => {
 })
 
 // ─── Get one evenement ────────────────────────────────────────────────────────
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', optionalAuth, async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('evenements')
@@ -234,7 +237,7 @@ router.get('/:id', async (req, res, next) => {
       .eq('id', req.params.id)
       .single()
 
-    if (error || !data) return res.status(404).json({ error: 'Événement introuvable' })
+    if (error || !data || (!req.user && data.statut !== 'publie')) return res.status(404).json({ error: 'Événement introuvable' })
     res.json(data)
   } catch (err) {
     next(err)
@@ -242,7 +245,7 @@ router.get('/:id', async (req, res, next) => {
 })
 
 // ─── Update evenement ─────────────────────────────────────────────────────────
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
 
@@ -275,7 +278,7 @@ router.put('/:id', async (req, res, next) => {
 })
 
 // ─── Delete evenement ─────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { error } = await supabase
       .from('evenements')
@@ -290,7 +293,7 @@ router.delete('/:id', async (req, res, next) => {
 })
 
 // ─── Get stats for an evenement ───────────────────────────────────────────────
-router.get('/:id/stats', async (req, res, next) => {
+router.get('/:id/stats', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const evenementId = req.params.id
 

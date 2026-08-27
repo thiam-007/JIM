@@ -350,6 +350,9 @@
               Supprimer l'invitation de
               <strong>{{ deletingInv?.invites?.prenom }} {{ deletingInv?.invites?.nom }}</strong> ?
             </p>
+            <div v-if="deleteError" class="form-error-msg">
+              <AppIcon name="alert-triangle" :size="15" /> {{ deleteError }}
+            </div>
             <div class="modal-actions">
               <button class="btn-cancel" @click="showDeleteModal = false">Annuler</button>
               <button class="bsub bsub-s modal-submit" @click="doDelete" :disabled="deleting">
@@ -370,6 +373,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import * as XLSX from 'xlsx'
 import { useApiStore } from '../store/api.js'
+import { normalizeEmail, isValidEmail } from '../utils/emailValidator.js'
 import AppIcon from '../components/AppIcon.vue'
 
 const route = useRoute()
@@ -387,6 +391,7 @@ const showDeleteModal = ref(false)
 const detailInv = ref(null)
 const deletingInv = ref(null)
 const deleting = ref(false)
+const deleteError = ref('')
 const sending = ref(false)
 const adding = ref(false)
 const addError = ref('')
@@ -594,17 +599,21 @@ function openDetail(inv) {
 
 function confirmDelete(inv) {
   deletingInv.value = inv
+  deleteError.value = ''
   showDeleteModal.value = true
 }
 
 async function doDelete() {
   if (!deletingInv.value) return
   deleting.value = true
+  deleteError.value = ''
   try {
     await api.del(`/api/invitations/${deletingInv.value.id}`)
     api.invitations = api.invitations.filter(i => i.id !== deletingInv.value.id)
     showDeleteModal.value = false
     deletingInv.value = null
+  } catch (err) {
+    deleteError.value = err.message || 'Erreur lors de la suppression.'
   } finally {
     deleting.value = false
   }
@@ -721,11 +730,22 @@ async function importExcelOrCSV(event) {
           
           let prenom = pKey ? String(row[pKey]).trim() : ''
           let nom = nKey ? String(row[nKey]).trim() : ''
-          const email = eKey ? String(row[eKey]).trim() : ''
+          let email = eKey ? String(row[eKey]).trim() : ''
           const telephone = tKey ? String(row[tKey]).trim() : ''
           const organisation = oKey ? String(row[oKey]).trim() : ''
           const titre_poste = posKey ? String(row[posKey]).trim() : ''
           const notes = notesKey ? String(row[notesKey]).trim() : ''
+
+          // Normaliser l'email
+          if (email) {
+            const normalizedEmail = normalizeEmail(email)
+            if (!normalizedEmail) {
+              console.warn(`Email invalide ignoré: "${email}"`)
+              email = '' // Ignorer l'email invalide
+            } else {
+              email = normalizedEmail
+            }
+          }
 
           if (!prenom && !nom) {
             const fullnameKey = Object.keys(row).find(k => k.toLowerCase().includes('nom complet') || k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom') || k.toLowerCase() === 'name' || k.toLowerCase() === 'fullname')
@@ -846,6 +866,7 @@ async function importExcelOrCSV(event) {
 
 /* Table */
 .inv-table-wrap { overflow-x: auto; }
+.inv-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .inv-table { width: 100%; border-collapse: collapse; min-width: 700px; }
 .inv-table th {
   padding: 12px 16px;
@@ -896,6 +917,12 @@ async function importExcelOrCSV(event) {
 .row-btn-qr:hover { background: rgba(21,101,192,.1); }
 .row-btn-delete { color: var(--rouge); }
 .row-btn-delete:hover { background: rgba(177,34,42,.1); }
+
+@media (max-width: 768px) {
+  .row-btn-qr, .row-btn-delete {
+    width: 44px; height: 44px;
+  }
+}
 .row-statut-select {
   padding: 5px 28px 5px 10px; border: 1.5px solid #e8ddd0;
   border-radius: 8px; font-size: .78rem; background: var(--creme);
@@ -1010,6 +1037,7 @@ async function importExcelOrCSV(event) {
 
 @media (max-width: 640px) {
   .inv-stats-bar { gap: 16px; }
+  .profile-stats-card > .fb { grid-template-columns: 1fr !important; }
   .inv-toolbar { flex-direction: column; align-items: stretch; }
   .inv-actions { flex-direction: column; }
   .detail-grid { grid-template-columns: 1fr; }

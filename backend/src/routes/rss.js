@@ -56,12 +56,13 @@ router.get('/', async (req, res, next) => {
         // RSS author format expects an email or just a name
         const author = act.auteur ? `${escapeXml(act.auteur)}` : 'Musée Virtuel de Guinée'
 
+        const description = String(act.description || '').replaceAll(']]>', ']]]]><![CDATA[>')
         xml += `  <item>
     <title>${escapeXml(act.titre)}</title>
     <link>${itemLink}</link>
     <guid isPermaLink="true">${itemLink}</guid>
     <pubDate>${pubDate}</pubDate>
-    <description><![CDATA[${act.description || ''}]]></description>
+    <description><![CDATA[${description}]]></description>
     <author>${escapeXml(author)}</author>
 `
         if (act.image_url) {

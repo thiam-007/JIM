@@ -647,6 +647,12 @@ async function importFromNewsletter() {
 .row-btn-delete { color: var(--rouge); }
 .row-btn-delete:hover { background: rgba(177,34,42,.1); }
 
+@media (max-width: 768px) {
+  .row-btn-edit, .row-btn-delete {
+    width: 44px; height: 44px;
+  }
+}
+
 /* Empty state */
 .inv-empty {
   display: flex; flex-direction: column; align-items: center;

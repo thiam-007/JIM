@@ -1,6 +1,6 @@
 import express from 'express'
 import supabase from '../config/supabase.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
 })
 
 // POST /api/revue-presse (Admin)
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { titre, media_nom, description, url_lien, date_publication, image_url } = req.body
     const { data, error } = await supabase
@@ -39,7 +39,7 @@ router.post('/', authMiddleware, async (req, res) => {
 })
 
 // PUT /api/revue-presse/:id (Admin)
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params
     const { titre, media_nom, description, url_lien, date_publication, image_url } = req.body
@@ -60,7 +60,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
 })
 
 // DELETE /api/revue-presse/:id (Admin)
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params
     const { error } = await supabase

@@ -1390,7 +1390,7 @@ header:hover .header-logo-tag {
 }
 .admin-sidebar {
   position: fixed; top: 0; left: 0;
-  width: 280px; height: 100vh;
+  width: min(280px, 100vw); height: 100vh;
   background: #fff;
   box-shadow: 5px 0 25px rgba(0,0,0,0.1);
   z-index: 1001;
@@ -1734,7 +1734,7 @@ textarea { resize: vertical; min-height: 100px; }
 
 /* ─── Section divider ─── */
 .sd { display: flex; align-items: center; gap: 10px; margin: 26px 0 18px; }
-.sd span { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--or); white-space: nowrap; }
+.sd span { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--or); white-space: nowrap; flex-shrink: 0; }
 .sl { flex: 1; height: 2px; background: linear-gradient(90deg, var(--or), transparent); border-radius: 1px; }
 
 /* ─── Group selector ─── */

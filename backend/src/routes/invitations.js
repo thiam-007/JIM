@@ -3,8 +3,12 @@ import { v4 as uuidv4 } from 'uuid'
 import supabase from '../config/supabase.js'
 import { sendInvitation } from '../services/emailService.js'
 import { generateQrPng } from '../services/qrService.js'
+import { normalizeEmail } from '../utils/emailValidator.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
+
+router.use(authMiddleware, requireAdmin)
 
 // ─── List invitations (with optional evenement_id filter) ──────────────────────
 router.get('/', async (req, res, next) => {
@@ -52,10 +56,11 @@ router.post('/', async (req, res, next) => {
     }
 
     // Build records — one per invite_id with a fresh UUID token
+    // Normalize token to lowercase for consistency
     const records = invite_ids.map((invite_id) => ({
       evenement_id,
       invite_id,
-      token: uuidv4()
+      token: uuidv4().toLowerCase()
     }))
 
     const { data, error } = await supabase
@@ -86,6 +91,13 @@ router.post('/', async (req, res, next) => {
 // ─── Delete invitation ─────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
   try {
+    const { error: checkinsError } = await supabase
+      .from('checkins')
+      .delete()
+      .eq('invitation_id', req.params.id)
+
+    if (checkinsError) throw checkinsError
+
     const { error } = await supabase
       .from('invitations')
       .delete()
@@ -135,16 +147,17 @@ router.post('/send', async (req, res, next) => {
         continue
       }
 
+      // Vérifier que l'email est normalisé (lowercase, trimé)
+      if (invite.email !== invite.email.toLowerCase().trim()) {
+        results.push({ id: invitation.id, status: 'skipped', reason: 'Email non normalisé — mettez à jour le contact' })
+        continue
+      }
+
       try {
         const rsvpUrl = `${frontendUrl}/rsvp/${invitation.token}`
         await sendInvitation({ invite, evenement, rsvpUrl })
 
-        // Update date_envoi and statut if still 'pas_de_reaction'
-        const updates = { date_envoi: new Date().toISOString() }
-        if (invitation.statut === 'pas_de_reaction') {
-          updates.statut = 'pas_de_reaction' // Keep statut but record send date
-        }
-
+        // Met à jour date_envoi
         await supabase
           .from('invitations')
           .update({ date_envoi: new Date().toISOString() })
@@ -167,33 +180,7 @@ router.post('/send', async (req, res, next) => {
   }
 })
 
-// ─── Get QR code as PNG image ──────────────────────────────────────────────────
-router.get('/qr/:token', async (req, res, next) => {
-  try {
-    let { token } = req.params
-    if (token.endsWith('.png')) {
-      token = token.slice(0, -4)
-    }
-
-    // Verify token exists
-    const { data, error } = await supabase
-      .from('invitations')
-      .select('id, token')
-      .eq('token', token)
-      .single()
-
-    if (error || !data) return res.status(404).json({ error: 'Invitation introuvable' })
-
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const pngBuffer = await generateQrPng(token, frontendUrl)
-
-    res.setHeader('Content-Type', 'image/png')
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
-    res.setHeader('Cache-Control', 'public, max-age=86400') // Cache 1 day
-    res.send(pngBuffer)
-  } catch (err) {
-    next(err)
-  }
-})
+// ─── NOTE: GET /api/invitations/qr/:token is now handled in index.js as a public endpoint
+// This protected route is kept for backward compatibility but redirects to the public one.
 
 export default router

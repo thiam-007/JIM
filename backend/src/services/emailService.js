@@ -12,6 +12,37 @@ function getFromAddress() {
   return process.env.EMAIL_USER ? `"Musée Virtuel de Guinée (musee@expertisefrance.fr)" <${process.env.EMAIL_USER}>` : '"Musée Virtuel de Guinée" <musee@expertisefrance.fr>'
 }
 
+async function sendBrevoEmail(payload) {
+  let lastError
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(15000)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(errorData)}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      lastError = error
+      if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+    }
+  }
+
+  throw lastError
+}
+
 const originalSendMail = transporter.sendMail.bind(transporter)
 transporter.sendMail = async (mailOptions) => {
   // Enforce replies redirecting to musee@expertisefrance.fr
@@ -40,23 +71,10 @@ transporter.sendMail = async (mailOptions) => {
         })
       }
 
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'api-key': process.env.BREVO_API_KEY,
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(`Brevo API Error: ${response.status} - ${JSON.stringify(errorData)}`)
-      }
-      return await response.json()
+      return await sendBrevoEmail(payload)
     } catch (brevoErr) {
-      console.warn("Échec de l'envoi via Brevo, tentative de fallback via Gmail...", brevoErr.message)
+      const cause = brevoErr.cause?.code || brevoErr.cause?.message
+      console.warn("Échec de l'envoi via Brevo, tentative de fallback via Gmail...", cause ? `${brevoErr.message} (${cause})` : brevoErr.message)
       // Si on échoue ici, on ne fait pas de 'return', on laisse le code continuer 
       // pour utiliser le fallback Nodemailer / Gmail en dessous.
     }

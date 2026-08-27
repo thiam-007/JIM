@@ -16,22 +16,29 @@
         <div class="ck-counter-item">
           <AppIcon name="users" :size="20" class="ck-counter-icon blue" />
           <div>
-            <div class="ck-counter-num">{{ checkinLog.length }}</div>
-            <div class="ck-counter-label">Check-ins aujourd'hui</div>
+            <div class="ck-counter-num">{{ totalInvitations }}</div>
+            <div class="ck-counter-label">Invités attendus</div>
           </div>
         </div>
         <div class="ck-counter-item">
           <AppIcon name="check-circle" :size="20" class="ck-counter-icon green" />
           <div>
+            <div class="ck-counter-num">{{ presentCount }}</div>
+            <div class="ck-counter-label">Présents</div>
+          </div>
+        </div>
+        <div class="ck-counter-item">
+          <AppIcon name="calendar-check" :size="20" class="ck-counter-icon orange" />
+          <div>
             <div class="ck-counter-num">{{ totalInscrits }}</div>
-            <div class="ck-counter-label">Total inscrits</div>
+            <div class="ck-counter-label">Confirmés</div>
           </div>
         </div>
         <div class="ck-progress-wrap">
           <div class="ck-progress-bar">
             <div class="ck-progress-fill" :style="`width:${progressPct}%`"></div>
           </div>
-          <div class="ck-progress-label">{{ progressPct }}% présents</div>
+          <div class="ck-progress-label">{{ progressPct }}% de présence</div>
         </div>
       </div>
     </div>
@@ -87,7 +94,7 @@
         </div>
 
         <!-- ─── Statistiques des profils émargés ─── -->
-        <div class="form-card profile-stats-card" v-if="!loading && checkinLog.length > 0" style="box-shadow: 0 10px 30px rgba(132,89,54,0.06); border: 1.5px solid rgba(132,89,54,0.1);">
+        <div class="form-card profile-stats-card" v-if="!loading && successfulCheckins.length > 0" style="box-shadow: 0 10px 30px rgba(132,89,54,0.06); border: 1.5px solid rgba(132,89,54,0.1);">
           <div class="fh fh-a" style="padding: 16px 24px; border-bottom: 1px solid rgba(132,89,54,0.08);">
             <div class="fh-icon" style="color: #fff;"><AppIcon name="bar-chart" :size="18" /></div>
             <div>
@@ -95,7 +102,7 @@
               <div class="fh-sub" style="font-size: 0.76rem; color: rgba(255,255,255,0.85);">Top organisations et fonctions des présents</div>
             </div>
           </div>
-          <div class="fb" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px;">
+          <div class="fb ck-stats-grid">
             <!-- Col 1: Organisations -->
             <div>
               <h4 style="margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid var(--brun); padding-left: 8px;">Organisations</h4>
@@ -106,7 +113,7 @@
                     <span style="color: var(--rouge);">{{ org.count }}</span>
                   </div>
                   <div style="height: 5px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; background: var(--brun); border-radius: 3px;" :style="`width: ${Math.round((org.count / checkinLog.length) * 100)}%`"></div>
+                    <div style="height: 100%; background: var(--brun); border-radius: 3px;" :style="`width: ${Math.round((org.count / successfulCheckins.length) * 100)}%`"></div>
                   </div>
                 </div>
               </div>
@@ -122,7 +129,7 @@
                     <span style="color: var(--rouge);">{{ job.count }}</span>
                   </div>
                   <div style="height: 5px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; background: var(--or); border-radius: 3px;" :style="`width: ${Math.round((job.count / checkinLog.length) * 100)}%`"></div>
+                    <div style="height: 100%; background: var(--or); border-radius: 3px;" :style="`width: ${Math.round((job.count / successfulCheckins.length) * 100)}%`"></div>
                   </div>
                 </div>
               </div>
@@ -272,7 +279,7 @@
     </Teleport>
 
     <!-- ─── Historique des check-ins ─── -->
-    <div class="form-card" v-if="checkinLog.length > 0">
+    <div class="form-card" v-if="successfulCheckins.length > 0">
       <div class="fh fh-a" style="padding:20px 28px;">
         <div class="fh-icon"><AppIcon name="clock" :size="20" /></div>
         <div>
@@ -282,7 +289,7 @@
       </div>
       <div class="ck-log-list">
         <div
-          v-for="(entry, idx) in checkinLog.slice(0, 10)"
+          v-for="(entry, idx) in successfulCheckins.slice(0, 10)"
           :key="entry.id || idx"
           class="ck-log-item"
           :style="`animation-delay: ${idx * 0.05}s`"
@@ -346,6 +353,16 @@ function focusNom() {
 
 const invitationsList = ref([])
 
+const totalInvitations = computed(() => invitationsList.value.length)
+
+const presentCount = computed(() => new Set(
+  invitationsList.value
+    .filter(invitation => invitation.statut === 'present')
+    .map(invitation => invitation.id)
+).size)
+
+const successfulCheckins = computed(() => checkinLog.value.filter(entry => entry.success !== false))
+
 const suggestions = computed(() => {
   const query = manualInput.value.trim().toLowerCase()
   if (query.length < 2) return []
@@ -362,7 +379,7 @@ const profileStats = computed(() => {
   const orgMap = {}
   const jobMap = {}
   
-  checkinLog.value.forEach(item => {
+  successfulCheckins.value.forEach(item => {
     const org = (item.organisation || 'Non spécifié').trim() || 'Non spécifié'
     const job = (item.titre_poste || 'Non spécifié').trim() || 'Non spécifié'
     
@@ -390,7 +407,8 @@ let resultTimer = null
 
 const progressPct = computed(() => {
   if (!totalInscrits.value) return 0
-  return Math.round((checkinLog.value.length / totalInscrits.value) * 100)
+  if (!totalInvitations.value) return 0
+  return Math.min(100, Math.round((presentCount.value / totalInvitations.value) * 100))
 })
 
 onMounted(async () => {
@@ -433,7 +451,8 @@ onMounted(async () => {
         nom: row.invitations?.invites?.nom || '',
         organisation: row.invitations?.invites?.organisation || '',
         titre_poste: row.invitations?.invites?.titre_poste || '',
-        checked_at: row.scanned_at
+        checked_at: row.scanned_at,
+        success: row.success !== false
       }))
     }
   } finally {
@@ -532,7 +551,7 @@ async function handleScanResult(scannedText) {
       name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
       message: 'Bienvenue !'
     }
-    // Ajouter au log de check-in normalisé
+    // Recharger les invitations pour actualiser les compteurs et le statut.
     checkinLog.value.unshift({
       id: result.id || Math.random().toString(),
       prenom: result.invite?.prenom || '',
@@ -714,8 +733,7 @@ async function submitRegisterOnsite() {
       organisation: result.invite?.organisation || '',
       checked_at: new Date().toISOString()
     })
-    
-    totalInscrits.value++
+    await loadInvitationsList()
   } catch (err) {
     registerError.value = err.message || 'Erreur lors de l\'enregistrement.'
   } finally {
@@ -752,6 +770,10 @@ async function submitRegisterOnsite() {
 /* Content layout */
 .ck-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 720px) { .ck-content { grid-template-columns: 1fr; } }
+
+/* Stats grid (répartition organisations / fonctions) */
+.ck-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px; }
+@media (max-width: 600px) { .ck-stats-grid { grid-template-columns: 1fr; padding: 14px 16px; } }
 
 /* Scanner card */
 .ck-scanner-card { overflow: hidden; }

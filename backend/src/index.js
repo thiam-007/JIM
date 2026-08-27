@@ -24,6 +24,7 @@ import rssRouter from './routes/rss.js'
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
 import supabase, { ensureStorageBuckets } from './config/supabase.js'
+import { validateRemoteUrl, isSafeImageContentType } from './utils/remoteUrl.js'
 
 // Middleware
 import { authMiddleware } from './middleware/auth.js'
@@ -95,23 +96,36 @@ app.get('/api/proxy-image', async (req, res) => {
     const { url } = req.query
     if (!url) return res.status(400).json({ error: 'URL is required' })
 
-    const response = await fetch(url, {
+    const remoteUrl = await validateRemoteUrl(url)
+    const response = await fetch(remoteUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      redirect: 'follow'
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000)
     })
+
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      return res.status(400).json({ error: 'Les redirections d’image ne sont pas autorisées' })
+    }
 
     if (!response.ok) {
       return res.status(response.status).send(`Failed to fetch image: ${response.statusText}`)
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg'
+    const contentLength = Number(response.headers.get('content-length') || 0)
+    if (!isSafeImageContentType(contentType) || contentLength > 8 * 1024 * 1024) {
+      return res.status(415).json({ error: 'Type ou taille d’image non autorisé' })
+    }
     res.setHeader('Content-Type', contentType)
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
     res.setHeader('Cache-Control', 'public, max-age=86400') // Cache 1 day
 
     const arrayBuffer = await response.arrayBuffer()
+    if (arrayBuffer.byteLength > 8 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Image trop volumineuse' })
+    }
     const buffer = Buffer.from(arrayBuffer)
     res.send(buffer)
   } catch (err) {

@@ -553,7 +553,7 @@ async function doDelete() {
 .preview-img-wrap { width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(132,89,54,0.1); flex-shrink: 0; background: #f5f5f5; }
 .preview-img { width: 100%; height: 100%; object-fit: cover; }
 .preview-details { display: flex; flex-direction: column; flex-grow: 1; }
-.preview-filename { font-size: 0.85rem; font-weight: 700; color: var(--brun-fonce); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px; }
+.preview-filename { font-size: 0.85rem; font-weight: 700; color: var(--brun-fonce); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: min(250px, calc(100vw - 120px)); }
 .btn-remove-file-absolute { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; background: white; border: 1px solid rgba(177,34,42,0.2); color: var(--rouge); display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; pointer-events: auto; box-shadow: 0 4px 12px rgba(177,34,42,0.1); transition: all 0.2s; }
 .btn-remove-file-absolute:hover { background: rgba(177,34,42,0.05); border-color: rgba(177,34,42,0.4); transform: scale(1.05); }
 .preview-container { padding: 12px; border: 1px solid rgba(132,89,54,0.15); border-radius: 12px; background: rgba(132,89,54,0.03); margin-top: 10px; }

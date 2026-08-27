@@ -1,8 +1,11 @@
 import { Router } from 'express'
 import crypto from 'crypto'
 import supabase from '../config/supabase.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
+
+router.use(authMiddleware, requireAdmin)
 
 /**
  * Helper: format a date as HH:MM in local time
@@ -56,10 +59,14 @@ async function performCheckin(invitation, agent, res) {
       agent_checkin: agent || null
     })
     .eq('id', invitation_id)
+    .neq('statut', 'present')
     .select('id, statut, heure_arrivee, agent_checkin, invites(prenom, nom, organisation)')
-    .single()
+    .maybeSingle()
 
   if (updateErr) throw updateErr
+  if (!updated) {
+    return res.status(409).json({ error: 'Cette invitation vient d\'être émargée par un autre agent', statut: 'present' })
+  }
 
   // Log successful check-in
   await supabase.from('checkins').insert({
@@ -89,7 +96,7 @@ router.post('/scan', async (req, res, next) => {
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
     if (uuidRegex.test(cleanToken)) {
-      // Recherche par token UUID (insensible à la casse)
+      // Recherche par token UUID — tokens toujours en lowercase dans la DB
       const { data: invitation, error } = await supabase
         .from('invitations')
         .select('id, token, statut, heure_arrivee, evenement_id, invites(prenom, nom, organisation)')
@@ -117,7 +124,8 @@ router.post('/scan', async (req, res, next) => {
         return res.status(400).json({ error: 'Recherche invalide' })
       }
 
-      // Récupérer toutes les invitations de l'événement pour faire un filtrage robuste en mémoire
+      // Récupérer les invitations de l'événement spécifique UNIQUEMENT (sécurité)
+      // Filtre client-side pour support recherche multi-mots
       const { data: invitations, error } = await supabase
         .from('invitations')
         .select('id, token, statut, heure_arrivee, evenement_id, invites!inner(prenom, nom, organisation)')
@@ -126,6 +134,11 @@ router.post('/scan', async (req, res, next) => {
       if (error || !invitations) {
         console.error('Erreur Supabase recherche nom:', error)
         return res.status(500).json({ error: 'Erreur lors de la récupération des invitations' })
+      }
+
+      // Sécurité: vérifier que chaque invitation appartient bien à cet événement
+      if (invitations.some(inv => inv.evenement_id !== evenement_id)) {
+        return res.status(500).json({ error: 'Erreur de validation événement' })
       }
 
       // Filtrer en mémoire pour supporter "Prénom Nom" ou recherche partielle multi-mots
@@ -145,6 +158,7 @@ router.post('/scan', async (req, res, next) => {
           error: 'Plusieurs correspondances trouvées',
           matches: matched.map(m => ({
             id: m.id,
+            token: m.token,
             prenom: m.invites?.prenom,
             nom: m.invites?.nom,
             organisation: m.invites?.organisation

@@ -2,7 +2,7 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
 import { sendNewsletterWelcome, sendNewsletterCampaign, generateNewsletterHtml } from '../services/emailService.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = express.Router()
 const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
@@ -85,7 +85,7 @@ router.post('/subscribe', newsletterLimiter, async (req, res) => {
 });
 
 // GET /api/newsletter/subscribers (Admin)
-router.get('/subscribers', authMiddleware, async (req, res) => {
+router.get('/subscribers', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('newsletter_subscribers')
@@ -101,7 +101,7 @@ router.get('/subscribers', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/newsletter/subscribers/:id (Admin)
-router.delete('/subscribers/:id', authMiddleware, async (req, res) => {
+router.delete('/subscribers/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { error } = await supabase
@@ -118,7 +118,7 @@ router.delete('/subscribers/:id', authMiddleware, async (req, res) => {
 });
 
 // PUT /api/newsletter/subscribers/:id (Admin)
-router.put('/subscribers/:id', authMiddleware, async (req, res) => {
+router.put('/subscribers/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { prenom, nom, institution, fonction, email } = req.body;
@@ -145,7 +145,7 @@ router.put('/subscribers/:id', authMiddleware, async (req, res) => {
 });
 
 // GET /api/newsletter/campaigns (Admin)
-router.get('/campaigns', authMiddleware, async (req, res) => {
+router.get('/campaigns', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('newsletter_campaigns')
@@ -161,7 +161,7 @@ router.get('/campaigns', authMiddleware, async (req, res) => {
 });
 
 // DELETE /api/newsletter/campaigns/:id (Admin)
-router.delete('/campaigns/:id', authMiddleware, async (req, res) => {
+router.delete('/campaigns/:id', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { error } = await supabase
@@ -178,7 +178,7 @@ router.delete('/campaigns/:id', authMiddleware, async (req, res) => {
 });
 
 // POST /api/newsletter/admin/add-subscribers (Admin)
-router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
+router.post('/admin/add-subscribers', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { emails, subscribers } = req.body;
     let inputList = [];
@@ -244,7 +244,7 @@ router.post('/admin/add-subscribers', authMiddleware, async (req, res) => {
 });
 
 // POST /api/newsletter/preview (Admin)
-router.post('/preview', authMiddleware, async (req, res) => {
+router.post('/preview', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { type_source, source_id, contenu_personnalise, sujet_email } = req.body;
     let titre = sujet_email || 'Sujet de l\'email';
@@ -316,7 +316,7 @@ router.post('/preview', authMiddleware, async (req, res) => {
 });
 
 // POST /api/newsletter/campaigns (Admin)
-router.post('/campaigns', authMiddleware, async (req, res) => {
+router.post('/campaigns', authMiddleware, requireAdmin, async (req, res) => {
   try {
     const { 
       titre_interne, sujet_email, type_source, source_id, 

@@ -456,6 +456,9 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
 .collections-card {
   box-shadow: var(--shadow);
   border: 1px solid rgba(132,89,54,0.15);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 .collections-grid {
   display: grid;
@@ -492,6 +495,7 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   display: flex;
   flex-direction: column;
   justify-content: center;
+  min-width: 0;
 }
 .focus-pre {
   display: inline-flex;
@@ -508,12 +512,15 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   font-weight: 900;
   color: var(--brun);
   margin: 6px 0 16px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 .collections-info p {
   font-size: 0.88rem;
   line-height: 1.55;
   color: #555;
   margin: 0 0 14px;
+  overflow-wrap: anywhere;
 }
 .collections-info p:last-of-type {
   margin-bottom: 20px;
@@ -525,6 +532,7 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   align-items: center;
   gap: 12px;
   margin-top: 8px;
+  flex-wrap: wrap;
 }
 .flow-step {
   display: flex;
@@ -793,6 +801,14 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--brun);
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+.contact-card > span,
+.contact-card > .contact-link {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .contact-link {
   color: var(--rouge);
@@ -809,6 +825,17 @@ const currentTab = computed(() => activityTabs[activeTabIdx.value])
   .ap-hero-title { font-size: 1.8rem; }
   .vision-lead { font-size: 1rem; }
   .collections-info { padding: 20px; }
+  .collections-image-wrap { min-height: 190px; }
+  .flow-arrow { display: none; }
+  .contact-card {
+    display: flex;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    padding: 12px 14px;
+  }
+  .contact-card > span { flex: 1 1 100%; }
+  .contact-card > .contact-link { flex: 1 1 100%; }
   .tab-btn { padding: 12px 14px; font-size: 0.74rem; }
   .tab-content { padding: 20px 16px; }
   .tab-text-side { word-break: break-word; }

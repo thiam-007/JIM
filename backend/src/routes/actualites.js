@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import crypto from 'crypto'
 import supabase from '../config/supabase.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 import { uploadExternalUrlToSupabase } from '../utils/imageUploader.js'
 
 const router = Router()
@@ -39,7 +39,7 @@ router.get('/:id', async (req, res, next) => {
 })
 
 // ─── Upload image to Supabase Storage (PROTECTED) ────────────────────────────
-router.post('/upload', authMiddleware, async (req, res, next) => {
+router.post('/upload', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { file, fileName, mimeType, bucket } = req.body
 
@@ -49,7 +49,13 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
 
     // Decode base64 image data (removes data:image/png;base64, header if present)
     const base64Data = file.includes(';base64,') ? file.split(';base64,')[1] : file
+    if (!/^[A-Za-z0-9+/=\s]+$/.test(base64Data)) {
+      return res.status(400).json({ error: 'Données base64 invalides' })
+    }
     const fileBuffer = Buffer.from(base64Data, 'base64')
+    if (fileBuffer.length === 0 || fileBuffer.length > 8 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Fichier vide ou supérieur à 8 Mo' })
+    }
 
     // Clean mimeType or set default
     const finalMime = mimeType || 'image/jpeg'
@@ -64,7 +70,13 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
     // Generate unique name
     const uniqueFileName = `${crypto.randomUUID()}.${fileExtension}`
 
+    const allowedBuckets = new Set([
+      process.env.SUPABASE_NEWS_BUCKET || 'actualites',
+      process.env.SUPABASE_HERO_BUCKET || 'hero',
+      'evenements'
+    ])
     const bucketName = bucket || process.env.SUPABASE_NEWS_BUCKET || 'actualites'
+    if (!allowedBuckets.has(bucketName)) return res.status(400).json({ error: 'Bucket non autorisé' })
 
     // Upload to Supabase Storage bucket
     const { error } = await supabase.storage
@@ -88,7 +100,7 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Create single news (PROTECTED) ───────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res, next) => {
+router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { titre, description, contenu, auteur, image_url, image_detail_url, date_evenement } = req.body
 
@@ -111,7 +123,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Update single news (PROTECTED) ───────────────────────────────────────────
-router.put('/:id', authMiddleware, async (req, res, next) => {
+router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { titre, description, contenu, auteur, image_url, image_detail_url, date_evenement } = req.body
@@ -145,7 +157,7 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Delete single news (PROTECTED) ───────────────────────────────────────────
-router.delete('/:id', authMiddleware, async (req, res, next) => {
+router.delete('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { error } = await supabase

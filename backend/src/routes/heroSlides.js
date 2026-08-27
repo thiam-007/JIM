@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import crypto from 'crypto'
 import supabase from '../config/supabase.js'
-import { authMiddleware } from '../middleware/auth.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
 
@@ -29,7 +29,7 @@ router.get('/', async (req, res, next) => {
 })
 
 // ─── Obtenir tous les slides (ADMIN) ──────────────────────────────────────────
-router.get('/admin/all', authMiddleware, async (req, res, next) => {
+router.get('/admin/all', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { data, error } = await supabase
       .from('hero_slides')
@@ -47,7 +47,7 @@ router.get('/admin/all', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Uploader un media (PROTECTED) ────────────────────────────────────────────
-router.post('/upload', authMiddleware, async (req, res, next) => {
+router.post('/upload', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { file, fileName, mimeType } = req.body
 
@@ -56,7 +56,13 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
     }
 
     const base64Data = file.includes(';base64,') ? file.split(';base64,')[1] : file
+    if (!/^[A-Za-z0-9+/=\s]+$/.test(base64Data)) {
+      return res.status(400).json({ error: 'Données base64 invalides' })
+    }
     const fileBuffer = Buffer.from(base64Data, 'base64')
+    if (fileBuffer.length === 0 || fileBuffer.length > 8 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Fichier vide ou supérieur à 8 Mo' })
+    }
 
     const finalMime = mimeType || 'image/jpeg'
     
@@ -95,7 +101,7 @@ router.post('/upload', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Créer un slide (PROTECTED) ───────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res, next) => {
+router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { titre_principal, titre_secondaire, sous_titre, media_url, media_type, ordre, actif } = req.body
 
@@ -123,7 +129,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Mettre à jour un slide (PROTECTED) ───────────────────────────────────────
-router.put('/:id', authMiddleware, async (req, res, next) => {
+router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { titre_principal, titre_secondaire, sous_titre, media_url, media_type, ordre, actif } = req.body
@@ -153,7 +159,7 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
 })
 
 // ─── Supprimer un slide (PROTECTED) ───────────────────────────────────────────
-router.delete('/:id', authMiddleware, async (req, res, next) => {
+router.delete('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { id } = req.params
     const { error } = await supabase

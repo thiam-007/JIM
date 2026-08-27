@@ -145,7 +145,7 @@ onUnmounted(() => {
 }
 .custom-popup .leaflet-popup-content {
   margin: 0;
-  width: 280px !important;
+  width: min(280px, 90vw) !important;
 }
 .custom-popup .leaflet-popup-tip-container {
   display: none;

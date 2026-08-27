@@ -1,7 +1,11 @@
 import { Router } from 'express'
 import supabase from '../config/supabase.js'
+import { normalizeEmail, isValidEmail } from '../utils/emailValidator.js'
+import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 
 const router = Router()
+
+router.use(authMiddleware, requireAdmin)
 
 // ─── List all invites (with optional search) ───────────────────────────────────
 router.get('/', async (req, res, next) => {
@@ -38,9 +42,18 @@ router.post('/', async (req, res, next) => {
     if (!prenom) return res.status(400).json({ error: 'Le prénom est requis' })
     if (!nom) return res.status(400).json({ error: 'Le nom est requis' })
 
+    // Normalize email if provided
+    let normalizedEmail = null
+    if (email) {
+      normalizedEmail = normalizeEmail(email)
+      if (!normalizedEmail) {
+        return res.status(400).json({ error: 'L\'email fourni est invalide. Veuillez vérifier le format.' })
+      }
+    }
+
     const { data, error } = await supabase
       .from('invites')
-      .insert({ prenom, nom, email, telephone, organisation, titre_poste, notes })
+      .insert({ prenom, nom, email: normalizedEmail, telephone, organisation, titre_poste, notes })
       .select()
       .single()
 
@@ -68,17 +81,32 @@ router.post('/bulk', async (req, res, next) => {
       const inv = invites[i]
       if (!inv.prenom || !inv.nom) {
         errors.push({ index: i, error: 'Prénom et nom requis', data: inv })
-      } else {
-        validInvites.push({
-          prenom: inv.prenom,
-          nom: inv.nom,
-          email: inv.email || null,
-          telephone: inv.telephone || null,
-          organisation: inv.organisation || null,
-          titre_poste: inv.titre_poste || null,
-          notes: inv.notes || null
-        })
+        continue
       }
+
+      // Normalize email if provided
+      let normalizedEmail = null
+      if (inv.email) {
+        normalizedEmail = normalizeEmail(inv.email)
+        if (!normalizedEmail) {
+          errors.push({
+            index: i,
+            error: `Email invalide: "${inv.email}"`,
+            data: inv
+          })
+          continue
+        }
+      }
+
+      validInvites.push({
+        prenom: inv.prenom.trim(),
+        nom: inv.nom.trim(),
+        email: normalizedEmail,
+        telephone: inv.telephone?.trim() || null,
+        organisation: inv.organisation?.trim() || null,
+        titre_poste: inv.titre_poste?.trim() || null,
+        notes: inv.notes?.trim() || null
+      })
     }
 
     if (validInvites.length === 0) {
@@ -124,13 +152,23 @@ router.put('/:id', async (req, res, next) => {
     const { prenom, nom, email, telephone, organisation, titre_poste, notes } = req.body
 
     const updates = {}
-    if (prenom !== undefined) updates.prenom = prenom
-    if (nom !== undefined) updates.nom = nom
-    if (email !== undefined) updates.email = email
-    if (telephone !== undefined) updates.telephone = telephone
-    if (organisation !== undefined) updates.organisation = organisation
-    if (titre_poste !== undefined) updates.titre_poste = titre_poste
-    if (notes !== undefined) updates.notes = notes
+    if (prenom !== undefined) updates.prenom = prenom.trim()
+    if (nom !== undefined) updates.nom = nom.trim()
+    if (email !== undefined) {
+      if (email === null) {
+        updates.email = null
+      } else {
+        const normalizedEmail = normalizeEmail(email)
+        if (!normalizedEmail) {
+          return res.status(400).json({ error: 'L\'email fourni est invalide.' })
+        }
+        updates.email = normalizedEmail
+      }
+    }
+    if (telephone !== undefined) updates.telephone = telephone?.trim() || null
+    if (organisation !== undefined) updates.organisation = organisation?.trim() || null
+    if (titre_poste !== undefined) updates.titre_poste = titre_poste?.trim() || null
+    if (notes !== undefined) updates.notes = notes?.trim() || null
 
     const { data, error } = await supabase
       .from('invites')

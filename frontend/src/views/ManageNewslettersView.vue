@@ -183,7 +183,7 @@
     <!-- Create Campaign Modal -->
     <Teleport to="body">
       <div v-if="showCampaignModal" class="modal-backdrop" @click.self="closeModal">
-        <div class="modal-box form-card" style="max-width: 700px;">
+        <div class="modal-box modal-campaign form-card">
           <div class="fh fh-a">
             <div class="fh-icon"><AppIcon name="send" :size="22" /></div>
             <div class="fh-title">Envoyer une Campagne</div>
@@ -544,7 +544,7 @@
     <!-- Preview Modal -->
     <Teleport to="body">
       <div v-if="showPreviewModal" class="modal-backdrop" @click.self="showPreviewModal = false">
-        <div class="modal-box form-card" style="max-width: 800px; height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-box modal-preview form-card">
           <div class="fh fh-a" style="flex-shrink: 0;">
             <div class="fh-icon"><AppIcon name="eye" :size="22" /></div>
             <div class="fh-title">Aperçu de la Newsletter</div>
@@ -1505,8 +1505,18 @@ function downloadForOutlook() {
 .btn-icon.delete { background: rgba(177,34,42,.08); color: var(--rouge); }
 .btn-icon.delete:hover { background: var(--rouge); color: #fff; }
 
+@media (max-width: 768px) {
+  .btn-icon {
+    width: 44px; height: 44px;
+  }
+}
+
 .modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(26,16,8,.55); display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(2px); }
 .modal-box { width: 100%; max-height: calc(100vh - 40px); overflow-y: auto; }
+/* Modal campagne : max 700px, fluide sur mobile */
+.modal-campaign { max-width: min(700px, calc(100vw - 40px)); }
+/* Modal aperçu : hauteur dynamique safe */
+.modal-preview { max-width: min(800px, calc(100vw - 40px)); height: min(90vh, calc(100svh - 40px)); display: flex; flex-direction: column; }
 .modal-confirm { max-width: 480px; }
 .ev-form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; }
 .btn-cancel { padding: 12px 22px; background: none; border: 2px solid rgba(132,89,54,.2); border-radius: 12px; color: var(--brun); font-weight: 700; cursor: pointer; transition: all .2s; }

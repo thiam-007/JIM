@@ -25,3 +25,22 @@ export function authMiddleware(req, res, next) {
     return res.status(401).json({ error: 'Token invalide' })
   }
 }
+
+export function optionalAuth(req, _res, next) {
+  const authHeader = req.headers['authorization']
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      req.user = jwt.verify(authHeader.slice(7), process.env.JWT_SECRET)
+    } catch {
+      req.user = null
+    }
+  }
+  next()
+}
+
+export function requireAdmin(req, res, next) {
+  if (!req.user || !['admin', 'super_admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs' })
+  }
+  next()
+}

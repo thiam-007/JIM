@@ -621,8 +621,8 @@ html.theme-musee .genre-pill {
     position: relative;
     top: auto;
     left: auto;
-    min-width: 80vw !important; 
-    max-width: 80vw !important;
+    min-width: min(80vw, calc(100vw - 20px)) !important;
+    max-width: min(80vw, calc(100vw - 20px)) !important;
     height: 100% !important;
     margin: 0 !important; 
     padding: 20px; 

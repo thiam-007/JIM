@@ -1,5 +1,6 @@
 import crypto from 'crypto'
 import supabase from '../config/supabase.js'
+import { validateRemoteUrl, isSafeImageContentType } from './remoteUrl.js'
 
 /**
  * Downloads an external image from a URL and uploads it to a Supabase storage bucket.
@@ -25,25 +26,30 @@ export async function uploadExternalUrlToSupabase(url, bucketName) {
 
   try {
     console.log(`[ImageUploader] Fetching external image: ${trimmed}`)
-    const response = await fetch(trimmed, {
+    const remoteUrl = await validateRemoteUrl(trimmed)
+    const response = await fetch(remoteUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
       },
-      redirect: 'follow'
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000)
     })
 
     if (!response.ok) {
       console.warn(`[ImageUploader] Failed to fetch external image: ${response.status} ${response.statusText}`)
-      return trimmed // fallback
+      return trimmed
     }
 
+    if ([301, 302, 303, 307, 308].includes(response.status)) throw new Error('Les redirections d’image ne sont pas autorisées')
+
     const contentType = response.headers.get('content-type') || 'image/jpeg'
-    if (!contentType.startsWith('image/')) {
+    if (!isSafeImageContentType(contentType)) {
       console.warn(`[ImageUploader] Fetched URL content-type is not an image: ${contentType}`)
-      return trimmed // fallback
+      throw new Error('Type de contenu image non autorisé')
     }
 
     const arrayBuffer = await response.arrayBuffer()
+    if (arrayBuffer.byteLength > 8 * 1024 * 1024) throw new Error('Image trop volumineuse')
     const buffer = Buffer.from(arrayBuffer)
 
     // Generate unique filename

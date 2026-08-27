@@ -4,6 +4,7 @@ import crypto from 'crypto'
 import supabase from '../config/supabase.js'
 import { sendConfirmation } from '../services/emailService.js'
 import { generateQrDataUrl } from '../services/qrService.js'
+import { normalizeEmail } from '../utils/emailValidator.js'
 
 const router = Router()
 
@@ -71,6 +72,9 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
     if (typeof confirmed !== 'boolean') {
       return res.status(400).json({ error: 'Le champ "confirmed" (boolean) est requis' })
     }
+    if (notes !== undefined && notes !== null && (typeof notes !== 'string' || notes.length > 2000)) {
+      return res.status(400).json({ error: 'Les notes doivent contenir au maximum 2000 caractères' })
+    }
 
     // Fetch current invitation
     const { data: invitation, error: fetchErr } = await supabase
@@ -101,10 +105,12 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
         notes_rsvp: notes || null
       })
       .eq('id', invitation.id)
+      .neq('statut', 'present')
       .select('statut, date_reponse')
-      .single()
+      .maybeSingle()
 
     if (updateErr) throw updateErr
+    if (!updated) return res.status(409).json({ error: 'Cette invitation est déjà enregistrée comme présente' })
 
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     let qr_url = null
@@ -163,7 +169,18 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
     const { prenom, nom, email, organisation, telephone } = req.body
 
     if (!prenom || !nom) return res.status(400).json({ error: 'Prénom et nom requis' })
+    if (typeof prenom !== 'string' || typeof nom !== 'string' || prenom.trim().length > 100 || nom.trim().length > 100) {
+      return res.status(400).json({ error: 'Le prénom et le nom doivent contenir au maximum 100 caractères' })
+    }
     if (!email) return res.status(400).json({ error: 'L\'adresse e-mail est obligatoire pour s\'inscrire.' })
+    const normalizedEmail = normalizeEmail(email)
+    if (!normalizedEmail) return res.status(400).json({ error: 'Adresse e-mail invalide' })
+    if (organisation !== undefined && organisation !== null && (typeof organisation !== 'string' || organisation.trim().length > 150)) {
+      return res.status(400).json({ error: 'L\'organisation doit contenir au maximum 150 caractères' })
+    }
+    if (telephone !== undefined && telephone !== null && (typeof telephone !== 'string' || telephone.trim().length > 40)) {
+      return res.status(400).json({ error: 'Le téléphone doit contenir au maximum 40 caractères' })
+    }
 
     // Vérifier si l'événement est actif et publié
     const { data: evenement, error: evErr } = await supabase
@@ -184,7 +201,7 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
     const { data: existingInvite } = await supabase
       .from('invites')
       .select('*')
-      .eq('email', email.trim().toLowerCase())
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
     if (existingInvite) {
@@ -198,7 +215,7 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
           prenom: prenom.trim(),
           nom: nom.trim(),
           organisation: organisation ? organisation.trim() : null,
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           telephone: telephone ? telephone.trim() : null
         })
         .select()

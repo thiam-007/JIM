@@ -2049,6 +2049,10 @@ function formatTimeAgo(dateStr) {
   }
 }
 
+@media (max-width: 380px) {
+  .btn-newsletter { white-space: normal; }
+}
+
 .focus-meta .meta-item {
   display: flex;
   align-items: center;
@@ -2823,8 +2827,9 @@ function formatTimeAgo(dateStr) {
     min-height: 380px;
     max-height: 460px;
     border-radius: 0;
-    margin-left: -20px;
-    width: calc(100% + 40px);
+    /* Fix scroll horizontal : suppression du dépassement négatif */
+    margin-left: 0;
+    width: 100%;
     margin-top: -10px;
     display: flex;
     align-items: flex-end;
@@ -3178,6 +3183,29 @@ html.theme-musee .ctrl-btn {
   }
   .card-3d.left {
     transform: translateX(-110px) translateZ(0px) rotateY(35deg) scale(0.85);
+  }
+}
+
+/* Fix mobile < 480px : carrousel sans débordement */
+@media(max-width: 480px) {
+  .carousel-3d-viewport {
+    height: 360px;
+  }
+  .carousel-3d-container {
+    overflow: hidden;
+  }
+  .card-3d {
+    width: min(220px, 80vw);
+    height: 290px;
+  }
+  /* Cartes latérales très réduites pour ne pas déborder */
+  .card-3d.right {
+    transform: translateX(60px) translateZ(0px) rotateY(-25deg) scale(0.75);
+    opacity: 0.3;
+  }
+  .card-3d.left {
+    transform: translateX(-60px) translateZ(0px) rotateY(25deg) scale(0.75);
+    opacity: 0.3;
   }
 }
 
