@@ -2031,18 +2031,30 @@ h3 { color: var(--brun); margin-bottom: 16px; font-size: 1.05rem; }
 /* ─── Responsive ─── */
 @media (max-width: 768px) {
   .nav-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px;
     padding: 0 10px;
     box-sizing: border-box;
     width: 100%;
     max-width: 100vw;
   }
+  .nav-wrapper .admin-toggle-btn.icon-only {
+    position: static !important;
+    flex: 0 0 44px;
+    transform: none !important;
+    margin-top: 20px;
+  }
   .nav-tabs {
+    flex: 1 1 auto;
     border-radius: 20px;
     overflow-x: auto;
     white-space: nowrap;
     justify-content: flex-start;
     -webkit-overflow-scrolling: touch;
-    width: 100%;
+    width: auto;
+    min-width: 0;
     scrollbar-width: none; /* Firefox */
   }
   .nav-tabs::-webkit-scrollbar {
