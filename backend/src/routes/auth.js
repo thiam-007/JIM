@@ -4,8 +4,20 @@ import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { hashPassword, verifyPassword } from '../utils/crypto.js'
+import { recordAudit } from '../utils/audit.js'
+import QRCode from 'qrcode'
+import { buildOtpAuthUri, generateRecoveryCodes, generateTotpSecret, verifyTotp } from '../utils/totp.js'
+import { decryptSecret, encryptSecret } from '../utils/secretCrypto.js'
 
 const router = Router()
+
+function signUserToken(user) {
+  return jwt.sign(
+    { id: user.id, email: user.email, role: user.role, prenom: user.prenom, nom: user.nom },
+    process.env.JWT_SECRET,
+    { expiresIn: '12h' }
+  )
+}
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -52,11 +64,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
           .single()
 
         if (!createErr && newUser) {
-          const token = jwt.sign(
-            { id: newUser.id, email: newUser.email, role: newUser.role, prenom: newUser.prenom, nom: newUser.nom },
-            process.env.JWT_SECRET,
-            { expiresIn: '12h' }
-          )
+          const token = signUserToken(newUser)
           return res.json({ token, role: newUser.role, email: newUser.email, prenom: newUser.prenom, nom: newUser.nom })
         }
       }
@@ -76,13 +84,85 @@ router.post('/login', loginLimiter, async (req, res, next) => {
       supabase.from('users').update({ password_hash: newHash }).eq('id', user.id).then()
     }
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, prenom: user.prenom, nom: user.nom },
-      process.env.JWT_SECRET,
-      { expiresIn: '12h' }
-    )
+    if (user.role === 'super_admin' && user.totp_enabled) {
+      const challengeToken = jwt.sign({ id: user.id, purpose: '2fa' }, process.env.JWT_SECRET, { expiresIn: '5m' })
+      return res.status(401).json({ error: 'Code 2FA requis', twoFactorRequired: true, challengeToken })
+    }
+
+    const token = signUserToken(user)
 
     res.json({ token, role: user.role, email: user.email, prenom: user.prenom, nom: user.nom })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/2fa/verify', async (req, res, next) => {
+  try {
+    const { challengeToken, code } = req.body
+    const challenge = jwt.verify(challengeToken, process.env.JWT_SECRET)
+    if (challenge.purpose !== '2fa') return res.status(401).json({ error: 'Challenge 2FA invalide' })
+
+    const { data: user, error } = await supabase.from('users').select('*').eq('id', challenge.id).single()
+    if (error || !user || user.role !== 'super_admin' || !user.totp_enabled) return res.status(401).json({ error: 'Challenge 2FA invalide' })
+
+    let valid = verifyTotp(decryptSecret(user.totp_secret), code)
+    let recoveryCodes = user.recovery_codes || []
+    if (!valid) {
+      const normalizedCode = String(code || '').trim().toUpperCase()
+      const index = recoveryCodes.indexOf(normalizedCode)
+      valid = index !== -1
+      if (valid) {
+        recoveryCodes = recoveryCodes.filter((_, codeIndex) => codeIndex !== index)
+        await supabase.from('users').update({ recovery_codes: recoveryCodes }).eq('id', user.id)
+      }
+    }
+    if (!valid) return res.status(401).json({ error: 'Code 2FA incorrect' })
+
+    await recordAudit(req, { action: '2fa_verified', entityType: 'user', entityId: user.id })
+    res.json({ token: signUserToken(user), role: user.role, email: user.email, prenom: user.prenom, nom: user.nom })
+  } catch (err) {
+    return res.status(401).json({ error: 'Challenge 2FA expiré ou invalide' })
+  }
+})
+
+router.post('/2fa/setup', authMiddleware, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'La 2FA est réservée au Super Administrateur' })
+    const secret = generateTotpSecret()
+    const recoveryCodes = generateRecoveryCodes()
+    const { error } = await supabase.from('users').update({ totp_secret: encryptSecret(secret), totp_enabled: false, recovery_codes: recoveryCodes }).eq('id', req.user.id)
+    if (error) throw error
+    const qrCode = await QRCode.toDataURL(buildOtpAuthUri(secret, req.user.email))
+    res.json({ secret, qrCode, recoveryCodes })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/2fa/enable', authMiddleware, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'La 2FA est réservée au Super Administrateur' })
+    const { data: user, error: fetchError } = await supabase.from('users').select('totp_secret').eq('id', req.user.id).single()
+    if (fetchError || !user?.totp_secret || !verifyTotp(decryptSecret(user.totp_secret), req.body.code)) return res.status(400).json({ error: 'Code 2FA incorrect' })
+    const { error } = await supabase.from('users').update({ totp_enabled: true }).eq('id', req.user.id)
+    if (error) throw error
+    await recordAudit(req, { action: '2fa_enabled', entityType: 'user', entityId: req.user.id })
+    res.json({ enabled: true })
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/2fa/disable', authMiddleware, async (req, res, next) => {
+  try {
+    if (req.user.role !== 'super_admin') return res.status(403).json({ error: 'La 2FA est réservée au Super Administrateur' })
+    const { data: user, error: fetchError } = await supabase.from('users').select('totp_secret').eq('id', req.user.id).single()
+    if (fetchError || !user?.totp_secret || !verifyTotp(decryptSecret(user.totp_secret), req.body.code)) return res.status(400).json({ error: 'Code 2FA incorrect' })
+    const { error } = await supabase.from('users').update({ totp_secret: null, totp_enabled: false, recovery_codes: [] }).eq('id', req.user.id)
+    if (error) throw error
+    await recordAudit(req, { action: '2fa_disabled', entityType: 'user', entityId: req.user.id })
+    res.json({ enabled: false })
   } catch (err) {
     next(err)
   }
@@ -92,8 +172,13 @@ router.post('/login', loginLimiter, async (req, res, next) => {
  * GET /api/auth/me
  * Protected — requires valid JWT
  */
-router.get('/me', authMiddleware, (req, res) => {
-  res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role, prenom: req.user.prenom, nom: req.user.nom })
+router.get('/me', authMiddleware, async (req, res, next) => {
+  try {
+    const { data: user } = await supabase.from('users').select('totp_enabled').eq('id', req.user.id).single()
+    res.json({ ok: true, id: req.user.id, email: req.user.email, role: req.user.role, prenom: req.user.prenom, nom: req.user.nom, totp_enabled: req.user.role === 'super_admin' && !!user?.totp_enabled })
+  } catch (err) {
+    next(err)
+  }
 })
 
 /**
@@ -171,6 +256,28 @@ router.get('/users', authMiddleware, requireSuperAdmin, async (req, res, next) =
   }
 })
 
+// GET /api/auth/audit — recent security and operational actions
+router.get('/audit', authMiddleware, requireSuperAdmin, async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500)
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('id, actor_id, actor_email, action, entity_type, entity_id, metadata, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      if (['42P01', '42501', 'PGRST205'].includes(error.code)) {
+        return res.status(503).json({ error: 'Le journal audit n’est pas encore disponible. Vérifiez la création de la table audit_logs dans Supabase.' })
+      }
+      throw error
+    }
+    res.json(data || [])
+  } catch (err) {
+    next(err)
+  }
+})
+
 /**
  * POST /api/auth/users
  * Protected (Super Admin)
@@ -187,7 +294,7 @@ router.post('/users', authMiddleware, requireSuperAdmin, async (req, res, next) 
       return res.status(400).json({ error: 'Le mot de passe doit faire au moins 6 caractères' })
     }
 
-    const validRoles = ['super_admin', 'admin']
+    const validRoles = ['super_admin', 'admin', 'accueil', 'lecteur']
     const finalRole = validRoles.includes(role) ? role : 'admin'
 
     const hashed = hashPassword(password)
@@ -211,6 +318,7 @@ router.post('/users', authMiddleware, requireSuperAdmin, async (req, res, next) 
       throw error
     }
 
+    await recordAudit(req, { action: 'user_created', entityType: 'user', entityId: data.id, metadata: { role: data.role } })
     res.status(201).json(data)
   } catch (err) {
     next(err)
@@ -235,6 +343,7 @@ router.delete('/users/:id', authMiddleware, requireSuperAdmin, async (req, res, 
       .eq('id', id)
 
     if (error) throw error
+    await recordAudit(req, { action: 'user_deleted', entityType: 'user', entityId: id })
     res.status(204).send()
   } catch (err) {
     next(err)

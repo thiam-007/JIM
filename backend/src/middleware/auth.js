@@ -44,3 +44,12 @@ export function requireAdmin(req, res, next) {
   }
   next()
 }
+
+export function requireRoles(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({ error: 'Vous n’avez pas les permissions nécessaires' })
+    }
+    next()
+  }
+}

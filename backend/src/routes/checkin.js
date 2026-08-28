@@ -1,11 +1,23 @@
 import { Router } from 'express'
 import crypto from 'crypto'
+import rateLimit from 'express-rate-limit'
 import supabase from '../config/supabase.js'
-import { authMiddleware, requireAdmin } from '../middleware/auth.js'
+import { authMiddleware, requireRoles } from '../middleware/auth.js'
+import { recordAudit } from '../utils/audit.js'
 
 const router = Router()
 
-router.use(authMiddleware, requireAdmin)
+const scanLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Trop de scans, veuillez patienter une minute.' }
+})
+
+router.use(authMiddleware, requireRoles('super_admin', 'admin', 'accueil'))
+router.use('/scan', scanLimiter)
+router.use('/manual', scanLimiter)
 
 /**
  * Helper: format a date as HH:MM in local time
@@ -20,12 +32,20 @@ function formatTime(date) {
  * @param {string} agent - agent name (optional)
  * @param {object} res - Express response
  */
-async function performCheckin(invitation, agent, res) {
+async function performCheckin(invitation, agent, req, res) {
   const { statut, id: invitation_id } = invitation
+
+  if (invitation.revoked_at || (invitation.expires_at && new Date(invitation.expires_at) <= new Date())) {
+    await supabase.from('checkins').insert({ invitation_id, agent: agent || null, success: false, message: 'QR code expiré ou révoqué' })
+    await recordAudit(req, { action: 'checkin_rejected', entityType: 'invitation', entityId: invitation_id, metadata: { reason: 'expired_or_revoked', agent } })
+    return res.status(410).json({ error: 'QR code expiré ou révoqué', statut })
+  }
 
   // Already checked in
   if (statut === 'present') {
     const time = invitation.heure_arrivee ? formatTime(invitation.heure_arrivee) : '?'
+    await supabase.from('checkins').insert({ invitation_id, agent: agent || null, success: false, message: 'Invitation déjà utilisée' })
+    await recordAudit(req, { action: 'checkin_rejected', entityType: 'invitation', entityId: invitation_id, metadata: { reason: 'already_used', agent } })
     return res.status(409).json({
       error: `Déjà scanné à ${time}`,
       statut: 'present',
@@ -42,6 +62,7 @@ async function performCheckin(invitation, agent, res) {
       success: false,
       message: 'Invité a décliné'
     })
+    await recordAudit(req, { action: 'checkin_rejected', entityType: 'invitation', entityId: invitation_id, metadata: { reason: 'declined', agent } })
     return res.status(422).json({
       error: 'Invité a décliné',
       statut: 'decline'
@@ -75,6 +96,7 @@ async function performCheckin(invitation, agent, res) {
     success: true,
     message: 'Check-in réussi'
   })
+  await recordAudit(req, { action: 'checkin_success', entityType: 'invitation', entityId: invitation_id, metadata: { agent } })
 
   return res.json({
     ok: true,
@@ -99,7 +121,7 @@ router.post('/scan', async (req, res, next) => {
       // Recherche par token UUID — tokens toujours en lowercase dans la DB
       const { data: invitation, error } = await supabase
         .from('invitations')
-        .select('id, token, statut, heure_arrivee, evenement_id, invites(prenom, nom, organisation)')
+        .select('id, token, statut, heure_arrivee, expires_at, revoked_at, evenement_id, invites(prenom, nom, email, telephone, organisation, titre_poste, categorie)')
         .eq('token', cleanToken.toLowerCase())
         .single()
 
@@ -112,7 +134,7 @@ router.post('/scan', async (req, res, next) => {
         return res.status(400).json({ error: 'Cette invitation appartient à un autre événement' })
       }
 
-      await performCheckin(invitation, agent, res)
+      await performCheckin(invitation, agent, req, res)
     } else {
       // Recherche nominative (Nom ou Prénom) pour saisie manuelle
       if (!evenement_id) {
@@ -128,7 +150,7 @@ router.post('/scan', async (req, res, next) => {
       // Filtre client-side pour support recherche multi-mots
       const { data: invitations, error } = await supabase
         .from('invitations')
-        .select('id, token, statut, heure_arrivee, evenement_id, invites!inner(prenom, nom, organisation)')
+        .select('id, token, statut, heure_arrivee, expires_at, revoked_at, evenement_id, invites!inner(prenom, nom, email, telephone, organisation, titre_poste, categorie)')
         .eq('evenement_id', evenement_id)
 
       if (error || !invitations) {
@@ -145,8 +167,11 @@ router.post('/scan', async (req, res, next) => {
       const matched = invitations.filter((inv) => {
         const prenom = (inv.invites?.prenom || '').toLowerCase()
         const nom = (inv.invites?.nom || '').toLowerCase()
+        const email = (inv.invites?.email || '').toLowerCase()
+        const telephone = (inv.invites?.telephone || '').toLowerCase()
+        const organisation = (inv.invites?.organisation || '').toLowerCase()
         const fullName = `${prenom} ${nom}`
-        return searchTerms.every(term => prenom.includes(term) || nom.includes(term) || fullName.includes(term))
+        return searchTerms.every(term => prenom.includes(term) || nom.includes(term) || fullName.includes(term) || email.includes(term) || telephone.includes(term) || organisation.includes(term))
       })
 
       if (matched.length === 0) {
@@ -161,12 +186,16 @@ router.post('/scan', async (req, res, next) => {
             token: m.token,
             prenom: m.invites?.prenom,
             nom: m.invites?.nom,
-            organisation: m.invites?.organisation
+            email: m.invites?.email,
+            telephone: m.invites?.telephone,
+            organisation: m.invites?.organisation,
+            titre_poste: m.invites?.titre_poste,
+            categorie: m.invites?.categorie
           }))
         })
       }
 
-      await performCheckin(matched[0], agent, res)
+      await performCheckin(matched[0], agent, req, res)
     }
   } catch (err) {
     next(err)
@@ -181,7 +210,7 @@ router.post('/manual/:invitation_id', async (req, res, next) => {
 
     const { data: invitation, error } = await supabase
       .from('invitations')
-      .select('id, token, statut, heure_arrivee, invites(prenom, nom, organisation)')
+      .select('id, token, statut, heure_arrivee, expires_at, revoked_at, invites(prenom, nom, organisation)')
       .eq('id', invitation_id)
       .single()
 
@@ -189,7 +218,7 @@ router.post('/manual/:invitation_id', async (req, res, next) => {
       return res.status(404).json({ error: 'Invitation introuvable' })
     }
 
-    await performCheckin(invitation, agent, res)
+    await performCheckin(invitation, agent, req, res)
   } catch (err) {
     next(err)
   }
@@ -217,7 +246,7 @@ router.get('/:evenement_id/log', async (req, res, next) => {
           statut,
           heure_arrivee,
           evenement_id,
-          invites ( prenom, nom, email, organisation, titre_poste )
+          invites ( prenom, nom, email, organisation, titre_poste, categorie )
         )
       `)
       .eq('invitations.evenement_id', evenement_id)

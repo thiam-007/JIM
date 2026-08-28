@@ -28,7 +28,8 @@ test('submitContactMessage persists and notifies when deps succeed', async () =>
         saved = payload
         return { id: '1' }
       },
-      sendMail: async () => true
+      sendMail: async () => true,
+      sendReceipt: async () => true
     }
   )
 

@@ -29,6 +29,7 @@ import { validateRemoteUrl, isSafeImageContentType } from './utils/remoteUrl.js'
 // Middleware
 import { authMiddleware } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
+import { sendAutomaticReminders } from './services/reminderService.js'
 
 // ─── App setup ─────────────────────────────────────────────────────────────────
 
@@ -174,11 +175,14 @@ app.get('/api/invitations/qr/:token', async (req, res, next) => {
     // Verify token exists in DB (cheap lookup, no sensitive data returned)
     const { data, error } = await supabase
       .from('invitations')
-      .select('id')
+      .select('id, expires_at, revoked_at')
       .eq('token', token)
       .single()
 
     if (error || !data) return res.status(404).json({ error: 'Invitation introuvable' })
+    if (data.revoked_at || (data.expires_at && new Date(data.expires_at) <= new Date())) {
+      return res.status(410).json({ error: 'QR code expiré ou révoqué' })
+    }
 
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     const pngBuffer = await generateQrPng(token, frontendUrl)
@@ -224,6 +228,18 @@ const startServer = async () => {
     console.log(`   Supabase URL : ${process.env.SUPABASE_URL || '(not set)'}`)
     console.log(`   Environment  : ${process.env.NODE_ENV || 'development'}`)
   })
+
+  const intervalHours = Number(process.env.REMINDER_INTERVAL_HOURS) || 24
+  const runReminders = async () => {
+    try {
+      const result = await sendAutomaticReminders()
+      if (result.processed) console.log(`📨 Relances automatiques : ${result.sent} envoyée(s), ${result.failed} échec(s)`)
+    } catch (error) {
+      console.error('Relances automatiques indisponibles:', error.message)
+    }
+  }
+  setTimeout(runReminders, 60 * 1000)
+  setInterval(runReminders, intervalHours * 60 * 60 * 1000)
 }
 
 startServer()

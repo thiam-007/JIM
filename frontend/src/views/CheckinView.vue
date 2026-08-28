@@ -1,5 +1,5 @@
 <template>
-  <div class="ck-shell">
+  <div class="ck-shell" :class="{ 'ck-high-contrast': highContrast }">
 
     <!-- ─── En-tête ─── -->
     <div class="form-card">
@@ -34,12 +34,65 @@
             <div class="ck-counter-label">Confirmés</div>
           </div>
         </div>
+        <div class="ck-counter-item">
+          <AppIcon name="clock" :size="20" class="ck-counter-icon amber" />
+          <div>
+            <div class="ck-counter-num">{{ remainingCount }}</div>
+            <div class="ck-counter-label">À accueillir</div>
+          </div>
+        </div>
+        <div class="ck-counter-item">
+          <AppIcon name="x-circle" :size="20" class="ck-counter-icon red" />
+          <div>
+            <div class="ck-counter-num">{{ declinedCount }}</div>
+            <div class="ck-counter-label">Refus</div>
+          </div>
+        </div>
+        <div class="ck-counter-item">
+          <AppIcon name="users" :size="20" class="ck-counter-icon capacity" />
+          <div>
+            <div class="ck-counter-num">{{ remainingCapacity }}</div>
+            <div class="ck-counter-label">Places restantes</div>
+          </div>
+        </div>
         <div class="ck-progress-wrap">
           <div class="ck-progress-bar">
             <div class="ck-progress-fill" :style="`width:${progressPct}%`"></div>
           </div>
           <div class="ck-progress-label">{{ progressPct }}% de présence</div>
         </div>
+        <button type="button" class="ck-live-toggle" :class="{ active: liveMode }" @click="liveMode = !liveMode">
+          <AppIcon :name="liveMode ? 'refresh-cw' : 'pause'" :size="15" />
+          {{ liveMode ? 'Live' : 'Pause' }}
+        </button>
+        <button type="button" class="ck-live-toggle" :class="{ active: highContrast }" @click="toggleContrast" title="Activer le contraste élevé">
+          <AppIcon name="sun" :size="15" /> Contraste
+        </button>
+      </div>
+        <div class="ck-offline-banner" :class="{ online: !isOffline }">
+          <AppIcon :name="isOffline ? 'wifi-off' : 'wifi'" :size="15" />
+          <span v-if="isOffline">Hors connexion : les scans sont enregistrés sur cet appareil.</span>
+          <span v-else-if="pendingOfflineCount">Connexion rétablie : synchronisation en cours ({{ pendingOfflineCount }} en attente).</span>
+          <span v-else>Connexion active</span>
+          <strong v-if="pendingOfflineCount">{{ pendingOfflineCount }} en attente</strong>
+        </div>
+      <div class="ck-report-actions" v-if="!loading && invitationsList.length">
+        <button type="button" class="btn-report" @click="exportAttendanceCsv">
+          <AppIcon name="download" :size="16" /> CSV invités
+        </button>
+        <button type="button" class="btn-report btn-report-secondary" @click="exportAttendanceExcel">
+          <AppIcon name="file-text" :size="16" /> Excel invités + scans
+        </button>
+        <select v-model="badgeCategory" class="ck-badge-category" aria-label="Catégorie des badges">
+          <option value="Participant">Participant</option>
+          <option value="Presse">Presse</option>
+          <option value="VIP">VIP</option>
+          <option value="Partenaire">Partenaire</option>
+        </select>
+        <button type="button" class="btn-report btn-report-secondary" @click="printPresentBadges" :disabled="presentCount === 0">
+          <AppIcon name="printer" :size="16" /> Imprimer badges
+        </button>
+        <span class="ck-sync-status" v-if="liveMode">Actualisé {{ lastRefreshLabel }}</span>
       </div>
     </div>
 
@@ -75,6 +128,9 @@
               </button>
               <button v-if="cameraActive" class="btn-flip-cam" @click="flipCamera">
                 <AppIcon name="refresh-cw" :size="16" /> Changer de caméra
+              </button>
+              <button type="button" class="btn-flip-cam" :class="{ muted: !soundEnabled }" @click="toggleSound" :title="soundEnabled ? 'Désactiver le son' : 'Activer le son'">
+                <AppIcon :name="soundEnabled ? 'volume-2' : 'volume-x'" :size="16" /> {{ soundEnabled ? 'Son' : 'Muet' }}
               </button>
             </div>
 
@@ -130,6 +186,36 @@
                   </div>
                   <div style="height: 5px; background: rgba(132,89,54,0.08); border-radius: 3px; overflow: hidden;">
                     <div style="height: 100%; background: var(--or); border-radius: 3px;" :style="`width: ${Math.round((job.count / successfulCheckins.length) * 100)}%`"></div>
+                  </div>
+                </div>
+              </div>
+              <p v-else style="font-size: 0.8rem; color: #888; font-style: italic;">Aucune donnée</p>
+            </div>
+            <div>
+              <h4 style="margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid #2e7d32; padding-left: 8px;">Catégories</h4>
+              <div v-if="profileStats.topCategories.length" style="display: flex; flex-direction: column; gap: 8px;">
+                <div v-for="category in profileStats.topCategories" :key="category.name" style="font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: 600;">
+                    <span style="color: var(--noir);">{{ category.name }}</span>
+                    <span style="color: #2e7d32;">{{ category.count }}</span>
+                  </div>
+                  <div style="height: 5px; background: rgba(46,125,50,0.1); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: #2e7d32; border-radius: 3px;" :style="`width: ${Math.round((category.count / successfulCheckins.length) * 100)}%`"></div>
+                  </div>
+                </div>
+              </div>
+              <p v-else style="font-size: 0.8rem; color: #888; font-style: italic;">Aucune donnée</p>
+            </div>
+            <div>
+              <h4 style="margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase; color: var(--brun); letter-spacing: 0.5px; border-left: 3px solid #1565c0; padding-left: 8px;">Arrivées par heure</h4>
+              <div v-if="profileStats.arrivalsByHour.length" style="display: flex; flex-direction: column; gap: 8px;">
+                <div v-for="arrival in profileStats.arrivalsByHour" :key="arrival.name" style="font-size: 0.82rem;">
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-weight: 600;">
+                    <span style="color: var(--noir);">{{ arrival.name }}</span>
+                    <span style="color: #1565c0;">{{ arrival.count }}</span>
+                  </div>
+                  <div style="height: 5px; background: rgba(21,101,192,0.1); border-radius: 3px; overflow: hidden;">
+                    <div style="height: 100%; background: #1565c0; border-radius: 3px;" :style="`width: ${Math.round((arrival.count / profileStats.maxArrivalCount) * 100)}%`"></div>
                   </div>
                 </div>
               </div>
@@ -313,6 +399,7 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
+import * as XLSX from 'xlsx'
 
 const route = useRoute()
 const api = useApiStore()
@@ -335,6 +422,17 @@ const showRegisterModal = ref(false)
 const registerLoading = ref(false)
 const registerError = ref('')
 const registerForm = ref({ prenom: '', nom: '', organisation: '', titre_poste: '', email: '' })
+const badgeCategory = ref('Participant')
+const soundEnabled = ref(localStorage.getItem('jim_checkin_sound') !== 'off')
+const highContrast = ref(localStorage.getItem('jim_checkin_contrast') === 'on')
+let audioContext = null
+const liveMode = ref(true)
+const lastRefreshAt = ref(null)
+const isOffline = ref(typeof navigator !== 'undefined' && !navigator.onLine)
+const pendingOfflineCount = ref(0)
+let liveRefreshTimer = null
+const offlineQueueKey = `jim_checkin_queue_${eventId}`
+const offlineInvitationsKey = `jim_checkin_invitations_${eventId}`
 
 const prenomInputRef = ref(null)
 const nomInputRef = ref(null)
@@ -351,7 +449,36 @@ function focusNom() {
   nomInputRef.value?.focus()
 }
 
+function toggleSound() {
+  soundEnabled.value = !soundEnabled.value
+  localStorage.setItem('jim_checkin_sound', soundEnabled.value ? 'on' : 'off')
+  if (soundEnabled.value) playScanTone(true)
+}
+
+function toggleContrast() {
+  highContrast.value = !highContrast.value
+  localStorage.setItem('jim_checkin_contrast', highContrast.value ? 'on' : 'off')
+}
+
+function playScanTone(success) {
+  if (!soundEnabled.value) return
+  try {
+    audioContext ||= new (window.AudioContext || window.webkitAudioContext)()
+    const oscillator = audioContext.createOscillator()
+    const gain = audioContext.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = success ? 880 : 220
+    gain.gain.setValueAtTime(0.001, audioContext.currentTime)
+    gain.gain.exponentialRampToValueAtTime(0.16, audioContext.currentTime + 0.01)
+    gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + (success ? 0.16 : 0.28))
+    oscillator.connect(gain).connect(audioContext.destination)
+    oscillator.start()
+    oscillator.stop(audioContext.currentTime + (success ? 0.16 : 0.28))
+  } catch { }
+}
+
 const invitationsList = ref([])
+const currentAgent = computed(() => [api.userPrenom, api.userNom].filter(Boolean).join(' ') || api.userEmail || 'Accueil')
 
 const totalInvitations = computed(() => invitationsList.value.length)
 
@@ -360,6 +487,13 @@ const presentCount = computed(() => new Set(
     .filter(invitation => invitation.statut === 'present')
     .map(invitation => invitation.id)
 ).size)
+
+const remainingCount = computed(() => Math.max(0, totalInvitations.value - presentCount.value))
+const declinedCount = computed(() => invitationsList.value.filter(invitation => invitation.statut === 'decline').length)
+const remainingCapacity = computed(() => {
+  const capacity = Number(evenement.value?.capacite)
+  return Number.isFinite(capacity) && capacity > 0 ? Math.max(0, capacity - presentCount.value) : '—'
+})
 
 const successfulCheckins = computed(() => checkinLog.value.filter(entry => entry.success !== false))
 
@@ -371,20 +505,28 @@ const suggestions = computed(() => {
     const prenom = (i.invites.prenom || '').toLowerCase()
     const nom = (i.invites.nom || '').toLowerCase()
     const org = (i.invites.organisation || '').toLowerCase()
-    return prenom.includes(query) || nom.includes(query) || org.includes(query)
+    const email = (i.invites.email || '').toLowerCase()
+    const telephone = (i.invites.telephone || '').toLowerCase()
+    return prenom.includes(query) || nom.includes(query) || org.includes(query) || email.includes(query) || telephone.includes(query)
   }).slice(0, 10)
 })
 
 const profileStats = computed(() => {
   const orgMap = {}
   const jobMap = {}
+  const categoryMap = {}
+  const hourMap = {}
   
   successfulCheckins.value.forEach(item => {
     const org = (item.organisation || 'Non spécifié').trim() || 'Non spécifié'
     const job = (item.titre_poste || 'Non spécifié').trim() || 'Non spécifié'
+    const category = (item.categorie || 'Participant').trim() || 'Participant'
+    const hour = item.checked_at ? new Date(item.checked_at).getHours() : null
     
     orgMap[org] = (orgMap[org] || 0) + 1
     jobMap[job] = (jobMap[job] || 0) + 1
+    categoryMap[category] = (categoryMap[category] || 0) + 1
+    if (hour !== null && !Number.isNaN(hour)) hourMap[hour] = (hourMap[hour] || 0) + 1
   })
   
   const topOrgs = Object.entries(orgMap)
@@ -396,8 +538,18 @@ const profileStats = computed(() => {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
+
+  const topCategories = Object.entries(categoryMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const arrivalsByHour = Object.entries(hourMap)
+    .map(([hour, count]) => ({ name: `${String(hour).padStart(2, '0')}h`, count, hour: Number(hour) }))
+    .sort((a, b) => a.hour - b.hour)
+
+  const maxArrivalCount = Math.max(1, ...arrivalsByHour.map(item => item.count))
     
-  return { topOrgs, topJobs }
+  return { topOrgs, topJobs, topCategories, arrivalsByHour, maxArrivalCount }
 })
 let stream = null
 let scanLoop = null
@@ -412,6 +564,9 @@ const progressPct = computed(() => {
 })
 
 onMounted(async () => {
+  window.addEventListener('online', handleOnline)
+  window.addEventListener('offline', handleOffline)
+  pendingOfflineCount.value = readOfflineQueue().length
   loading.value = true
   try {
     // Load jsQR dynamically from CDN (avoids build-time resolution)
@@ -440,6 +595,10 @@ onMounted(async () => {
     }
     if (invs.status === 'fulfilled') {
       invitationsList.value = invs.value || []
+      localStorage.setItem(offlineInvitationsKey, JSON.stringify(invitationsList.value))
+      totalInscrits.value = invitationsList.value.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
+    } else {
+      invitationsList.value = readCachedInvitations()
       totalInscrits.value = invitationsList.value.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
     }
     if (log.status === 'fulfilled') {
@@ -451,10 +610,14 @@ onMounted(async () => {
         nom: row.invitations?.invites?.nom || '',
         organisation: row.invitations?.invites?.organisation || '',
         titre_poste: row.invitations?.invites?.titre_poste || '',
+        categorie: row.invitations?.invites?.categorie || 'Participant',
+        agent: row.agent || row.invitations?.agent_checkin || '',
         checked_at: row.scanned_at,
         success: row.success !== false
       }))
     }
+    lastRefreshAt.value = new Date()
+    liveRefreshTimer = setInterval(refreshLiveData, 15000)
   } finally {
     loading.value = false
   }
@@ -462,7 +625,152 @@ onMounted(async () => {
 
 onUnmounted(() => {
   stopCamera()
+  if (liveRefreshTimer) clearInterval(liveRefreshTimer)
+  window.removeEventListener('online', handleOnline)
+  window.removeEventListener('offline', handleOffline)
 })
+
+const lastRefreshLabel = computed(() => {
+  if (!lastRefreshAt.value) return 'à l’instant'
+  return new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(lastRefreshAt.value)
+})
+
+function readOfflineQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(offlineQueueKey) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function writeOfflineQueue(queue) {
+  localStorage.setItem(offlineQueueKey, JSON.stringify(queue))
+  pendingOfflineCount.value = queue.length
+}
+
+function readCachedInvitations() {
+  try {
+    return JSON.parse(localStorage.getItem(offlineInvitationsKey) || '[]')
+  } catch {
+    return []
+  }
+}
+
+function handleOffline() {
+  isOffline.value = true
+}
+
+function handleOnline() {
+  isOffline.value = false
+  syncOfflineQueue()
+}
+
+function resolveCachedInvitation(input) {
+  const cleanInput = input.trim().toLowerCase()
+  let matches = invitationsList.value.filter(invitation => invitation.token?.toLowerCase() === cleanInput)
+  if (!matches.length) {
+    const terms = cleanInput.split(/\s+/).filter(Boolean)
+    matches = invitationsList.value.filter(invitation => {
+      const prenom = (invitation.invites?.prenom || '').toLowerCase()
+      const nom = (invitation.invites?.nom || '').toLowerCase()
+      const organisation = (invitation.invites?.organisation || '').toLowerCase()
+      return terms.every(term => prenom.includes(term) || nom.includes(term) || organisation.includes(term))
+    })
+  }
+  if (matches.length !== 1) return null
+  return matches[0]
+}
+
+function queueOfflineCheckin(input) {
+  if (!isOffline.value) return false
+  const invitation = resolveCachedInvitation(input)
+  if (!invitation) return false
+  if (invitation.statut === 'present') {
+    return false
+  }
+
+  const queue = readOfflineQueue()
+  if (queue.some(item => item.invitationId === invitation.id)) {
+    throw new Error('Ce scan est déjà en attente de synchronisation')
+  }
+
+  const checkedAt = new Date().toISOString()
+  queue.push({ invitationId: invitation.id, token: invitation.token, agent: currentAgent.value, checkedAt })
+  writeOfflineQueue(queue)
+  invitation.statut = 'present'
+  invitation.heure_arrivee = checkedAt
+  invitation.agent_checkin = currentAgent.value
+  checkinLog.value.unshift({
+    id: `offline-${invitation.id}-${checkedAt}`,
+    prenom: invitation.invites?.prenom || '',
+    nom: invitation.invites?.nom || '',
+    organisation: invitation.invites?.organisation || '',
+    titre_poste: invitation.invites?.titre_poste || '',
+    agent: currentAgent.value,
+    checked_at: checkedAt,
+    success: true,
+    pending: true
+  })
+  scanResult.value = {
+    type: 'success',
+    name: `${invitation.invites?.prenom || ''} ${invitation.invites?.nom || ''}`.trim() || 'Invité',
+    message: 'Présence enregistrée hors connexion'
+  }
+  navigator.vibrate?.([80, 40, 80])
+  return true
+}
+
+async function syncOfflineQueue() {
+  if (isOffline.value) return
+  const queue = readOfflineQueue()
+  for (const item of queue) {
+    try {
+      await api.post('/api/checkin/scan', {
+        token: item.token,
+        evenement_id: eventId,
+        agent: item.agent
+      })
+      const remaining = readOfflineQueue().filter(entry => entry.invitationId !== item.invitationId)
+      writeOfflineQueue(remaining)
+    } catch (error) {
+      if (error.message?.includes('déjà') || error.message?.includes('émargée')) {
+        const remaining = readOfflineQueue().filter(entry => entry.invitationId !== item.invitationId)
+        writeOfflineQueue(remaining)
+      } else {
+        break
+      }
+    }
+  }
+  if (!pendingOfflineCount.value) await refreshLiveData()
+}
+
+async function refreshLiveData() {
+  if (isOffline.value || !liveMode.value || loading.value || processing.value) return
+  try {
+    const [log, invitations] = await Promise.all([
+      api.get(`/api/checkin/${eventId}/log`),
+      api.get(`/api/invitations?evenement_id=${eventId}`)
+    ])
+    const rawLog = log?.log || log || []
+    checkinLog.value = rawLog.map(row => ({
+      id: row.id,
+      prenom: row.invitations?.invites?.prenom || '',
+      nom: row.invitations?.invites?.nom || '',
+      organisation: row.invitations?.invites?.organisation || '',
+      titre_poste: row.invitations?.invites?.titre_poste || '',
+      categorie: row.invitations?.invites?.categorie || 'Participant',
+      agent: row.agent || row.invitations?.agent_checkin || '',
+      checked_at: row.scanned_at,
+      success: row.success !== false
+    }))
+    invitationsList.value = invitations || []
+    localStorage.setItem(offlineInvitationsKey, JSON.stringify(invitationsList.value))
+    totalInscrits.value = invitationsList.value.filter(i => i.statut === 'inscrit' || i.statut === 'present').length
+    lastRefreshAt.value = new Date()
+  } catch (error) {
+    console.warn('Synchronisation live indisponible:', error.message)
+  }
+}
 
 async function startCamera() {
   try {
@@ -545,23 +853,28 @@ async function handleScanResult(scannedText) {
     if (token.endsWith('.png')) token = token.slice(0, -4)
     token = token.trim().toLowerCase()
 
-    const result = await api.post('/api/checkin/scan', { token, evenement_id: eventId })
+    const result = await api.post('/api/checkin/scan', { token, evenement_id: eventId, agent: currentAgent.value })
     scanResult.value = {
       type: 'success',
       name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
       message: 'Bienvenue !'
     }
+    navigator.vibrate?.([80, 40, 80])
+    playScanTone(true)
     // Recharger les invitations pour actualiser les compteurs et le statut.
     checkinLog.value.unshift({
       id: result.id || Math.random().toString(),
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      categorie: result.invite?.categorie || 'Participant',
       titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
     await loadInvitationsList()
   } catch (err) {
+    if (queueOfflineCheckin(token)) return
+    navigator.vibrate?.(220)
     scanResult.value = {
       type: 'error',
       name: 'QR invalide ou déjà scanné',
@@ -588,25 +901,32 @@ async function doManualCheckin() {
   try {
     const result = await api.post('/api/checkin/scan', {
       token: manualInput.value.trim(),
-      evenement_id: eventId
+      evenement_id: eventId,
+      agent: currentAgent.value
     })
     scanResult.value = {
       type: 'success',
       name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
       message: 'Bienvenue !'
     }
+    navigator.vibrate?.([80, 40, 80])
+    playScanTone(true)
     // Ajouter au log de check-in normalisé
     checkinLog.value.unshift({
       id: result.id || Math.random().toString(),
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      categorie: result.invite?.categorie || 'Participant',
       titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
     manualInput.value = ''
     await loadInvitationsList()
   } catch (err) {
+    if (queueOfflineCheckin(manualInput.value)) return
+    navigator.vibrate?.(220)
+    playScanTone(false)
     if (err.matches) {
       manualMatches.value = err.matches
       manualError.value = 'Plusieurs correspondances trouvées. Veuillez sélectionner la bonne personne :'
@@ -625,25 +945,33 @@ async function selectMatch(match) {
   try {
     const result = await api.post('/api/checkin/scan', {
       token: match.token,
-      evenement_id: eventId
+      evenement_id: eventId,
+      agent: currentAgent.value
     })
     scanResult.value = {
       type: 'success',
       name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
       message: 'Bienvenue !'
     }
+    navigator.vibrate?.([80, 40, 80])
+    playScanTone(true)
     // Ajouter au log de check-in normalisé
     checkinLog.value.unshift({
       id: result.id || Math.random().toString(),
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      categorie: result.invite?.categorie || 'Participant',
       titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
     manualInput.value = ''
     await loadInvitationsList()
   } catch (err) {
+    if (queueOfflineCheckin(match.token)) return
+    navigator.vibrate?.(220)
+    playScanTone(false)
+    playScanTone(false)
     manualError.value = err.message || 'Erreur lors de la validation.'
   } finally {
     processing.value = false
@@ -667,7 +995,8 @@ async function handleSelectSuggestion(invitationItem) {
   try {
     const result = await api.post('/api/checkin/scan', {
       token: invitationItem.token,
-      evenement_id: eventId
+      evenement_id: eventId,
+      agent: currentAgent.value
     })
     scanResult.value = {
       type: 'success',
@@ -680,11 +1009,15 @@ async function handleSelectSuggestion(invitationItem) {
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      categorie: result.invite?.categorie || 'Participant',
       titre_poste: result.invite?.titre_poste || '',
       checked_at: new Date().toISOString()
     })
+    playScanTone(true)
     await loadInvitationsList()
   } catch (err) {
+    if (queueOfflineCheckin(invitationItem.token)) return
+    playScanTone(false)
     manualError.value = err.message || 'Erreur lors de la validation.'
   } finally {
     processing.value = false
@@ -704,6 +1037,100 @@ function formatTime(ts) {
   } catch { return '' }
 }
 
+function exportAttendanceCsv() {
+  const headers = ['Prenom', 'Nom', 'Email', 'Telephone', 'Organisation', 'Fonction', 'Statut', 'Date de reponse', 'Heure d arrivee', 'Agent']
+  const rows = invitationRows()
+  const csv = '\uFEFF' + [headers, ...rows]
+    .map(row => row.map(value => `"${String(value).replace(/"/g, '""')}"`).join(';'))
+    .join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${eventFileName()}_invites.csv`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function invitationRows() {
+  return invitationsList.value.map(invitation => [
+    invitation.invites?.prenom || '',
+    invitation.invites?.nom || '',
+    invitation.invites?.email || '',
+    invitation.invites?.telephone || invitation.invites?.phone || '',
+    invitation.invites?.organisation || '',
+    invitation.invites?.titre_poste || '',
+    invitation.statut || '',
+    invitation.date_reponse ? new Date(invitation.date_reponse).toLocaleString('fr-FR') : '',
+    invitation.heure_arrivee ? new Date(invitation.heure_arrivee).toLocaleString('fr-FR') : '',
+    invitation.agent_checkin || ''
+  ])
+}
+
+function exportAttendanceExcel() {
+  const workbook = XLSX.utils.book_new()
+  const invitationHeaders = ['Prenom', 'Nom', 'Email', 'Telephone', 'Organisation', 'Fonction', 'Statut', 'Date de reponse', 'Heure d arrivee', 'Agent']
+  const scanHeaders = ['Date', 'Heure', 'Prenom', 'Nom', 'Organisation', 'Fonction', 'Agent', 'Resultat']
+  const scanRows = checkinLog.value.map(entry => [
+    entry.checked_at ? new Date(entry.checked_at).toLocaleDateString('fr-FR') : '',
+    entry.checked_at ? new Date(entry.checked_at).toLocaleTimeString('fr-FR') : '',
+    entry.prenom,
+    entry.nom,
+    entry.organisation,
+    entry.titre_poste,
+    entry.agent || '',
+    entry.success === false ? 'Refuse' : 'Present'
+  ])
+
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([invitationHeaders, ...invitationRows()]), 'Invites')
+  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([scanHeaders, ...scanRows]), 'Historique scans')
+  XLSX.writeFile(workbook, `${eventFileName()}_rapport.xlsx`)
+}
+
+function eventFileName() {
+  return (evenement.value?.titre || 'evenement')
+    .replace(/[^a-z0-9]+/gi, '_')
+    .replace(/^_|_$/g, '')
+}
+
+function escapeHtml(value) {
+  return String(value || '').replace(/[&<>'"]/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  })[character])
+}
+
+function printPresentBadges() {
+  const presentInvitations = invitationsList.value.filter(invitation => invitation.statut === 'present')
+  if (!presentInvitations.length) return
+  const printWindow = window.open('', '_blank', 'width=1000,height=800')
+  if (!printWindow) {
+    scanResult.value = { type: 'error', name: 'Impression bloquée', message: 'Autorisez les fenêtres pop-up pour imprimer les badges.' }
+    return
+  }
+
+  const cards = presentInvitations.map(invitation => {
+    const invite = invitation.invites || {}
+    return `<article class="badge">
+      <div class="brand">MVG EVENT'S</div>
+      <div class="category">${escapeHtml(invite.categorie || badgeCategory.value)}</div>
+      <h1>${escapeHtml(`${invite.prenom || ''} ${invite.nom || ''}`.trim())}</h1>
+      <p>${escapeHtml(invite.organisation || '—')}</p>
+      <p class="role">${escapeHtml(invite.titre_poste || '')}</p>
+      <footer>${escapeHtml(evenement.value?.titre || 'Événement')}</footer>
+    </article>`
+  }).join('')
+
+  printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Badges - ${escapeHtml(eventFileName())}</title><style>
+    @page { size: A4; margin: 12mm; } * { box-sizing: border-box; } body { margin: 0; font-family: Arial, sans-serif; color: #241b16; }
+    .sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; } .badge { height: 78mm; border: 2px solid #845936; padding: 9mm; display: flex; flex-direction: column; justify-content: space-between; page-break-inside: avoid; }
+    .brand { color: #845936; font-size: 11px; font-weight: bold; letter-spacing: 2px; } .category { align-self: flex-start; background: #b1222a; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; }
+    h1 { font-size: 24px; margin: 8px 0 0; } p { margin: 0; font-size: 14px; } .role { color: #666; font-size: 12px; } footer { border-top: 1px solid #ddd; padding-top: 7px; font-size: 11px; color: #845936; }
+  </style></head><body><main class="sheet">${cards}</main><script>window.onload = () => window.print()<\/script></body></html>`)
+  printWindow.document.close()
+}
+
 async function submitRegisterOnsite() {
   if (!registerForm.value.prenom.trim() || !registerForm.value.nom.trim()) return
   registerLoading.value = true
@@ -712,7 +1139,7 @@ async function submitRegisterOnsite() {
     const result = await api.post('/api/checkin/register-onsite', {
       ...registerForm.value,
       evenement_id: eventId,
-      agent: api.user?.name || 'Accueil'
+      agent: currentAgent.value
     })
     
     showRegisterModal.value = false
@@ -724,6 +1151,8 @@ async function submitRegisterOnsite() {
       name: `${result.invite?.prenom || ''} ${result.invite?.nom || ''}`.trim() || 'Invité',
       message: 'Bienvenue ! (Enregistré sur place)'
     }
+    navigator.vibrate?.([80, 40, 80])
+    playScanTone(true)
     
     // Ajouter au log de check-in normalisé
     checkinLog.value.unshift({
@@ -731,6 +1160,7 @@ async function submitRegisterOnsite() {
       prenom: result.invite?.prenom || '',
       nom: result.invite?.nom || '',
       organisation: result.invite?.organisation || '',
+      categorie: result.invite?.categorie || 'Participant',
       checked_at: new Date().toISOString()
     })
     await loadInvitationsList()
@@ -744,6 +1174,12 @@ async function submitRegisterOnsite() {
 
 <style scoped>
 .ck-shell { display: flex; flex-direction: column; gap: 20px; }
+.ck-high-contrast .form-card { border-color: #111; box-shadow: 0 0 0 2px #111; }
+.ck-high-contrast .ck-result { border-width: 3px; }
+.ck-high-contrast .ck-result-name, .ck-high-contrast .ck-result-msg,
+.ck-high-contrast .ck-counter-label, .ck-high-contrast .ck-sync-status { color: #111; }
+.ck-high-contrast .ck-counter-num { color: #000; text-shadow: 0 1px #fff; }
+.ck-high-contrast .ck-manual-input, .ck-high-contrast .btn-manual { border-width: 3px; }
 
 /* Counter */
 .ck-counter {
@@ -755,9 +1191,27 @@ async function submitRegisterOnsite() {
 .ck-counter-icon { color: var(--or); }
 .ck-counter-icon.blue { color: #1565c0; }
 .ck-counter-icon.green { color: #2e7d32; }
+.ck-counter-icon.red { color: #c62828; }
+.ck-counter-icon.capacity { color: #00838f; }
 .ck-counter-num { font-size: 1.8rem; font-weight: 900; color: var(--blanc); line-height: 1; }
 .ck-counter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.7); }
-.ck-progress-wrap { flex: 1; min-width: 140px; }
+.ck-offline-banner {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 8px 12px; border-radius: 8px; background: #fff4e5; color: #9a5b00;
+  font-size: .78rem; font-weight: 700;
+}
+.ck-offline-banner.online { background: #edf8ef; color: #28733b; }
+.ck-offline-banner strong { margin-left: auto; }
+.ck-report-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+.btn-report {
+  display: inline-flex; align-items: center; gap: 8px;
+  width: 100%; justify-content: center;
+  padding: 10px 16px; border: 1px solid rgba(255,255,255,.35);
+  border-radius: 999px; background: rgba(255,255,255,.12); color: var(--blanc);
+  font-size: .78rem; font-weight: 700; cursor: pointer;
+}
+.btn-report:hover { background: rgba(255,255,255,.22); }
+.ck-progress-wrap { flex: 1; min-width: 0; width: 100%; }
 .ck-progress-bar {
   height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; overflow: hidden; margin-bottom: 6px;
 }
@@ -766,14 +1220,28 @@ async function submitRegisterOnsite() {
   border-radius: 4px; transition: width .5s ease;
 }
 .ck-progress-label { font-size: .76rem; color: rgba(255,255,255,.8); font-weight: 700; }
+.ck-live-toggle {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  padding: 8px 12px; border: 1px solid rgba(255,255,255,.3);
+  border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7);
+  font-size: .72rem; font-weight: 800; cursor: pointer;
+}
+.ck-live-toggle.active { background: rgba(76,175,80,.2); border-color: rgba(129,199,132,.7); color: #c8e6c9; }
+.ck-sync-status { color: rgba(132,89,54,.65); font-size: .72rem; }
+@media (min-width: 601px) {
+  .ck-counter { gap: 16px; }
+  .ck-live-toggle { margin-left: auto; }
+  .ck-report-actions { flex-direction: row; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+  .btn-report { width: auto; justify-content: center; }
+}
 
 /* Content layout */
-.ck-content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-@media (max-width: 720px) { .ck-content { grid-template-columns: 1fr; } }
+.ck-content { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 721px) { .ck-content { grid-template-columns: 1fr 1fr; gap: 20px; } }
 
 /* Stats grid (répartition organisations / fonctions) */
-.ck-stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px; }
-@media (max-width: 600px) { .ck-stats-grid { grid-template-columns: 1fr; padding: 14px 16px; } }
+.ck-stats-grid { display: grid; grid-template-columns: 1fr; gap: 16px; padding: 14px 16px; }
+@media (min-width: 601px) { .ck-stats-grid { grid-template-columns: 1fr 1fr; gap: 20px; padding: 18px 24px; } }
 
 /* Scanner card */
 .ck-scanner-card { overflow: hidden; }
@@ -817,7 +1285,7 @@ async function submitRegisterOnsite() {
 
 /* Camera controls */
 .ck-cam-controls {
-  display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 10px; margin-top: 14px;
 }
 .btn-start-cam, .btn-stop-cam, .btn-flip-cam {
   display: flex; align-items: center; gap: 8px;
@@ -827,6 +1295,9 @@ async function submitRegisterOnsite() {
 .btn-start-cam {
   background: linear-gradient(135deg, #1a3a2a, #2d6a4a);
   color: #fff; box-shadow: 0 6px 18px rgba(26,58,42,.25); flex: 1;
+}
+@media (min-width: 601px) {
+  .ck-cam-controls { flex-direction: row; flex-wrap: wrap; }
 }
 .btn-start-cam:hover { filter: brightness(1.1); }
 .btn-stop-cam {

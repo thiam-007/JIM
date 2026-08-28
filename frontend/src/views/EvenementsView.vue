@@ -169,6 +169,47 @@
                 </div>
               </div>
 
+              <div class="fg">
+                <label>Programme détaillé</label>
+                <div class="program-editor">
+                  <div v-for="(session, index) in form.programme" :key="index" class="program-row">
+                    <input v-model="session.heure" type="time" aria-label="Heure de la session" />
+                    <input v-model="session.titre" type="text" placeholder="Titre de la session" aria-label="Titre de la session" />
+                    <input v-model="session.salle" type="text" placeholder="Salle / espace" aria-label="Salle de la session" />
+                    <button type="button" class="row-btn-delete" title="Supprimer la session" @click="removeSession(index)"><AppIcon name="trash" :size="14" /></button>
+                  </div>
+                  <button type="button" class="btn-import" @click="addSession"><AppIcon name="plus" :size="14" /> Ajouter une session</button>
+                </div>
+              </div>
+
+              <div class="fg">
+                <label>Sujet des invitations</label>
+                <input type="text" v-model="form.email_sujet" placeholder="Invitation — {{ titre de l’événement }}" />
+              </div>
+              <div class="fg">
+                <label>Introduction personnalisée</label>
+                <textarea v-model="form.email_intro" rows="3" placeholder="Texte affiché dans l’email après le nom de l’invité…"></textarea>
+              </div>
+              <div class="fg">
+                <label>Signature personnalisée</label>
+                <input type="text" v-model="form.email_signature" placeholder="L’équipe du Musée Virtuel de Guinée" />
+              </div>
+
+              <div class="fr">
+                <div class="fg">
+                  <label>Intervenants</label>
+                  <input v-model="form.intervenants" placeholder="Noms séparés par des virgules" />
+                </div>
+                <div class="fg">
+                  <label>Partenaires</label>
+                  <input v-model="form.partenaires" placeholder="Organisations séparées par des virgules" />
+                </div>
+              </div>
+              <div class="fg">
+                <label>Sponsors</label>
+                <input v-model="form.sponsors" placeholder="Sponsors séparés par des virgules" />
+              </div>
+
               <div class="fr">
                 <div class="fg">
                   <label>Date de début</label>
@@ -347,6 +388,21 @@
                 <p v-else>Aucune description disponible pour cet événement.</p>
               </div>
 
+              <div v-if="detailEvt?.programme?.length" class="ev-programme-large mt-4">
+                <h4>Programme</h4>
+                <div v-for="(session, index) in detailEvt.programme" :key="index" class="programme-item">
+                  <strong>{{ session.heure || '—' }}</strong>
+                  <span>{{ session.titre || 'Session' }}</span>
+                  <small v-if="session.salle">{{ session.salle }}</small>
+                </div>
+              </div>
+              <div v-if="detailEvt?.intervenants?.length || detailEvt?.partenaires?.length || detailEvt?.sponsors?.length" class="ev-programme-large mt-4">
+                <h4>Intervenants et partenaires</h4>
+                <div v-if="detailEvt.intervenants?.length" class="event-network-row"><strong>Intervenants</strong><span>{{ detailEvt.intervenants.join(' · ') }}</span></div>
+                <div v-if="detailEvt.partenaires?.length" class="event-network-row"><strong>Partenaires</strong><span>{{ detailEvt.partenaires.join(' · ') }}</span></div>
+                <div v-if="detailEvt.sponsors?.length" class="event-network-row"><strong>Sponsors</strong><span>{{ detailEvt.sponsors.join(' · ') }}</span></div>
+              </div>
+
               <div class="ev-form-actions mt-4" style="justify-content: space-between;">
                 <button class="btn-cancel" @click="closeDetailModal">Fermer</button>
                 <button class="btn-primary-custom" @click="shareEvent" style="padding: 10px 16px; width: auto; font-size: 0.9rem;">
@@ -429,6 +485,13 @@ const form = ref({
   capacite: '',
   format: 'presentiel',
   statut: 'brouillon',
+  email_sujet: '',
+  email_intro: '',
+  email_signature: '',
+  programme: [],
+  intervenants: [],
+  partenaires: [],
+  sponsors: [],
   image_url: ''
 })
 
@@ -586,7 +649,7 @@ function statutLabel(statut) {
 
 function openCreate() {
   editingEvt.value = null
-  form.value = { titre: '', description: '', date_debut: '', date_fin: '', lieu: '', capacite: '', format: 'presentiel', statut: 'brouillon', image_url: '' }
+  form.value = { titre: '', description: '', date_debut: '', date_fin: '', lieu: '', capacite: '', format: 'presentiel', statut: 'brouillon', email_sujet: '', email_intro: '', email_signature: '', programme: [], intervenants: [], partenaires: [], sponsors: [], image_url: '' }
   imageFile.value = null
   imageMode.value = 'file'
   formError.value = ''
@@ -604,12 +667,27 @@ function openEdit(evt) {
     capacite: evt.capacite || '',
     format: evt.format || 'presentiel',
     statut: evt.statut || 'brouillon',
+    email_sujet: evt.email_sujet || '',
+    email_intro: evt.email_intro || '',
+    email_signature: evt.email_signature || '',
+    programme: Array.isArray(evt.programme) ? evt.programme.map(session => ({ ...session })) : [],
+    intervenants: Array.isArray(evt.intervenants) ? evt.intervenants.join(', ') : '',
+    partenaires: Array.isArray(evt.partenaires) ? evt.partenaires.join(', ') : '',
+    sponsors: Array.isArray(evt.sponsors) ? evt.sponsors.join(', ') : '',
     image_url: evt.image_url === '/images/side-photo.jpeg' ? '' : (evt.image_url || '')
   }
   imageFile.value = null
   imageMode.value = (evt.image_url && !evt.image_url.startsWith('data:') && !evt.image_url.includes('supabase.co') && evt.image_url !== '/images/side-photo.jpeg') ? 'url' : 'file'
   formError.value = ''
   showModal.value = true
+}
+
+function addSession() {
+  form.value.programme.push({ heure: '', titre: '', salle: '' })
+}
+
+function removeSession(index) {
+  form.value.programme.splice(index, 1)
 }
 
 function closeModal() {
@@ -638,6 +716,9 @@ async function saveEvt() {
       ...form.value,
       image_url: finalImageUrl
     }
+    body.intervenants = listFromInput(body.intervenants)
+    body.partenaires = listFromInput(body.partenaires)
+    body.sponsors = listFromInput(body.sponsors)
     if (!body.capacite) delete body.capacite
     if (!body.date_debut) delete body.date_debut
     if (!body.date_fin) delete body.date_fin
@@ -655,6 +736,11 @@ async function saveEvt() {
   } finally {
     saving.value = false
   }
+}
+
+function listFromInput(value) {
+  if (Array.isArray(value)) return value
+  return String(value || '').split(',').map(item => item.trim()).filter(Boolean)
 }
 
 function confirmDelete(evt) {

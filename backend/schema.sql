@@ -11,11 +11,26 @@ CREATE TABLE IF NOT EXISTS evenements (
   date_fin TIMESTAMPTZ,
   lieu VARCHAR,
   capacite INTEGER,
+  programme JSONB NOT NULL DEFAULT '[]'::jsonb,
+  intervenants JSONB NOT NULL DEFAULT '[]'::jsonb,
+  partenaires JSONB NOT NULL DEFAULT '[]'::jsonb,
+  sponsors JSONB NOT NULL DEFAULT '[]'::jsonb,
+  email_sujet VARCHAR,
+  email_intro TEXT,
+  email_signature TEXT,
   image_url TEXT,
   statut VARCHAR DEFAULT 'brouillon',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_sujet VARCHAR;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_intro TEXT;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_signature TEXT;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS programme JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS intervenants JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS partenaires JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS sponsors JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 -- invites
 CREATE TABLE IF NOT EXISTS invites (
@@ -26,10 +41,13 @@ CREATE TABLE IF NOT EXISTS invites (
   telephone VARCHAR,
   organisation VARCHAR,
   titre_poste VARCHAR,
+  categorie VARCHAR DEFAULT 'Participant',
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE invites ADD COLUMN IF NOT EXISTS categorie VARCHAR DEFAULT 'Participant';
 
 -- invitations
 CREATE TABLE IF NOT EXISTS invitations (
@@ -37,8 +55,12 @@ CREATE TABLE IF NOT EXISTS invitations (
   evenement_id UUID REFERENCES evenements(id) ON DELETE CASCADE,
   invite_id UUID REFERENCES invites(id) ON DELETE CASCADE,
   token VARCHAR UNIQUE NOT NULL DEFAULT gen_random_uuid()::text,
+  expires_at TIMESTAMPTZ,
+  revoked_at TIMESTAMPTZ,
   statut VARCHAR DEFAULT 'pas_de_reaction',
   date_envoi TIMESTAMPTZ,
+  derniere_relance_at TIMESTAMPTZ,
+  relances_count INTEGER NOT NULL DEFAULT 0,
   date_reponse TIMESTAMPTZ,
   heure_arrivee TIMESTAMPTZ,
   agent_checkin VARCHAR,
@@ -58,6 +80,22 @@ CREATE TABLE IF NOT EXISTS checkins (
   success BOOLEAN DEFAULT TRUE,
   message TEXT
 );
+
+-- audit log
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id UUID,
+  actor_email VARCHAR,
+  action VARCHAR NOT NULL,
+  entity_type VARCHAR NOT NULL,
+  entity_id UUID,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity ON audit_logs(entity_type, entity_id);
+GRANT SELECT, INSERT ON TABLE audit_logs TO service_role;
 
 -- actualites
 CREATE TABLE IF NOT EXISTS actualites (
@@ -91,10 +129,19 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR NOT NULL,
   prenom VARCHAR,
   nom VARCHAR,
-  role VARCHAR NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin')),
+  role VARCHAR NOT NULL DEFAULT 'admin' CHECK (role IN ('super_admin', 'admin', 'accueil', 'lecteur')),
+  totp_secret TEXT,
+  totp_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  recovery_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin', 'admin', 'accueil', 'lecteur'));
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_codes JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 -- contact messages
 CREATE TABLE IF NOT EXISTS contact_messages (
@@ -152,6 +199,10 @@ CREATE INDEX IF NOT EXISTS idx_invitations_evenement_id ON invitations(evenement
 CREATE INDEX IF NOT EXISTS idx_invitations_invite_id ON invitations(invite_id);
 CREATE INDEX IF NOT EXISTS idx_invitations_token ON invitations(token);
 CREATE INDEX IF NOT EXISTS idx_invitations_statut ON invitations(statut);
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS derniere_relance_at TIMESTAMPTZ;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS relances_count INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+ALTER TABLE invitations ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS idx_checkins_invitation_id ON checkins(invitation_id);
 
 -- ============================================================

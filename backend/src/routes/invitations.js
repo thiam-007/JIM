@@ -5,6 +5,7 @@ import { sendInvitation } from '../services/emailService.js'
 import { generateQrPng } from '../services/qrService.js'
 import { normalizeEmail } from '../utils/emailValidator.js'
 import { authMiddleware, requireAdmin } from '../middleware/auth.js'
+import { recordAudit } from '../utils/audit.js'
 
 const router = Router()
 
@@ -23,11 +24,13 @@ router.get('/', async (req, res, next) => {
         statut,
         date_envoi,
         date_reponse,
+        expires_at,
+        revoked_at,
         heure_arrivee,
         notes_rsvp,
         created_at,
         invite_id,
-        invites ( id, prenom, nom, email, organisation, titre_poste ),
+        invites ( id, prenom, nom, email, organisation, titre_poste, categorie ),
         evenements ( titre, date_debut )
       `)
       .order('created_at', { ascending: false })
@@ -88,6 +91,44 @@ router.post('/', async (req, res, next) => {
   }
 })
 
+// ─── Reissue / revoke QR token ───────────────────────────────────────────────
+router.post('/:id/reissue', async (req, res, next) => {
+  try {
+    const token = uuidv4().toLowerCase()
+    const { data, error } = await supabase
+      .from('invitations')
+      .update({ token, revoked_at: null })
+      .eq('id', req.params.id)
+      .select('id, token, statut, expires_at, revoked_at')
+      .single()
+
+    if (error) throw error
+    await recordAudit(req, { action: 'qr_reissued', entityType: 'invitation', entityId: req.params.id })
+    if (!data) return res.status(404).json({ error: 'Invitation introuvable' })
+    res.json(data)
+  } catch (err) {
+    next(err)
+  }
+})
+
+router.post('/:id/revoke', async (req, res, next) => {
+  try {
+    const { data, error } = await supabase
+      .from('invitations')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select('id, token, revoked_at')
+      .single()
+
+    if (error) throw error
+    await recordAudit(req, { action: 'qr_revoked', entityType: 'invitation', entityId: req.params.id })
+    if (!data) return res.status(404).json({ error: 'Invitation introuvable' })
+    res.json(data)
+  } catch (err) {
+    next(err)
+  }
+})
+
 // ─── Delete invitation ─────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
   try {
@@ -113,7 +154,7 @@ router.delete('/:id', async (req, res, next) => {
 // ─── Send invitation emails ────────────────────────────────────────────────────
 router.post('/send', async (req, res, next) => {
   try {
-    const { invitation_ids } = req.body
+    const { invitation_ids, reminder = false } = req.body
 
     if (!Array.isArray(invitation_ids) || invitation_ids.length === 0) {
       return res.status(400).json({ error: 'invitation_ids doit être un tableau non vide' })
@@ -127,6 +168,7 @@ router.post('/send', async (req, res, next) => {
         token,
         statut,
         date_envoi,
+        relances_count,
         invite_id,
         invites ( id, prenom, nom, email ),
         evenements ( id, titre, description, date_debut, date_fin, lieu )
@@ -155,13 +197,13 @@ router.post('/send', async (req, res, next) => {
 
       try {
         const rsvpUrl = `${frontendUrl}/rsvp/${invitation.token}`
-        await sendInvitation({ invite, evenement, rsvpUrl })
+        await sendInvitation({ invite, evenement, rsvpUrl, isReminder: reminder })
 
         // Met à jour date_envoi
-        await supabase
-          .from('invitations')
-          .update({ date_envoi: new Date().toISOString() })
-          .eq('id', invitation.id)
+        const update = reminder
+          ? { derniere_relance_at: new Date().toISOString(), relances_count: (invitation.relances_count || 0) + 1 }
+          : { date_envoi: new Date().toISOString(), statut: 'envoye' }
+        await supabase.from('invitations').update(update).eq('id', invitation.id)
 
         results.push({ id: invitation.id, status: 'sent', email: invite.email })
       } catch (emailErr) {
@@ -173,6 +215,8 @@ router.post('/send', async (req, res, next) => {
     const sent = results.filter((r) => r.status === 'sent').length
     const failed = results.filter((r) => r.status === 'failed').length
     const skipped = results.filter((r) => r.status === 'skipped').length
+
+    await recordAudit(req, { action: reminder ? 'invitations_reminded' : 'invitations_sent', entityType: 'evenement', metadata: { count: sent, failed, skipped } })
 
     res.json({ sent, failed, skipped, results })
   } catch (err) {

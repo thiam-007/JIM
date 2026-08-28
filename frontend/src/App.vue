@@ -101,6 +101,9 @@
           <RouterLink v-if="apiStore.isSuperAdmin" class="sidebar-link" :class="{ active: route.name === 'ManageAdmins' }" to="/admin/utilisateurs" @click="isAdminSidebarOpen = false">
             <AppIcon name="user-check" :size="16" /> Utilisateurs
           </RouterLink>
+          <RouterLink v-if="apiStore.isSuperAdmin" class="sidebar-link" :class="{ active: route.name === 'AuditLogs' }" to="/admin/audit" @click="isAdminSidebarOpen = false">
+            <AppIcon name="shield" :size="16" /> Journal d’audit
+          </RouterLink>
           <RouterLink class="sidebar-link" :class="{ active: route.name === 'ManageNewsletters' }" to="/admin/newsletters" @click="isAdminSidebarOpen = false">
             <AppIcon name="mail" :size="16" /> Newsletters
           </RouterLink>
@@ -134,7 +137,7 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Home' }" to="/">
             <AppIcon name="home" :size="16" /> Accueil
           </RouterLink>
-          <div v-if="!isAdminDomain" class="nav-dropdown-wrapper" tabindex="0" @click="void(0)">
+          <div v-if="!isAdminDomain && !apiStore.isConnected" class="nav-dropdown-wrapper" tabindex="0" @click="void(0)">
             <div class="nav-tab nav-tab-dropdown" :class="{ active: route.name === 'Apropos' || route.name === 'RevuePresse' }">
               <AppIcon name="info" :size="16" /> Le Projet
               <AppIcon name="chevron-down" :size="14" class="dropdown-icon" />
@@ -154,13 +157,13 @@
           <RouterLink class="nav-tab" :class="{ active: route.name === 'Evenements' }" to="/evenements">
             <AppIcon name="calendar" :size="16" /> Événement
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'Galerie3D' }" to="/galerie-3d">
+          <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'Galerie3D' }" to="/galerie-3d">
             <AppIcon name="box" :size="16" /> Galerie 3D
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'CarteInteractive' }" to="/carte">
+          <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'CarteInteractive' }" to="/carte">
             <AppIcon name="map-pin" :size="16" /> Carte
           </RouterLink>
-          <RouterLink v-if="!isAdminDomain" class="nav-tab" :class="{ active: route.name === 'LivreDor' }" to="/livre-d-or">
+          <RouterLink v-if="!isAdminDomain && !apiStore.isConnected" class="nav-tab" :class="{ active: route.name === 'LivreDor' }" to="/livre-d-or">
             <AppIcon name="book-open" :size="16" /> Livre d'Or
           </RouterLink>
         </nav>
@@ -278,6 +281,11 @@
                   <label>Mot de passe</label>
                   <input type="password" v-model="loginPassword" required placeholder="Mot de passe…" />
                 </div>
+                <div v-if="twoFactorChallenge" class="fg">
+                  <label>Code de vérification 2FA</label>
+                  <input type="text" inputmode="numeric" autocomplete="one-time-code" v-model="twoFactorCode" required pattern="[0-9A-Za-z-]{6,20}" placeholder="Code de l’application ou de récupération" />
+                  <small class="two-factor-help">Saisissez le code affiché dans votre application d’authentification.</small>
+                </div>
                 <div v-if="loginError" class="form-error-msg">
                   <AppIcon name="alert-triangle" :size="15" /> {{ loginError }}
                 </div>
@@ -285,7 +293,7 @@
                   <button type="button" class="btn-cancel" @click="closeLogin" :disabled="loggingIn">Annuler</button>
                   <button type="submit" class="bsub bsub-a modal-submit" :disabled="loggingIn">
                     <AppIcon :name="loggingIn ? 'loader' : 'check'" :size="16" />
-                    {{ loggingIn ? 'Connexion…' : 'Se connecter' }}
+                    {{ loggingIn ? 'Connexion…' : (twoFactorChallenge ? 'Vérifier le code' : 'Se connecter') }}
                   </button>
                 </div>
               </form>
@@ -528,6 +536,8 @@ const loginEmail = ref('')
 const loginPassword = ref('')
 const loginError = ref('')
 const loggingIn = ref(false)
+const twoFactorChallenge = ref('')
+const twoFactorCode = ref('')
 
 
 
@@ -539,6 +549,8 @@ function returnToPublicSite() {
 function openLogin() {
   loginEmail.value = ''
   loginPassword.value = ''
+  twoFactorChallenge.value = ''
+  twoFactorCode.value = ''
   loginError.value = ''
   showLoginModal.value = true
 }
@@ -552,13 +564,23 @@ async function handleLogin() {
   loggingIn.value = true
   loginError.value = ''
   try {
-    await apiStore.login(loginEmail.value.trim(), loginPassword.value)
+    if (twoFactorChallenge.value) {
+      await apiStore.verifyTwoFactor(twoFactorChallenge.value, twoFactorCode.value.trim().toUpperCase())
+    } else {
+      await apiStore.login(loginEmail.value.trim(), loginPassword.value)
+    }
     closeLogin()
     if (route.name !== 'Home') {
       router.push('/')
     }
   } catch (err) {
-    loginError.value = err.message || 'Identifiants incorrects'
+    if (err.twoFactorRequired && err.challengeToken) {
+      twoFactorChallenge.value = err.challengeToken
+      twoFactorCode.value = ''
+      loginError.value = ''
+    } else {
+      loginError.value = err.message || 'Identifiants incorrects'
+    }
   } finally {
     loggingIn.value = false
   }

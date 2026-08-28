@@ -75,7 +75,7 @@
                 <td>
                   <span class="role-badge" :class="user.role">
                     <AppIcon :name="user.role === 'super_admin' ? 'shield' : 'user'" :size="14" />
-                    {{ user.role === 'super_admin' ? 'Super Admin' : 'Admin' }}
+                    {{ roleLabel(user.role) }}
                   </span>
                 </td>
                 <td>{{ formatDate(user.created_at) }}</td>
@@ -132,6 +132,8 @@
                 <select v-model="form.role">
                   <option value="admin">Administrateur standard</option>
                   <option value="super_admin">Super Administrateur (gestion des comptes)</option>
+                  <option value="accueil">Agent d’accueil (émargement)</option>
+                  <option value="lecteur">Lecteur (consultation)</option>
                 </select>
               </div>
 
@@ -241,6 +243,15 @@ function formatDate(dateStr) {
   } catch {
     return dateStr
   }
+}
+
+function roleLabel(role) {
+  return {
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    accueil: 'Accueil',
+    lecteur: 'Lecteur'
+  }[role] || role
 }
 
 function openCreate() {

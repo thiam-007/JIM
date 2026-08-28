@@ -54,9 +54,14 @@
     <template v-if="api.isConnected">
       <!-- ─── Tableau de Bord Analytique (Les KPI Flash) ─── -->
       <section class="kpi-section" v-reveal="100">
-        <div class="section-title-wrap">
-          <h2>Chiffres Clés</h2>
-          <div class="section-divider"></div>
+        <div class="section-title-wrap kpi-section-title">
+          <div class="kpi-heading">
+            <h2>Chiffres Clés</h2>
+            <div class="section-divider"></div>
+          </div>
+          <button type="button" class="dashboard-report-btn" @click="printDashboardReport" title="Exporter le rapport PDF">
+            <AppIcon name="download" :size="15" /> PDF
+          </button>
         </div>
 
         <div class="kpi-grid">
@@ -69,6 +74,28 @@
             <div class="kpi-value-wrap">
               <span class="kpi-value">{{ kpiStats.total_evenements }}</span>
               <span class="kpi-sub">Projets passés & à venir</span>
+            </div>
+          </div>
+
+          <div class="kpi-card glass" v-tilt-3d>
+            <div class="kpi-header">
+              <span class="kpi-title">Présences</span>
+              <div class="kpi-icon-wrap vert"><AppIcon name="check-circle" :size="20" /></div>
+            </div>
+            <div class="kpi-value-wrap">
+              <span class="kpi-value">{{ kpiStats.cumul_participants }}</span>
+              <span class="kpi-sub">{{ kpiStats.taux_presence_moyen }}% de présence globale</span>
+            </div>
+          </div>
+
+          <div class="kpi-card glass" v-tilt-3d>
+            <div class="kpi-header">
+              <span class="kpi-title">Absents confirmés</span>
+              <div class="kpi-icon-wrap rouge"><AppIcon name="user-x" :size="20" /></div>
+            </div>
+            <div class="kpi-value-wrap">
+              <span class="kpi-value">{{ kpiStats.total_no_shows }}</span>
+              <span class="kpi-sub">Confirmés non présents</span>
             </div>
           </div>
 
@@ -725,7 +752,12 @@ const kpiStats = ref({
   formats_distribution: { presentiel: 0, virtuel: 0, hybride: 0 },
   cumul_participants: 0,
   total_abonnes: 0,
-  total_campagnes: 0
+  total_campagnes: 0,
+  total_invites: 0,
+  total_envoyees: 0,
+  total_confirmations: 0,
+  total_refus: 0,
+  total_no_shows: 0
 })
 const activities = ref([])
 const loading = ref(false)
@@ -1210,6 +1242,24 @@ async function loadDashboardData() {
   }
 }
 
+function printDashboardReport() {
+  const report = [
+    ['Total événements', kpiStats.value.total_evenements],
+    ['Invitations', kpiStats.value.total_invites],
+    ['Invitations envoyées', kpiStats.value.total_envoyees],
+    ['Confirmations', kpiStats.value.total_confirmations],
+    ['Refus', kpiStats.value.total_refus],
+    ['Présences', kpiStats.value.cumul_participants],
+    ['Absents confirmés', kpiStats.value.total_no_shows],
+    ['Taux de présence', `${kpiStats.value.taux_presence_moyen}%`]
+  ]
+  const printWindow = window.open('', '_blank', 'width=900,height=700')
+  if (!printWindow) return
+  const rows = report.map(([label, value]) => `<tr><th>${label}</th><td>${value ?? 0}</td></tr>`).join('')
+  printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport dashboard MVG</title><style>body{font-family:Arial,sans-serif;color:#241b16;padding:30px}h1{color:#845936;border-bottom:2px solid #b1222a;padding-bottom:12px}table{border-collapse:collapse;width:100%;max-width:700px}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd}td{font-size:20px;font-weight:bold;color:#b1222a}</style></head><body><h1>Rapport global MVG Event's</h1><p>Généré le ${new Date().toLocaleString('fr-FR')}</p><table>${rows}</table><script>window.onload=()=>window.print()<\/script></body></html>`)
+  printWindow.document.close()
+}
+
 // Format Distribution percent
 function formatPercent(format) {
   const sum = kpiStats.value.total_evenements || 0
@@ -1686,9 +1736,17 @@ function formatTimeAgo(dateStr) {
   font-size: 1.35rem; font-weight: 900; color: var(--brun);
   text-transform: uppercase; letter-spacing: 1px; margin: 0 0 6px;
 }
+.kpi-section-title { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.kpi-heading { min-width: 0; }
+.dashboard-report-btn { margin-left: 24px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--brun); border-radius: 999px; padding: 8px 12px; background: transparent; color: var(--brun); font-weight: 700; cursor: pointer; }
+.dashboard-report-btn:hover { background: var(--brun); color: #fff; }
 .section-divider {
   width: 45px; height: 4px; background: var(--rouge);
   border-radius: 2px;
+}
+@media (max-width: 600px) {
+  .kpi-section-title { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .dashboard-report-btn { margin-left: 0; }
 }
 
 /* ─── KPI Cards ─── */

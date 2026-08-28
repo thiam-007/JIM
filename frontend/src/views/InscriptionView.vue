@@ -96,6 +96,7 @@
           </div>
 
           <div v-if="submitError" class="rsvp-error-inline">{{ submitError }}</div>
+          <div v-if="submitSuccess" class="rsvp-success-inline">{{ submitSuccess }}</div>
 
           <button type="submit" class="rsvp-btn-confirm" :disabled="submitting" style="width: 100%; justify-content: center; margin-top: 20px;">
             <svg v-if="!submitting" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -141,6 +142,7 @@ const form = ref({
   titre_poste: '',
   telephone: ''
 })
+const submitSuccess = ref('')
 
 onMounted(async () => {
   try {
@@ -162,6 +164,7 @@ async function submitRegistration() {
   if (!form.value.prenom.trim() || !form.value.nom.trim() || !form.value.email.trim()) return
   submitting.value = true
   submitError.value = ''
+  submitSuccess.value = ''
   try {
     const res = await fetch(`${apiUrl}/api/rsvp/evenement/${eventId}/register`, {
       method: 'POST',
@@ -174,8 +177,11 @@ async function submitRegistration() {
       throw new Error(result.error || 'Erreur lors de l\'inscription.')
     }
     
-    // Inscription réussie : rediriger vers la page RSVP avec le token pour récupérer son QR code !
-    router.push({ name: 'Rsvp', params: { token: result.token } })
+    if (result.statut === 'liste_attente') {
+      submitSuccess.value = result.message || 'Votre demande a été placée sur liste d’attente.'
+    } else {
+      router.push({ name: 'Rsvp', params: { token: result.token } })
+    }
   } catch (err) {
     submitError.value = err.message
   } finally {
@@ -315,6 +321,11 @@ function formatDate(dateStr) {
   margin-top: 14px; padding: 12px 16px;
   background: #ffeaea; border: 1.5px solid rgba(177,34,42,.3); border-radius: 12px;
   color: #B1222A; font-size: .86rem; font-weight: 600;
+}
+.rsvp-success-inline {
+  margin-top: 14px; padding: 12px 16px;
+  background: #edf8ef; border: 1.5px solid rgba(46,125,50,.3); border-radius: 12px;
+  color: #28733b; font-size: .86rem; font-weight: 600;
 }
 
 /* Loading */

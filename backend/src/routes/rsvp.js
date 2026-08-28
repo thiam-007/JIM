@@ -16,6 +16,37 @@ const rsvpLimiter = rateLimit({
   legacyHeaders: false
 })
 
+async function promoteNextWaiting(evenementId) {
+  const { data: waiting, error } = await supabase
+    .from('invitations')
+    .select('id, token, invites ( prenom, nom, email, organisation, titre_poste ), evenements ( id, titre, description, date_debut, date_fin, lieu )')
+    .eq('evenement_id', evenementId)
+    .eq('statut', 'liste_attente')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (error || !waiting) return
+
+  const { data: promoted, error: updateError } = await supabase
+    .from('invitations')
+    .update({ statut: 'inscrit', date_reponse: new Date().toISOString() })
+    .eq('id', waiting.id)
+    .eq('statut', 'liste_attente')
+    .select('id, token, statut')
+    .maybeSingle()
+  if (updateError || !promoted) return
+
+  if (waiting.invites?.email) {
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
+    try {
+      const qrCodeDataUrl = await generateQrDataUrl(waiting.token, frontendUrl)
+      await sendConfirmation({ invite: waiting.invites, evenement: waiting.evenements, qrCodeDataUrl, token: waiting.token })
+    } catch (emailError) {
+      console.error('Échec de notification de la liste d’attente:', emailError.message)
+    }
+  }
+}
+
 // ─── Get RSVP data by token (PUBLIC) ──────────────────────────────────────────
 router.get('/:token', async (req, res, next) => {
   try {
@@ -25,6 +56,8 @@ router.get('/:token', async (req, res, next) => {
       .from('invitations')
       .select(`
         token,
+        expires_at,
+        revoked_at,
         statut,
         date_reponse,
         notes_rsvp,
@@ -35,6 +68,9 @@ router.get('/:token', async (req, res, next) => {
       .single()
 
     if (error || !data) return res.status(404).json({ error: 'Invitation introuvable ou lien invalide' })
+    if (data.revoked_at || (data.expires_at && new Date(data.expires_at) <= new Date())) {
+      return res.status(410).json({ error: 'Cette invitation a expiré ou a été révoquée' })
+    }
 
     // Return only safe public data (no internal UUIDs)
     res.json({
@@ -82,6 +118,8 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
       .select(`
         id,
         token,
+        expires_at,
+        revoked_at,
         statut,
         invites ( prenom, nom, email, organisation, titre_poste ),
         evenements ( id, titre, description, date_debut, date_fin, lieu, image_url )
@@ -91,6 +129,9 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
 
     if (fetchErr || !invitation) {
       return res.status(404).json({ error: 'Invitation introuvable ou lien invalide' })
+    }
+    if (invitation.revoked_at || (invitation.expires_at && new Date(invitation.expires_at) <= new Date())) {
+      return res.status(410).json({ error: 'Cette invitation a expiré ou a été révoquée' })
     }
 
     const newStatut = confirmed ? 'inscrit' : 'decline'
@@ -111,6 +152,7 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
 
     if (updateErr) throw updateErr
     if (!updated) return res.status(409).json({ error: 'Cette invitation est déjà enregistrée comme présente' })
+    if (!confirmed) await promoteNextWaiting(invitation.evenements.id)
 
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     let qr_url = null
@@ -185,7 +227,7 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
     // Vérifier si l'événement est actif et publié
     const { data: evenement, error: evErr } = await supabase
       .from('evenements')
-      .select('id, titre, description, date_debut, date_fin, lieu, image_url, statut')
+      .select('id, titre, description, date_debut, date_fin, lieu, image_url, capacite, statut')
       .eq('id', evenement_id)
       .single()
 
@@ -193,6 +235,14 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
     if (evenement.statut !== 'publie') {
       return res.status(403).json({ error: 'Cet événement n\'est pas ouvert aux inscriptions publiques.' })
     }
+
+    const { count: confirmedCount, error: countError } = await supabase
+      .from('invitations')
+      .select('id', { count: 'exact', head: true })
+      .eq('evenement_id', evenement_id)
+      .in('statut', ['inscrit', 'present'])
+    if (countError) throw countError
+    const isAtCapacity = Number(evenement.capacite) > 0 && (confirmedCount || 0) >= Number(evenement.capacite)
 
     let inviteId = null
     let inviteData = null
@@ -242,7 +292,7 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
         const { data: updated, error: updateErr } = await supabase
           .from('invitations')
           .update({
-            statut: 'inscrit',
+            statut: isAtCapacity ? 'liste_attente' : 'inscrit',
             date_reponse: new Date().toISOString()
           })
           .eq('id', invitation.id)
@@ -260,7 +310,7 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
           evenement_id,
           invite_id: inviteId,
           token,
-          statut: 'inscrit',
+          statut: isAtCapacity ? 'liste_attente' : 'inscrit',
           date_reponse: new Date().toISOString()
         })
         .select('id, token, statut')
@@ -272,23 +322,25 @@ router.post('/evenement/:id/register', rsvpLimiter, async (req, res, next) => {
 
     // 3. Envoyer un e-mail de confirmation avec le QR code si l'e-mail est disponible
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
-    const qrCodeDataUrl = await generateQrDataUrl(invitation.token, frontendUrl)
-
-    try {
-      await sendConfirmation({
-        invite: inviteData,
-        evenement: evenement,
-        qrCodeDataUrl,
-        token: invitation.token
-      })
-    } catch (emailErr) {
-      console.error('Failed to send self-registration confirmation email:', emailErr)
+    if (invitation.statut !== 'liste_attente') {
+      const qrCodeDataUrl = await generateQrDataUrl(invitation.token, frontendUrl)
+      try {
+        await sendConfirmation({
+          invite: inviteData,
+          evenement: evenement,
+          qrCodeDataUrl,
+          token: invitation.token
+        })
+      } catch (emailErr) {
+        console.error('Failed to send self-registration confirmation email:', emailErr)
+      }
     }
 
     res.status(201).json({
       ok: true,
       token: invitation.token,
-      statut: invitation.statut
+      statut: invitation.statut,
+      message: invitation.statut === 'liste_attente' ? 'Événement complet : votre demande a été placée sur liste d’attente.' : undefined
     })
   } catch (err) {
     next(err)

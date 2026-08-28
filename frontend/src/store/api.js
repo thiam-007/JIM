@@ -39,7 +39,10 @@ export const useApiStore = defineStore('api', {
       })
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}))
-        throw new Error(errorData.error || 'Identifiants incorrects')
+        const error = new Error(errorData.error || 'Identifiants incorrects')
+        error.twoFactorRequired = errorData.twoFactorRequired
+        error.challengeToken = errorData.challengeToken
+        throw error
       }
       const { token, role, email: userEmail, prenom, nom } = await res.json()
       this.token = token
@@ -53,6 +56,21 @@ export const useApiStore = defineStore('api', {
       sessionStorage.setItem('jim_user_prenom', this.userPrenom)
       sessionStorage.setItem('jim_user_nom', this.userNom)
       sessionStorage.setItem('jim_auth', '1')
+    },
+    async verifyTwoFactor(challengeToken, code) {
+      const data = await this.post('/api/auth/2fa/verify', { challengeToken, code })
+      this.token = data.token
+      this.userRole = data.role || 'super_admin'
+      this.userEmail = data.email || ''
+      this.userPrenom = data.prenom || ''
+      this.userNom = data.nom || ''
+      sessionStorage.setItem('jim_jwt', data.token)
+      sessionStorage.setItem('jim_user_role', this.userRole)
+      sessionStorage.setItem('jim_user_email', this.userEmail)
+      sessionStorage.setItem('jim_user_prenom', this.userPrenom)
+      sessionStorage.setItem('jim_user_nom', this.userNom)
+      sessionStorage.setItem('jim_auth', '1')
+      return data
     },
     logout() {
       this.token = ''

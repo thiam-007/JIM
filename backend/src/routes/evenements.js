@@ -2,6 +2,7 @@ import { Router } from 'express'
 import supabase from '../config/supabase.js'
 import { uploadExternalUrlToSupabase } from '../utils/imageUploader.js'
 import { authMiddleware, optionalAuth, requireAdmin } from '../middleware/auth.js'
+import { recordAudit } from '../utils/audit.js'
 
 const router = Router()
 
@@ -68,6 +69,10 @@ router.get('/dashboard/stats', authMiddleware, requireAdmin, async (req, res, ne
     const total_evenements = events.length
     const total_invites = invitations.length
     const total_presents = invitations.filter(i => i.statut === 'present').length
+    const total_envoyees = invitations.filter(i => ['envoye', 'inscrit', 'decline', 'present'].includes(i.statut)).length
+    const total_confirmations = invitations.filter(i => ['inscrit', 'present'].includes(i.statut)).length
+    const total_refus = invitations.filter(i => i.statut === 'decline').length
+    const total_no_shows = invitations.filter(i => i.statut === 'inscrit').length
     
     const taux_presence_moyen = total_invites > 0 ? Math.round((total_presents / total_invites) * 100) : 0
 
@@ -88,6 +93,11 @@ router.get('/dashboard/stats', authMiddleware, requireAdmin, async (req, res, ne
       taux_presence_moyen,
       formats_distribution,
       cumul_participants: total_presents,
+      total_invites,
+      total_envoyees,
+      total_confirmations,
+      total_refus,
+      total_no_shows,
       total_abonnes: total_abonnes || 0,
       total_campagnes: total_campagnes || 0
     })
@@ -209,7 +219,7 @@ router.get('/dashboard/activities', authMiddleware, requireAdmin, async (req, re
 // ─── Create evenement ─────────────────────────────────────────────────────────
 router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
 
     if (!titre) return res.status(400).json({ error: 'Le titre est requis' })
 
@@ -217,11 +227,12 @@ router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from('evenements')
-      .insert({ titre, description, date_debut, date_fin, lieu, capacite, image_url: uploadedImageUrl, statut: statut || 'brouillon', format: format || 'presentiel' })
+      .insert({ titre, description, date_debut, date_fin, lieu, capacite, programme: Array.isArray(programme) ? programme : [], intervenants: Array.isArray(intervenants) ? intervenants : [], partenaires: Array.isArray(partenaires) ? partenaires : [], sponsors: Array.isArray(sponsors) ? sponsors : [], email_sujet, email_intro, email_signature, image_url: uploadedImageUrl, statut: statut || 'brouillon', format: format || 'presentiel' })
       .select()
       .single()
 
     if (error) throw error
+    await recordAudit(req, { action: 'event_created', entityType: 'evenement', entityId: data.id })
     res.status(201).json(data)
   } catch (err) {
     next(err)
@@ -247,7 +258,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 // ─── Update evenement ─────────────────────────────────────────────────────────
 router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, image_url, statut, format } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
 
     const updates = {}
     if (titre !== undefined) updates.titre = titre
@@ -256,6 +267,13 @@ router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     if (date_fin !== undefined) updates.date_fin = date_fin
     if (lieu !== undefined) updates.lieu = lieu
     if (capacite !== undefined) updates.capacite = capacite
+    if (programme !== undefined) updates.programme = Array.isArray(programme) ? programme : []
+    if (intervenants !== undefined) updates.intervenants = Array.isArray(intervenants) ? intervenants : []
+    if (partenaires !== undefined) updates.partenaires = Array.isArray(partenaires) ? partenaires : []
+    if (sponsors !== undefined) updates.sponsors = Array.isArray(sponsors) ? sponsors : []
+    if (email_sujet !== undefined) updates.email_sujet = email_sujet?.trim() || null
+    if (email_intro !== undefined) updates.email_intro = email_intro?.trim() || null
+    if (email_signature !== undefined) updates.email_signature = email_signature?.trim() || null
     if (image_url !== undefined) {
       updates.image_url = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
     }
@@ -271,6 +289,7 @@ router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
 
     if (error) throw error
     if (!data) return res.status(404).json({ error: 'Événement introuvable' })
+    await recordAudit(req, { action: 'event_updated', entityType: 'evenement', entityId: req.params.id, metadata: { fields: Object.keys(updates) } })
     res.json(data)
   } catch (err) {
     next(err)
@@ -286,6 +305,7 @@ router.delete('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
       .eq('id', req.params.id)
 
     if (error) throw error
+    await recordAudit(req, { action: 'event_deleted', entityType: 'evenement', entityId: req.params.id })
     res.status(204).send()
   } catch (err) {
     next(err)

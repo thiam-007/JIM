@@ -73,9 +73,6 @@
             :src="`https://sketchfab.com/models/${activeItem?.sketchfabId}/embed?autostart=1&internal=1&tracking=0&ui_ar=1&ui_infos=0&ui_pane=0&ui_theme=dark`"
             title="Sketchfab 3D Viewer"
             frameborder="0"
-            allowfullscreen
-            mozallowfullscreen="true"
-            webkitallowfullscreen="true"
             allow="autoplay; fullscreen; xr-spatial-tracking"
             class="museum-iframe"
             @load="onIframeLoaded"
@@ -219,9 +216,6 @@
               :src="`https://sketchfab.com/models/${catalogActiveItem.sketchfabId}/embed?autostart=1&internal=1&tracking=0&ui_ar=1&ui_infos=0&ui_pane=0&ui_theme=dark`"
               title="Sketchfab 3D Viewer"
               frameborder="0"
-              allowfullscreen
-              mozallowfullscreen="true"
-              webkitallowfullscreen="true"
               allow="autoplay; fullscreen; xr-spatial-tracking"
               class="sketchfab-iframe"
             ></iframe>

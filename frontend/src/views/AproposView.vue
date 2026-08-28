@@ -181,8 +181,7 @@
               <iframe 
                 src="https://player.vimeo.com/video/1216398699?title=0&byline=0&portrait=0&playsinline=1" 
                 style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;" 
-                allow="autoplay; fullscreen; picture-in-picture" 
-                allowfullscreen>
+                allow="autoplay; fullscreen; picture-in-picture">
               </iframe>
             </div>
           </div>

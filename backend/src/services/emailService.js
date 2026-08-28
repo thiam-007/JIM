@@ -385,20 +385,27 @@ function eventBlock(evenement) {
  * Send an invitation email with RSVP button.
  * @param {{ invite: object, evenement: object, rsvpUrl: string }} params
  */
-export async function sendInvitation({ invite, evenement, rsvpUrl }) {
+export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = false }) {
   const fullName = `${invite.prenom} ${invite.nom}`
+  const escapeText = value => String(value || '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character])
+  const customIntro = evenement.email_intro
+    ? escapeText(evenement.email_intro).replace(/\n/g, '<br />')
+    : (isReminder
+        ? 'Nous vous rappelons que votre réponse à cette invitation est toujours attendue&nbsp;:'
+        : 'Le <strong>Musée Virtuel de Guinée</strong> a le plaisir de vous convier à son prochain événement&nbsp;:')
+  const customSignature = evenement.email_signature ? escapeText(evenement.email_signature).replace(/\n/g, '<br />') : '— L’équipe du Musée Virtuel de Guinée'
 
   const body = `
     <!-- Greeting -->
     <p style="margin:0 0 8px;color:#b45332;font-size:13px;font-family:'Alexandria',sans-serif;letter-spacing:1px;text-transform:uppercase;">
-      Invitation personnelle
+      ${isReminder ? 'Rappel d’invitation' : 'Invitation personnelle'}
     </p>
     <h2 style="margin:0 0 24px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
       Cher(e) <strong>${fullName}</strong>,
     </h2>
 
     <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
-      Le <strong>Musée Virtuel de Guinée</strong> a le plaisir de vous convier à son prochain événement&nbsp;:
+      ${customIntro}
     </p>
 
     <!-- Event title -->
@@ -443,7 +450,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
 
     <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
       Nous espérons avoir le plaisir de vous accueillir lors de cet événement.<br />
-      <span style="color:#b45332;">— L'équipe du Musée Virtuel de Guinée</span>
+      <span style="color:#b45332;">${customSignature}</span>
     </p>
   `
 
@@ -456,7 +463,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl }) {
       from: getFromAddress(),
       to: invite.email,
       replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
-      subject: `Invitation — ${evenement.titre}`,
+      subject: isReminder ? `Rappel — ${evenement.email_sujet || `Invitation — ${evenement.titre}`}` : (evenement.email_sujet || `Invitation — ${evenement.titre}`),
       html: emailShell(body, 'INVITATION OFFICIELLE')
     })
     return info

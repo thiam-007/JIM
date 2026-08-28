@@ -2,6 +2,7 @@ import { Router } from 'express'
 import supabase from '../config/supabase.js'
 import { normalizeEmail, isValidEmail } from '../utils/emailValidator.js'
 import { authMiddleware, requireAdmin } from '../middleware/auth.js'
+import { recordAudit } from '../utils/audit.js'
 
 const router = Router()
 
@@ -37,7 +38,7 @@ router.get('/', async (req, res, next) => {
 // ─── Create single invite ──────────────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
   try {
-    const { prenom, nom, email, telephone, organisation, titre_poste, notes } = req.body
+    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, notes } = req.body
 
     if (!prenom) return res.status(400).json({ error: 'Le prénom est requis' })
     if (!nom) return res.status(400).json({ error: 'Le nom est requis' })
@@ -53,11 +54,12 @@ router.post('/', async (req, res, next) => {
 
     const { data, error } = await supabase
       .from('invites')
-      .insert({ prenom, nom, email: normalizedEmail, telephone, organisation, titre_poste, notes })
+      .insert({ prenom, nom, email: normalizedEmail, telephone, organisation, titre_poste, categorie: categorie || 'Participant', notes })
       .select()
       .single()
 
     if (error) throw error
+    await recordAudit(req, { action: 'invite_created', entityType: 'invite', entityId: data.id })
     res.status(201).json(data)
   } catch (err) {
     next(err)
@@ -105,6 +107,7 @@ router.post('/bulk', async (req, res, next) => {
         telephone: inv.telephone?.trim() || null,
         organisation: inv.organisation?.trim() || null,
         titre_poste: inv.titre_poste?.trim() || null,
+        categorie: inv.categorie?.trim() || 'Participant',
         notes: inv.notes?.trim() || null
       })
     }
@@ -119,6 +122,7 @@ router.post('/bulk', async (req, res, next) => {
       .select()
 
     if (error) throw error
+    await recordAudit(req, { action: 'invites_imported', entityType: 'invite', metadata: { count: data.length, rejected: errors.length } })
 
     res.status(201).json({
       created: data.length,
@@ -149,7 +153,7 @@ router.get('/:id', async (req, res, next) => {
 // ─── Update invite ─────────────────────────────────────────────────────────────
 router.put('/:id', async (req, res, next) => {
   try {
-    const { prenom, nom, email, telephone, organisation, titre_poste, notes } = req.body
+    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, notes } = req.body
 
     const updates = {}
     if (prenom !== undefined) updates.prenom = prenom.trim()
@@ -168,6 +172,7 @@ router.put('/:id', async (req, res, next) => {
     if (telephone !== undefined) updates.telephone = telephone?.trim() || null
     if (organisation !== undefined) updates.organisation = organisation?.trim() || null
     if (titre_poste !== undefined) updates.titre_poste = titre_poste?.trim() || null
+    if (categorie !== undefined) updates.categorie = categorie?.trim() || 'Participant'
     if (notes !== undefined) updates.notes = notes?.trim() || null
 
     const { data, error } = await supabase
@@ -179,6 +184,7 @@ router.put('/:id', async (req, res, next) => {
 
     if (error) throw error
     if (!data) return res.status(404).json({ error: 'Invité introuvable' })
+    await recordAudit(req, { action: 'invite_updated', entityType: 'invite', entityId: req.params.id, metadata: { fields: Object.keys(updates) } })
     res.json(data)
   } catch (err) {
     next(err)
@@ -194,6 +200,7 @@ router.delete('/:id', async (req, res, next) => {
       .eq('id', req.params.id)
 
     if (error) throw error
+    await recordAudit(req, { action: 'invite_deleted', entityType: 'invite', entityId: req.params.id })
     res.status(204).send()
   } catch (err) {
     next(err)

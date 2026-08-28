@@ -43,6 +43,21 @@
       <AppIcon :name="importMsg.type === 'success' ? 'check-circle' : 'alert-triangle'" :size="16" />
       {{ importMsg.text }}
     </div>
+    <div v-if="importReport" class="import-report form-card">
+      <div class="import-report-head">
+        <strong>Rapport d’import</strong>
+        <button type="button" class="row-btn-edit" title="Fermer le rapport" @click="importReport = null"><AppIcon name="x" :size="15" /></button>
+      </div>
+      <div class="import-report-stats">
+        <span class="import-ok">{{ importReport.accepted }} ligne(s) acceptée(s)</span>
+        <span class="import-ko">{{ importReport.rejected.length }} ligne(s) rejetée(s)</span>
+      </div>
+      <div v-if="importReport.rejected.length" class="import-rejected-list">
+        <div v-for="item in importReport.rejected" :key="`${item.row}-${item.reason}`" class="import-rejected-item">
+          <strong>Ligne {{ item.row }}</strong><span>{{ item.reason }}</span>
+        </div>
+      </div>
+    </div>
 
     <!-- ─── Chargement ─── -->
     <div v-if="loading" class="inv-loading">
@@ -75,6 +90,7 @@
               <th>Email</th>
               <th>Organisation</th>
               <th>Poste</th>
+              <th>Catégorie</th>
               <th class="col-center">Invitations</th>
               <th class="col-actions">Actions</th>
             </tr>
@@ -94,6 +110,7 @@
               </td>
               <td>{{ inv.organisation || '—' }}</td>
               <td>{{ inv.titre_poste || '—' }}</td>
+              <td><span class="inv-category" :class="(inv.categorie || 'Participant').toLowerCase()">{{ inv.categorie || 'Participant' }}</span></td>
               <td class="col-center">
                 <span class="inv-count-badge" v-if="inv.invitations_count">{{ inv.invitations_count }}</span>
                 <span v-else class="inv-empty-cell">0</span>
@@ -174,6 +191,15 @@
                 </div>
               </div>
               <div class="fg">
+                <label>Catégorie</label>
+                <select v-model="form.categorie">
+                  <option value="Participant">Participant</option>
+                  <option value="Presse">Presse</option>
+                  <option value="VIP">VIP</option>
+                  <option value="Partenaire">Partenaire</option>
+                </select>
+              </div>
+              <div class="fg">
                 <label>Notes</label>
                 <textarea v-model="form.notes" placeholder="Notes internes…" rows="3"></textarea>
               </div>
@@ -247,12 +273,13 @@ const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
 const importMsg = ref(null)
+const importReport = ref(null)
 const fileInput = ref(null)
 const importingFromNewsletter = ref(false)
 
 const form = ref({
   prenom: '', nom: '', email: '', telephone: '',
-  organisation: '', titre_poste: '', notes: ''
+  organisation: '', titre_poste: '', categorie: 'Participant', notes: ''
 })
 
 onMounted(async () => {
@@ -317,7 +344,7 @@ function initials(inv) {
 
 function openCreate() {
   editingInv.value = null
-  form.value = { prenom: '', nom: '', email: '', telephone: '', organisation: '', titre_poste: '', notes: '' }
+  form.value = { prenom: '', nom: '', email: '', telephone: '', organisation: '', titre_poste: '', categorie: 'Participant', notes: '' }
   formError.value = ''
   showModal.value = true
 }
@@ -331,6 +358,7 @@ function openEdit(inv) {
     telephone: inv.telephone || '',
     organisation: inv.organisation || '',
     titre_poste: inv.titre_poste || '',
+    categorie: inv.categorie || 'Participant',
     notes: inv.notes || ''
   }
   formError.value = ''
@@ -386,6 +414,7 @@ async function importExcelOrCSV(event) {
   const file = event.target.files[0]
   if (!file) return
   importMsg.value = null
+  importReport.value = null
 
   const reader = new FileReader()
   reader.onload = async (e) => {
@@ -397,8 +426,9 @@ async function importExcelOrCSV(event) {
       const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
       
       const records = []
+      const rejected = []
       
-      json.forEach(row => {
+      json.forEach((row, rowIndex) => {
         // Recherche des clés sans sensibilité à la casse
         const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'first name' || k.toLowerCase() === 'firstname')
         const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom' || k.toLowerCase() === 'last name' || k.toLowerCase() === 'lastname')
@@ -407,6 +437,7 @@ async function importExcelOrCSV(event) {
         const oKey = Object.keys(row).find(k => k.toLowerCase() === 'organisation' || k.toLowerCase() === 'société' || k.toLowerCase() === 'entreprise' || k.toLowerCase() === 'company' || k.toLowerCase() === 'institution')
         const posKey = Object.keys(row).find(k => k.toLowerCase() === 'poste' || k.toLowerCase() === 'fonction' || k.toLowerCase() === 'titre' || k.toLowerCase() === 'position' || k.toLowerCase() === 'role')
         const notesKey = Object.keys(row).find(k => k.toLowerCase() === 'notes' || k.toLowerCase() === 'note' || k.toLowerCase() === 'observation' || k.toLowerCase() === 'observations')
+        const categoryKey = Object.keys(row).find(k => ['catégorie', 'categorie', 'category'].includes(k.toLowerCase()))
         
         let prenom = pKey ? String(row[pKey]).trim() : ''
         let nom = nKey ? String(row[nKey]).trim() : ''
@@ -414,6 +445,7 @@ async function importExcelOrCSV(event) {
         const telephone = tKey ? String(row[tKey]).trim() : ''
         const organisation = oKey ? String(row[oKey]).trim() : ''
         const titre_poste = posKey ? String(row[posKey]).trim() : ''
+        const categorie = categoryKey ? String(row[categoryKey]).trim() : 'Participant'
         const notes = notesKey ? String(row[notesKey]).trim() : ''
 
         // Gestion du cas où le nom complet figure dans une seule colonne
@@ -430,8 +462,10 @@ async function importExcelOrCSV(event) {
           }
         }
 
-        if (prenom || nom) {
-          records.push({ prenom, nom, email, telephone, organisation, titre_poste, notes })
+        if (prenom && nom) {
+          records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, notes })
+        } else {
+          rejected.push({ row: rowIndex + 2, reason: 'Prénom ou nom manquant' })
         }
       })
 
@@ -442,6 +476,10 @@ async function importExcelOrCSV(event) {
 
       const result = await api.post('/api/invites/bulk', { invites: records })
       importMsg.value = { type: 'success', text: `${result.created || records.length} contact(s) importé(s) avec succès.` }
+      importReport.value = {
+        accepted: result.created || records.length,
+        rejected: [...rejected, ...(result.skipped || []).map(item => ({ row: Number(item.index) + 2, reason: item.error || 'Ligne rejetée' }))]
+      }
       await api.fetchInvites()
     } catch (err) {
       console.error(err)
@@ -627,6 +665,14 @@ async function importFromNewsletter() {
 .inv-fullname { font-weight: 700; color: var(--noir); }
 .inv-phone { font-size: .76rem; color: var(--brun); opacity: .6; margin-top: 2px; }
 .inv-email { color: var(--brun); text-decoration: none; }
+.import-report { padding: 16px 20px; }
+.import-report-head { display: flex; align-items: center; justify-content: space-between; color: var(--brun); }
+.import-report-stats { display: flex; gap: 18px; margin-top: 10px; font-size: .84rem; font-weight: 700; }
+.import-ok { color: #28733b; }
+.import-ko { color: #a3262e; }
+.import-rejected-list { display: grid; gap: 6px; margin-top: 12px; max-height: 180px; overflow-y: auto; }
+.import-rejected-item { display: flex; gap: 10px; padding: 7px 10px; background: #fff4f2; border-radius: 6px; color: #7d2929; font-size: .78rem; }
+.import-rejected-item strong { min-width: 62px; }
 .inv-email:hover { color: var(--rouge); text-decoration: underline; }
 .inv-empty-cell { color: rgba(132,89,54,.35); }
 .inv-count-badge {

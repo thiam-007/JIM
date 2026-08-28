@@ -47,6 +47,30 @@
       </div>
 
       <div class="profile-right-col">
+        <div v-if="apiStore.isSuperAdmin" class="form-card profile-2fa-card">
+          <div class="fh fh-a">
+            <div class="fh-icon"><AppIcon name="shield" :size="24" /></div>
+            <div>
+              <div class="fh-title">Double authentification</div>
+              <div class="fh-sub">Obligatoire uniquement pour votre compte Super Administrateur.</div>
+            </div>
+          </div>
+          <div class="fb">
+            <div v-if="twoFactorSetup" class="two-factor-setup">
+              <img :src="twoFactorSetup.qrCode" alt="QR code de configuration 2FA" class="two-factor-qr" />
+              <p>Scannez ce QR code avec votre application d’authentification, puis saisissez le code affiché.</p>
+              <code>{{ twoFactorSetup.secret }}</code>
+              <div class="recovery-codes"><strong>Codes de récupération à conserver :</strong><span v-for="code in twoFactorSetup.recoveryCodes" :key="code">{{ code }}</span></div>
+              <div class="two-factor-inline"><input v-model="twoFactorCode" inputmode="numeric" placeholder="Code à 6 chiffres" /><button class="bsub bsub-a" @click="enableTwoFactor">Activer</button></div>
+            </div>
+            <div v-else>
+              <p class="two-factor-status">{{ twoFactorEnabled ? 'La 2FA est activée.' : 'La 2FA n’est pas encore activée.' }}</p>
+              <button v-if="!twoFactorEnabled" class="bsub bsub-a" @click="setupTwoFactor">Configurer la 2FA</button>
+              <div v-else class="two-factor-inline"><input v-model="twoFactorCode" inputmode="numeric" placeholder="Code actuel" /><button class="bsub bsub-s" @click="disableTwoFactor">Désactiver</button></div>
+            </div>
+            <div v-if="twoFactorError" class="form-error-msg"><AppIcon name="alert-triangle" :size="15" /> {{ twoFactorError }}</div>
+          </div>
+        </div>
         <!-- Modifier Mot de passe -->
         <div class="form-card profile-pwd-card">
           <div class="fh fh-a">
@@ -134,6 +158,51 @@ const pwdForm = ref({
   success: '',
   loading: false
 })
+const twoFactorEnabled = ref(false)
+const twoFactorSetup = ref(null)
+const twoFactorCode = ref('')
+const twoFactorError = ref('')
+
+async function loadTwoFactorStatus() {
+  try {
+    const me = await apiStore.get('/api/auth/me')
+    twoFactorEnabled.value = !!me.totp_enabled
+  } catch { }
+}
+
+async function setupTwoFactor() {
+  twoFactorError.value = ''
+  try {
+    twoFactorSetup.value = await apiStore.post('/api/auth/2fa/setup', {})
+  } catch (err) {
+    twoFactorError.value = err.message || 'Impossible de préparer la 2FA.'
+  }
+}
+
+async function enableTwoFactor() {
+  twoFactorError.value = ''
+  try {
+    await apiStore.post('/api/auth/2fa/enable', { code: twoFactorCode.value.trim() })
+    twoFactorEnabled.value = true
+    twoFactorSetup.value = null
+    twoFactorCode.value = ''
+  } catch (err) {
+    twoFactorError.value = err.message || 'Code 2FA incorrect.'
+  }
+}
+
+async function disableTwoFactor() {
+  twoFactorError.value = ''
+  try {
+    await apiStore.post('/api/auth/2fa/disable', { code: twoFactorCode.value.trim() })
+    twoFactorEnabled.value = false
+    twoFactorCode.value = ''
+  } catch (err) {
+    twoFactorError.value = err.message || 'Code 2FA incorrect.'
+  }
+}
+
+if (apiStore.isSuperAdmin) loadTwoFactorStatus()
 
 async function updatePassword() {
   pwdForm.value.error = ''
@@ -177,6 +246,15 @@ function handleLogout() {
 </script>
 
 <style scoped>
+.two-factor-setup { display: grid; gap: 12px; }
+.two-factor-setup p, .two-factor-status { margin: 0; color: #66564d; font-size: .88rem; }
+.two-factor-qr { width: 180px; height: 180px; border: 8px solid #fff; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+.two-factor-setup code { width: fit-content; padding: 7px 10px; background: #f6f1eb; border-radius: 6px; letter-spacing: 2px; }
+.recovery-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; font-size: .8rem; }
+.recovery-codes strong { grid-column: 1 / -1; }
+.recovery-codes span { padding: 5px 7px; background: #f6f1eb; border-radius: 4px; font-family: monospace; }
+.two-factor-inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.two-factor-inline input { flex: 1; min-width: 150px; }
 /* Page Header */
 .page-header-section {
   position: relative;

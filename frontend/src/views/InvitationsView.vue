@@ -28,6 +28,10 @@
           <span class="inv-stat-num">{{ stats.inscrits }}</span>
           <span class="inv-stat-label">Inscrits ({{ pct(stats.inscrits) }}%)</span>
         </div>
+        <div class="inv-stat blue">
+          <span class="inv-stat-num">{{ stats.envoyes }}</span>
+          <span class="inv-stat-label">Envoyés ({{ pct(stats.envoyes) }}%)</span>
+        </div>
         <div class="inv-stat red">
           <span class="inv-stat-num">{{ stats.declines }}</span>
           <span class="inv-stat-label">Déclinés ({{ pct(stats.declines) }}%)</span>
@@ -35,6 +39,18 @@
         <div class="inv-stat blue">
           <span class="inv-stat-num">{{ stats.presents }}</span>
           <span class="inv-stat-label">Présents ({{ pct(stats.presents) }}%)</span>
+        </div>
+        <div class="inv-stat amber">
+          <span class="inv-stat-num">{{ responseStats.responseRate }}%</span>
+          <span class="inv-stat-label">Taux de réponse</span>
+        </div>
+        <div class="inv-stat red">
+          <span class="inv-stat-num">{{ responseStats.noShows }}</span>
+          <span class="inv-stat-label">No-shows</span>
+        </div>
+        <div class="inv-stat">
+          <span class="inv-stat-num">{{ responseStats.averageDays }} j</span>
+          <span class="inv-stat-label">Délai moyen</span>
         </div>
       </div>
 
@@ -98,7 +114,9 @@
           <select v-model="filterStatut" class="inv-filter-select">
             <option value="">Tous les statuts</option>
             <option value="pas_de_reaction">Pas de réaction</option>
+            <option value="envoye">Envoyés</option>
             <option value="inscrit">Inscrits</option>
+            <option value="liste_attente">Liste d’attente</option>
             <option value="decline">Déclinés</option>
             <option value="present">Présents</option>
           </select>
@@ -110,6 +128,13 @@
           <button class="btn-send" @click="sendPending" :disabled="sending || pendingCount === 0">
             <AppIcon :name="sending ? 'loader' : 'send'" :size="15" />
             Envoyer invitations ({{ pendingCount }})
+          </button>
+          <button class="btn-send btn-reminder" @click="sendReminders" :disabled="sending || reminderCount === 0">
+            <AppIcon :name="sending ? 'loader' : 'refresh-cw'" :size="15" />
+            Relancer sans réponse ({{ reminderCount }})
+          </button>
+          <button class="btn-import" type="button" @click="printEventReport" title="Exporter le rapport PDF de l’événement">
+            <AppIcon name="file-text" :size="15" /> Rapport PDF
           </button>
           <button class="btn-create" @click="openAddInvites">
             <AppIcon name="plus" :size="15" /> Ajouter des invités
@@ -167,7 +192,7 @@
               <td class="inv-date">{{ inv.date_reponse ? formatShortDate(inv.date_reponse) : '—' }}</td>
               <td class="col-actions" @click.stop>
                 <a
-                  v-if="inv.token"
+                  v-if="inv.token && !inv.revoked_at"
                   :href="`${apiUrl}/api/invitations/qr/${inv.token}`"
                   target="_blank"
                   class="row-btn-qr"
@@ -175,6 +200,12 @@
                 >
                   <AppIcon name="qr-code" :size="15" />
                 </a>
+                <button v-if="inv.token" class="row-btn-qr" type="button" title="Réémettre le QR code" @click="reissueQr(inv)">
+                  <AppIcon name="refresh-cw" :size="15" />
+                </button>
+                <button v-if="inv.token && !inv.revoked_at" class="row-btn-delete" type="button" title="Révoquer le QR code" @click="revokeQr(inv)">
+                  <AppIcon name="lock" :size="15" />
+                </button>
                 <select
                   class="row-statut-select"
                   :value="inv.statut"
@@ -182,7 +213,9 @@
                   title="Changer le statut"
                 >
                   <option value="pas_de_reaction">Pas de réaction</option>
+                  <option value="envoye">Envoyé</option>
                   <option value="inscrit">Inscrit</option>
+                  <option value="liste_attente">Liste d’attente</option>
                   <option value="decline">Décliné</option>
                   <option value="present">Présent</option>
                 </select>
@@ -418,9 +451,27 @@ const stats = computed(() => {
   const list = api.invitations
   return {
     total: list.length,
+    envoyes: list.filter(i => i.statut === 'envoye').length,
     inscrits: list.filter(i => i.statut === 'inscrit').length,
     declines: list.filter(i => i.statut === 'decline').length,
     presents: list.filter(i => i.statut === 'present').length,
+  }
+})
+
+const responseStats = computed(() => {
+  const list = api.invitations || []
+  const answered = list.filter(invitation => invitation.date_reponse)
+  const responseRate = list.length ? Math.round((answered.length / list.length) * 100) : 0
+  const totalResponseTime = answered.reduce((total, invitation) => {
+    if (!invitation.date_envoi) return total
+    const delay = new Date(invitation.date_reponse) - new Date(invitation.date_envoi)
+    return delay >= 0 ? total + delay : total
+  }, 0)
+  const measuredResponses = answered.filter(invitation => invitation.date_envoi && new Date(invitation.date_reponse) >= new Date(invitation.date_envoi)).length
+  return {
+    responseRate,
+    noShows: list.filter(invitation => invitation.statut === 'inscrit').length,
+    averageDays: measuredResponses ? Math.round((totalResponseTime / measuredResponses / 86400000) * 10) / 10 : 0
   }
 })
 
@@ -459,6 +510,10 @@ const profileStats = computed(() => {
 
 const pendingCount = computed(() =>
   api.invitations.filter(i => i.statut === 'pas_de_reaction').length
+)
+
+const reminderCount = computed(() =>
+  api.invitations.filter(i => i.statut === 'envoye' && !i.date_reponse).length
 )
 
 const filteredInvitations = computed(() => {
@@ -530,12 +585,12 @@ function initials(person) {
 }
 
 function statutLabel(s) {
-  const map = { pas_de_reaction: 'Pas de réaction', inscrit: 'Inscrit', decline: 'Décliné', present: 'Présent' }
+  const map = { pas_de_reaction: 'Pas de réaction', envoye: 'Envoyé', inscrit: 'Inscrit', liste_attente: 'Liste d’attente', decline: 'Décliné', present: 'Présent' }
   return map[s] || s
 }
 
 function statutClass(s) {
-  const map = { pas_de_reaction: 'badge-gray', inscrit: 'badge-green', decline: 'badge-red', present: 'badge-blue' }
+  const map = { pas_de_reaction: 'badge-gray', envoye: 'badge-blue', inscrit: 'badge-green', liste_attente: 'badge-purple', decline: 'badge-red', present: 'badge-blue' }
   return map[s] || 'badge-gray'
 }
 
@@ -549,16 +604,45 @@ async function updateStatut(inv, newStatut) {
   }
 }
 
+async function reissueQr(inv) {
+  if (!window.confirm(`Réémettre le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ? L’ancien QR sera invalidé.`)) return
+  try {
+    const updated = await api.post(`/api/invitations/${inv.id}/reissue`, {})
+    Object.assign(inv, updated)
+  } catch (err) {
+    alert(`Impossible de réémettre le QR code : ${err.message}`)
+  }
+}
+
+async function revokeQr(inv) {
+  if (!window.confirm(`Révoquer définitivement le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ?`)) return
+  try {
+    const updated = await api.post(`/api/invitations/${inv.id}/revoke`, {})
+    Object.assign(inv, updated)
+  } catch (err) {
+    alert(`Impossible de révoquer le QR code : ${err.message}`)
+  }
+}
+
 async function sendPending() {
   const pendingInvites = api.invitations.filter(i => i.statut === 'pas_de_reaction')
+  await sendInvitationBatch(pendingInvites, 'Envoi terminé')
+}
+
+async function sendReminders() {
+  const pendingInvites = api.invitations.filter(i => i.statut === 'envoye' && !i.date_reponse)
+  await sendInvitationBatch(pendingInvites, 'Relances terminées', true)
+}
+
+async function sendInvitationBatch(pendingInvites, label, reminder = false) {
   const ids = pendingInvites.map(i => i.id)
   if (ids.length === 0) return
 
   sending.value = true
   try {
-    const res = await api.post(`/api/invitations/send`, { invitation_ids: ids })
+    const res = await api.post(`/api/invitations/send`, { invitation_ids: ids, reminder })
     const failedReasons = res.results ? res.results.filter(r => r.status === 'failed').map(r => '- ' + (r.error || 'Erreur inconnue')).join('\n') : ''
-    alert(`Envoi terminé !\n\nSuccès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`)
+    alert(`${label} !\n\nSuccès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`)
     await api.fetchInvitations(eventId)
   } catch (err) {
     console.error(err)
@@ -566,6 +650,28 @@ async function sendPending() {
   } finally {
     sending.value = false
   }
+}
+
+function printEventReport() {
+  const report = [
+    ['Invitations totales', stats.value.total],
+    ['Invitations envoyées', stats.value.envoyes],
+    ['Confirmations', stats.value.inscrits],
+    ['Refus', stats.value.declines],
+    ['Présents', stats.value.presents],
+    ['No-shows', responseStats.value.noShows],
+    ['Taux de réponse', `${responseStats.value.responseRate}%`],
+    ['Délai moyen de réponse', `${responseStats.value.averageDays} jour(s)`]
+  ]
+  const printWindow = window.open('', '_blank', 'width=900,height=700')
+  if (!printWindow) return
+  const rows = report.map(([label, value]) => `<tr><th>${label}</th><td>${value ?? 0}</td></tr>`).join('')
+  printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Rapport - ${eventName()}</title><style>body{font-family:Arial,sans-serif;color:#241b16;padding:30px}h1{color:#845936;border-bottom:2px solid #b1222a;padding-bottom:12px}table{border-collapse:collapse;width:100%;max-width:700px}th,td{text-align:left;padding:12px;border-bottom:1px solid #ddd}td{font-size:20px;font-weight:bold;color:#b1222a}</style></head><body><h1>${eventName()}</h1><p>Rapport des invitations généré le ${new Date().toLocaleString('fr-FR')}</p><table>${rows}</table><script>window.onload=()=>window.print()<\/script></body></html>`)
+  printWindow.document.close()
+}
+
+function eventName() {
+  return String(evenement.value?.titre || 'Événement').replace(/[<>&"']/g, '')
 }
 
 async function openAddInvites() {
@@ -805,10 +911,10 @@ async function importExcelOrCSV(event) {
 
 /* Toolbar */
 .inv-toolbar {
-  display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+  display: flex; flex-direction: column; gap: 12px; align-items: stretch;
   padding-top: 0; border-top: 1px solid rgba(132,89,54,.1);
 }
-.inv-search-wrap { position: relative; flex: 1; min-width: 180px; display: flex; align-items: center; }
+.inv-search-wrap { position: relative; width: 100%; display: flex; align-items: center; }
 .inv-search-icon {
   position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
   color: var(--brun); opacity: .5; pointer-events: none;
@@ -827,14 +933,14 @@ async function importExcelOrCSV(event) {
   outline: none; transition: all .25s; min-width: 160px;
 }
 .inv-filter-select:focus { border-color: var(--or); }
-.inv-actions { display: flex; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+.inv-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 
 .btn-send {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 18px; background: rgba(46,125,50,.1);
   color: #2e7d32; border: 1.5px solid rgba(46,125,50,.3);
   border-radius: 999px; font-size: .84rem; font-weight: 700;
-  cursor: pointer; transition: all .25s; white-space: nowrap;
+  cursor: pointer; transition: all .25s; white-space: normal; justify-content: center; min-height: 44px;
 }
 .btn-send:hover:not(:disabled) { background: #2e7d32; color: #fff; }
 .btn-send:disabled { opacity: .5; cursor: not-allowed; }
@@ -844,7 +950,7 @@ async function importExcelOrCSV(event) {
   padding: 10px 20px; background: linear-gradient(135deg, var(--brun), var(--or));
   color: #fff; border: none; border-radius: 999px;
   font-size: .84rem; font-weight: 700; cursor: pointer;
-  white-space: nowrap; transition: all .25s;
+  white-space: normal; transition: all .25s; justify-content: center; min-height: 44px;
   box-shadow: 0 6px 16px rgba(89,55,22,.2);
 }
 .btn-create:hover { transform: translateY(-1px); filter: brightness(1.06); }
@@ -854,7 +960,7 @@ async function importExcelOrCSV(event) {
   padding: 10px 18px; background: rgba(21,101,192,.1);
   color: #1565c0; border: 1.5px solid rgba(21,101,192,.3);
   border-radius: 999px; font-size: .84rem; font-weight: 700;
-  cursor: pointer; transition: all .25s; white-space: nowrap; text-decoration: none;
+  cursor: pointer; transition: all .25s; white-space: normal; text-decoration: none; justify-content: center; min-height: 44px;
 }
 .btn-scan:hover { background: #1565c0; color: #fff; }
 
@@ -918,6 +1024,12 @@ async function importExcelOrCSV(event) {
 .row-btn-delete { color: var(--rouge); }
 .row-btn-delete:hover { background: rgba(177,34,42,.1); }
 
+@media (min-width: 769px) {
+  .inv-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .inv-search-wrap { flex: 1; min-width: 180px; width: auto; }
+  .inv-actions { flex-direction: row; width: auto; flex-shrink: 0; flex-wrap: wrap; }
+  .btn-send, .btn-create, .btn-scan { white-space: nowrap; min-height: 0; }
+}
 @media (max-width: 768px) {
   .row-btn-qr, .row-btn-delete {
     width: 44px; height: 44px;

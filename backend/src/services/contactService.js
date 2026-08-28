@@ -49,6 +49,7 @@ export async function submitContactMessage(payload, deps = {}) {
   const normalized = normalizeContactPayload(payload)
   const saveMessage = deps.saveMessage || defaultSaveMessage
   const sendMail = deps.sendMail || sendContactMessage
+  const sendReceipt = deps.sendReceipt || sendContactReceipt
 
   const saved = await saveMessage(normalized)
 
@@ -62,7 +63,7 @@ export async function submitContactMessage(payload, deps = {}) {
       recipient
     })
     // Send auto-reply to user
-    await sendContactReceipt(normalized)
+    await sendReceipt(normalized)
     emailSent = true
   } catch (err) {
     console.warn('[contact] échec d’envoi d’e-mail:', err.message)
