@@ -4,7 +4,7 @@
     <!-- ─── Header MVG ─── -->
     <header class="rsvp-header">
       <div class="rsvp-logo-wrap">
-        <img src="/images/logo.jpeg" alt="Musée Virtuel de Guinée" class="rsvp-logo" />
+        <img src="/images/logo-dark.jpg" alt="Musée Virtuel de Guinée" class="rsvp-logo" />
       </div>
       <div>
         <h1 class="rsvp-brand">Musée Virtuel de Guinée</h1>
