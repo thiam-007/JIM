@@ -1183,51 +1183,91 @@ async function submitRegisterOnsite() {
 
 /* Counter */
 .ck-counter {
-  display: flex; gap: 28px; align-items: center; flex-wrap: wrap;
-  padding-top: 12px; padding-bottom: 12px;
-  border-top: 1px solid rgba(255,255,255,.15);
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  padding: 16px 24px;
+  background: rgba(255, 255, 255, 0.85);
+  border-top: 1px solid rgba(132, 89, 54, 0.12);
 }
-.ck-counter-item { display: flex; align-items: center; gap: 12px; }
+.ck-counter-item {
+  display: flex; align-items: center; gap: 12px;
+  background: #ffffff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(132, 89, 54, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
 .ck-counter-icon { color: var(--or); }
 .ck-counter-icon.blue { color: #1565c0; }
 .ck-counter-icon.green { color: #2e7d32; }
+.ck-counter-icon.orange, .ck-counter-icon.amber { color: #e65100; }
 .ck-counter-icon.red { color: #c62828; }
 .ck-counter-icon.capacity { color: #00838f; }
-.ck-counter-num { font-size: 1.8rem; font-weight: 900; color: var(--blanc); line-height: 1; }
-.ck-counter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.7); }
+.ck-counter-num { font-size: 1.6rem; font-weight: 900; color: #121526; line-height: 1; }
+.ck-counter-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #555e70; margin-top: 3px; }
 .ck-offline-banner {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 8px 12px; border-radius: 8px; background: #fff4e5; color: #9a5b00;
-  font-size: .78rem; font-weight: 700;
+  padding: 10px 16px; border-radius: 10px; background: #fff4e5; color: #9a5b00;
+  font-size: .8rem; font-weight: 700;
+  margin: 0 24px 14px;
+  border: 1px solid rgba(154, 91, 0, 0.2);
 }
-.ck-offline-banner.online { background: #edf8ef; color: #28733b; }
+.ck-offline-banner.online { background: #edf8ef; color: #28733b; border-color: rgba(40, 115, 59, 0.2); }
 .ck-offline-banner strong { margin-left: auto; }
-.ck-report-actions { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+.ck-report-actions {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 0 24px 18px;
+}
 .btn-report {
   display: inline-flex; align-items: center; gap: 8px;
   width: 100%; justify-content: center;
-  padding: 10px 16px; border: 1px solid rgba(255,255,255,.35);
-  border-radius: 999px; background: rgba(255,255,255,.12); color: var(--blanc);
-  font-size: .78rem; font-weight: 700; cursor: pointer;
+  padding: 9px 16px; border: 1.5px solid #28336f;
+  border-radius: 10px; background: #ffffff; color: #28336f;
+  font-size: .8rem; font-weight: 700; cursor: pointer;
+  transition: all .2s ease;
+  box-shadow: 0 2px 6px rgba(40, 51, 111, 0.05);
 }
-.btn-report:hover { background: rgba(255,255,255,.22); }
-.ck-progress-wrap { flex: 1; min-width: 0; width: 100%; }
+.btn-report:hover { background: #28336f; color: #ffffff; }
+.btn-report-secondary {
+  border-color: #b45332; color: #b45332;
+}
+.btn-report-secondary:hover {
+  background: #b45332; color: #ffffff; border-color: #b45332;
+}
+.ck-badge-category {
+  padding: 9px 14px;
+  border: 1.5px solid rgba(40, 51, 111, 0.25);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #121526;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  min-width: 150px;
+}
+.ck-badge-category:focus {
+  border-color: #28336f;
+  box-shadow: 0 0 0 3px rgba(40, 51, 111, 0.12);
+}
+.ck-progress-wrap { flex: 1; min-width: 200px; width: 100%; }
 .ck-progress-bar {
-  height: 8px; background: rgba(255,255,255,.2); border-radius: 4px; overflow: hidden; margin-bottom: 6px;
+  height: 9px; background: rgba(40, 51, 111, 0.1); border-radius: 5px; overflow: hidden; margin-bottom: 6px;
 }
 .ck-progress-fill {
-  height: 100%; background: linear-gradient(90deg, #4caf50, #81c784);
-  border-radius: 4px; transition: width .5s ease;
+  height: 100%; background: linear-gradient(90deg, #2e7d32, #4caf50);
+  border-radius: 5px; transition: width .5s ease;
 }
-.ck-progress-label { font-size: .76rem; color: rgba(255,255,255,.8); font-weight: 700; }
+.ck-progress-label { font-size: .76rem; color: #28336f; font-weight: 700; }
 .ck-live-toggle {
   display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
-  padding: 8px 12px; border: 1px solid rgba(255,255,255,.3);
-  border-radius: 999px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7);
-  font-size: .72rem; font-weight: 800; cursor: pointer;
+  padding: 8px 14px; border: 1.5px solid rgba(40, 51, 111, 0.2);
+  border-radius: 999px; background: #ffffff; color: #555e70;
+  font-size: .75rem; font-weight: 800; cursor: pointer;
+  transition: all .2s ease;
 }
-.ck-live-toggle.active { background: rgba(76,175,80,.2); border-color: rgba(129,199,132,.7); color: #c8e6c9; }
-.ck-sync-status { color: rgba(132,89,54,.65); font-size: .72rem; }
+.ck-live-toggle:hover { border-color: #28336f; color: #28336f; }
+.ck-live-toggle.active { background: #e8f5e9; border-color: #4caf50; color: #1b5e20; }
+.ck-sync-status { color: #64748b; font-size: .75rem; font-weight: 500; }
 @media (min-width: 601px) {
   .ck-counter { gap: 16px; }
   .ck-live-toggle { margin-left: auto; }
