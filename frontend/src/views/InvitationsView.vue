@@ -398,6 +398,50 @@
       </div>
     </Teleport>
 
+    <!-- ─── Modal de confirmation ─── -->
+    <Teleport to="body">
+      <div v-if="confirmModal.open" class="modal-backdrop" @click.self="closeConfirmModal">
+        <div class="modal-box modal-confirm form-card">
+          <div class="fh fh-s">
+            <div class="fh-icon"><AppIcon name="alert-triangle" :size="22" /></div>
+            <div class="fh-title">{{ confirmModal.title }}</div>
+          </div>
+          <div class="fb">
+            <p class="confirm-text" v-html="confirmModal.message"></p>
+            <div class="modal-actions">
+              <button class="btn-cancel" @click="closeConfirmModal">Annuler</button>
+              <button class="bsub bsub-s modal-submit" @click="confirmAction" :disabled="confirmModal.loading">
+                <AppIcon :name="confirmModal.loading ? 'loader' : 'check'" :size="16" />
+                {{ confirmModal.loading ? 'Traitement…' : confirmModal.confirmLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ─── Modal de notification ─── -->
+    <Teleport to="body">
+      <div v-if="notificationModal.open" class="modal-backdrop" @click.self="closeNotificationModal">
+        <div class="modal-box modal-confirm form-card" :class="notificationModal.type">
+          <div class="fh fh-s">
+            <div class="fh-icon">
+              <AppIcon :name="notificationModal.type === 'error' ? 'alert-triangle' : (notificationModal.type === 'info' ? 'info' : 'check-circle')" :size="22" />
+            </div>
+            <div class="fh-title">{{ notificationModal.title }}</div>
+          </div>
+          <div class="fb">
+            <p class="confirm-text" style="white-space: pre-line;">{{ notificationModal.message }}</p>
+            <div class="modal-actions">
+              <button class="bsub bsub-s modal-submit" @click="closeNotificationModal">
+                <AppIcon name="check" :size="16" /> OK
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -430,6 +474,58 @@ const adding = ref(false)
 const addError = ref('')
 const modalSearch = ref('')
 const selectedIds = ref(new Set())
+const confirmModal = ref({
+  open: false,
+  title: '',
+  message: '',
+  confirmLabel: 'Confirmer',
+  loading: false,
+  action: null
+})
+const notificationModal = ref({
+  open: false,
+  title: '',
+  message: '',
+  type: 'success'
+})
+
+function showNotification({ title, message, type = 'success' }) {
+  notificationModal.value = { open: true, title, message, type }
+}
+
+function closeNotificationModal() {
+  notificationModal.value = { ...notificationModal.value, open: false }
+}
+
+function openConfirmModal({ title, message, confirmLabel = 'Confirmer', action }) {
+  confirmModal.value = {
+    open: true,
+    title,
+    message,
+    confirmLabel,
+    loading: false,
+    action
+  }
+}
+
+function closeConfirmModal() {
+  confirmModal.value = { ...confirmModal.value, open: false, loading: false, action: null }
+}
+
+async function confirmAction() {
+  if (!confirmModal.value.action) {
+    closeConfirmModal()
+    return
+  }
+
+  confirmModal.value.loading = true
+  try {
+    await confirmModal.value.action()
+  } finally {
+    confirmModal.value.loading = false
+    closeConfirmModal()
+  }
+}
 
 onMounted(async () => {
   loading.value = true
@@ -605,23 +701,53 @@ async function updateStatut(inv, newStatut) {
 }
 
 async function reissueQr(inv) {
-  if (!window.confirm(`Réémettre le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ? L’ancien QR sera invalidé.`)) return
-  try {
-    const updated = await api.post(`/api/invitations/${inv.id}/reissue`, {})
-    Object.assign(inv, updated)
-  } catch (err) {
-    alert(`Impossible de réémettre le QR code : ${err.message}`)
-  }
+  openConfirmModal({
+    title: 'Réémettre le QR code',
+    message: `Réémettre le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ?\n\nL’ancien QR sera invalidé.`,
+    confirmLabel: 'Réémettre',
+    action: async () => {
+      try {
+        const updated = await api.post(`/api/invitations/${inv.id}/reissue`, {})
+        Object.assign(inv, updated)
+        showNotification({
+          title: 'QR réémis',
+          message: `Le nouveau QR code a bien été généré pour ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''}.`,
+          type: 'success'
+        })
+      } catch (err) {
+        showNotification({
+          title: 'Erreur',
+          message: `Impossible de réémettre le QR code : ${err.message}`,
+          type: 'error'
+        })
+      }
+    }
+  })
 }
 
 async function revokeQr(inv) {
-  if (!window.confirm(`Révoquer définitivement le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ?`)) return
-  try {
-    const updated = await api.post(`/api/invitations/${inv.id}/revoke`, {})
-    Object.assign(inv, updated)
-  } catch (err) {
-    alert(`Impossible de révoquer le QR code : ${err.message}`)
-  }
+  openConfirmModal({
+    title: 'Révoquer le QR code',
+    message: `Révoquer définitivement le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} ?`,
+    confirmLabel: 'Révoquer',
+    action: async () => {
+      try {
+        const updated = await api.post(`/api/invitations/${inv.id}/revoke`, {})
+        Object.assign(inv, updated)
+        showNotification({
+          title: 'QR révoqué',
+          message: `Le QR code de ${inv.invites?.prenom || ''} ${inv.invites?.nom || ''} a été révoqué avec succès.`,
+          type: 'success'
+        })
+      } catch (err) {
+        showNotification({
+          title: 'Erreur',
+          message: `Impossible de révoquer le QR code : ${err.message}`,
+          type: 'error'
+        })
+      }
+    }
+  })
 }
 
 async function sendPending() {
@@ -642,11 +768,15 @@ async function sendInvitationBatch(pendingInvites, label, reminder = false) {
   try {
     const res = await api.post(`/api/invitations/send`, { invitation_ids: ids, reminder })
     const failedReasons = res.results ? res.results.filter(r => r.status === 'failed').map(r => '- ' + (r.error || 'Erreur inconnue')).join('\n') : ''
-    alert(`${label} !\n\nSuccès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`)
+    showNotification({
+      title: label,
+      message: `Succès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`,
+      type: res.failed > 0 ? 'info' : 'success'
+    })
     await api.fetchInvitations(eventId)
   } catch (err) {
     console.error(err)
-    alert('Erreur: ' + err.message)
+    showNotification({ title: 'Erreur', message: 'Erreur: ' + err.message, type: 'error' })
   } finally {
     sending.value = false
   }
@@ -751,7 +881,7 @@ async function syncNewsletterSubscribers() {
   try {
     const subscribers = await api.get('/api/newsletter/subscribers')
     if (!subscribers || subscribers.length === 0) {
-      alert('Aucun abonné trouvé dans la newsletter.')
+      showNotification({ title: 'Newsletter vide', message: 'Aucun abonné trouvé dans la newsletter.', type: 'info' })
       return
     }
 
@@ -791,18 +921,22 @@ async function syncNewsletterSubscribers() {
     })
 
     if (recordsToImport.length === 0) {
-      alert('Tous vos abonnés de la newsletter figurent déjà dans vos contacts.')
+      showNotification({ title: 'Aucun import', message: 'Tous vos abonnés de la newsletter figurent déjà dans vos contacts.', type: 'info' })
       return
     }
 
     const result = await api.post('/api/invites/bulk', { invites: recordsToImport })
-    alert(`${result.created || recordsToImport.length} nouvel/nouveaux abonné(s) importé(s) comme contact(s) avec succès !`)
+    showNotification({
+      title: 'Import terminé',
+      message: `${result.created || recordsToImport.length} nouvel/nouveaux abonné(s) importé(s) comme contact(s) avec succès !`,
+      type: 'success'
+    })
     
     // Rafraîchir les contacts et recharger les invités existants
     await api.fetchInvites()
   } catch (err) {
     console.error(err)
-    alert('Erreur lors de la synchronisation : ' + err.message)
+    showNotification({ title: 'Erreur', message: 'Erreur lors de la synchronisation : ' + err.message, type: 'error' })
   } finally {
     syncing.value = false
   }
@@ -872,16 +1006,24 @@ async function importExcelOrCSV(event) {
         })
 
         if (records.length === 0) {
-          alert('Aucun contact valide trouvé dans le fichier.')
+          showNotification({ title: 'Fichier vide', message: 'Aucun contact valide trouvé dans le fichier.', type: 'info' })
           return
         }
 
         const result = await api.post('/api/invites/bulk', { invites: records })
-        alert(`${result.created || records.length} contact(s) importé(s) avec succès.`)
+        showNotification({
+          title: 'Import réussi',
+          message: `${result.created || records.length} contact(s) importé(s) avec succès.`,
+          type: 'success'
+        })
         await api.fetchInvites()
       } catch (err) {
         console.error(err)
-        alert('Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.')
+        showNotification({
+          title: 'Erreur',
+          message: 'Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.',
+          type: 'error'
+        })
       }
     }
     reader.readAsArrayBuffer(file)

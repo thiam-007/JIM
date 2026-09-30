@@ -1102,8 +1102,23 @@ function escapeHtml(value) {
 }
 
 function printPresentBadges() {
-  const presentInvitations = invitationsList.value.filter(invitation => invitation.statut === 'present')
-  if (!presentInvitations.length) return
+  const selectedCategory = badgeCategory.value || 'Participant'
+  const presentInvitations = invitationsList.value.filter(invitation => {
+    if (invitation.statut !== 'present') return false
+    const invite = invitation.invites || {}
+    const category = (invite.categorie || 'Participant').trim() || 'Participant'
+    return category === selectedCategory
+  })
+
+  if (!presentInvitations.length) {
+    scanResult.value = {
+      type: 'info',
+      name: 'Aucun badge',
+      message: `Aucun participant présent pour la catégorie ${selectedCategory}.`
+    }
+    return
+  }
+
   const printWindow = window.open('', '_blank', 'width=1000,height=800')
   if (!printWindow) {
     scanResult.value = { type: 'error', name: 'Impression bloquée', message: 'Autorisez les fenêtres pop-up pour imprimer les badges.' }
@@ -1112,9 +1127,13 @@ function printPresentBadges() {
 
   const cards = presentInvitations.map(invitation => {
     const invite = invitation.invites || {}
+    const category = (invite.categorie || selectedCategory || 'Participant').trim() || 'Participant'
     return `<article class="badge">
-      <div class="brand">MVG EVENT'S</div>
-      <div class="category">${escapeHtml(invite.categorie || badgeCategory.value)}</div>
+      <div class="brand-row">
+        <img src="/mvg-logo-minima.png" alt="Logo MVG" />
+        <div class="brand">MVG EVENT'S</div>
+      </div>
+      <div class="category">${escapeHtml(category)}</div>
       <h1>${escapeHtml(`${invite.prenom || ''} ${invite.nom || ''}`.trim())}</h1>
       <p>${escapeHtml(invite.organisation || '—')}</p>
       <p class="role">${escapeHtml(invite.titre_poste || '')}</p>
@@ -1125,7 +1144,10 @@ function printPresentBadges() {
   printWindow.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Badges - ${escapeHtml(eventFileName())}</title><style>
     @page { size: A4; margin: 12mm; } * { box-sizing: border-box; } body { margin: 0; font-family: Arial, sans-serif; color: #241b16; }
     .sheet { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; } .badge { height: 78mm; border: 2px solid #845936; padding: 9mm; display: flex; flex-direction: column; justify-content: space-between; page-break-inside: avoid; }
-    .brand { color: #845936; font-size: 11px; font-weight: bold; letter-spacing: 2px; } .category { align-self: flex-start; background: #b1222a; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; }
+    .brand-row { display: flex; align-items: center; gap: 8px; }
+    .brand-row img { width: 34px; height: 34px; object-fit: contain; }
+    .brand { color: #845936; font-size: 11px; font-weight: bold; letter-spacing: 2px; }
+    .category { align-self: flex-start; background: #b1222a; color: white; padding: 5px 10px; font-size: 12px; font-weight: bold; }
     h1 { font-size: 24px; margin: 8px 0 0; } p { margin: 0; font-size: 14px; } .role { color: #666; font-size: 12px; } footer { border-top: 1px solid #ddd; padding-top: 7px; font-size: 11px; color: #845936; }
   </style></head><body><main class="sheet">${cards}</main><script>window.onload = () => window.print()<\/script></body></html>`)
   printWindow.document.close()
