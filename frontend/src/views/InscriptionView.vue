@@ -4,7 +4,12 @@
     <!-- ─── Header MVG ─── -->
     <header class="rsvp-header">
       <div class="rsvp-logo-wrap">
-        <img src="/images/logo-dark.jpg" alt="Musée Virtuel de Guinée" class="rsvp-logo" />
+        <img
+          src="/mvg-logo-minima.png"
+          alt="Musée Virtuel de Guinée"
+          class="rsvp-logo"
+          @error="$event.target.src = 'https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/mvg-logo-minima.png'"
+        />
       </div>
       <div>
         <h1 class="rsvp-brand">Musée Virtuel de Guinée</h1>
@@ -231,11 +236,14 @@ function formatDate(dateStr) {
 }
 .rsvp-logo-wrap {
   width: 56px; height: 56px; border-radius: 50%; overflow: hidden;
-  border: 2.5px solid rgba(255,255,255,.35);
+  border: 2px solid rgba(255,255,255,.45);
   box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  background: #ffffff;
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px;
   flex-shrink: 0;
 }
-.rsvp-logo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rsvp-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
 .rsvp-brand { font-size: 1.1rem; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 .rsvp-brand-sub { font-size: .72rem; color: rgba(255,255,255,.82); margin: 4px 0 0; letter-spacing: 1.2px; }
 

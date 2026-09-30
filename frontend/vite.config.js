@@ -7,7 +7,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['images/favicon.png'],
+      includeAssets: ['images/favicon.png', 'mvg-logo-minima.png'],
       manifest: {
         name: "MVG Community — Musée Virtuel de Guinée",
         short_name: "MVG Community",

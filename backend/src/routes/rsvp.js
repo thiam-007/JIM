@@ -50,7 +50,10 @@ async function promoteNextWaiting(evenementId) {
 // ─── Get RSVP data by token (PUBLIC) ──────────────────────────────────────────
 router.get('/:token', async (req, res, next) => {
   try {
-    const { token } = req.params
+    let token = (req.params.token || '').trim().toLowerCase()
+    if (token.endsWith('.png')) {
+      token = token.slice(0, -4)
+    }
 
     const { data, error } = await supabase
       .from('invitations')
@@ -102,7 +105,10 @@ router.get('/:token', async (req, res, next) => {
 // ─── Submit RSVP response (PUBLIC) ────────────────────────────────────────────
 router.post('/:token', rsvpLimiter, async (req, res, next) => {
   try {
-    const { token } = req.params
+    let token = (req.params.token || '').trim().toLowerCase()
+    if (token.endsWith('.png')) {
+      token = token.slice(0, -4)
+    }
     const { confirmed, notes } = req.body
 
     if (typeof confirmed !== 'boolean') {

@@ -4,7 +4,12 @@
     <!-- ─── Header MVG ─── -->
     <header class="rsvp-header">
       <div class="rsvp-logo-wrap">
-        <img src="/images/logo-dark.jpg" alt="Musée Virtuel de Guinée" class="rsvp-logo" />
+        <img
+          src="/mvg-logo-minima.png"
+          alt="Musée Virtuel de Guinée"
+          class="rsvp-logo"
+          @error="$event.target.src = 'https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/mvg-logo-minima.png'"
+        />
       </div>
       <div>
         <h1 class="rsvp-brand">Musée Virtuel de Guinée</h1>
@@ -72,6 +77,19 @@
         <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:contact@mvg.org">contact@mvg.org</a></p>
       </div>
 
+      <!-- ─── Statut : Liste d'attente ─── -->
+      <div v-else-if="invitation.statut === 'liste_attente'" class="rsvp-card rsvp-declined-card" style="border-color: #f7bf39;">
+        <div class="rsvp-status-icon" style="color: #b45332;">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h3>Inscription sur liste d'attente</h3>
+        <p>Cet événement est actuellement complet. Vous êtes sur liste d'attente et serez notifié(e) par email si une place se libère.</p>
+        <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:contact@mvg.org">contact@mvg.org</a></p>
+      </div>
+
       <!-- ─── Statut : Déjà inscrit / présent ─── -->
       <div v-else-if="invitation.statut === 'inscrit' || invitation.statut === 'present'" class="rsvp-card rsvp-confirmed-card">
         <div class="rsvp-status-icon">
@@ -86,7 +104,7 @@
         <div class="rsvp-qr-section">
           <div class="rsvp-qr-frame">
             <img
-              :src="`${apiUrl}/api/invitations/qr/${token}`"
+              :src="`${apiUrl}/api/invitations/qr/${cleanToken}`"
               :alt="`QR Code — ${invitation.invite?.nom}`"
               class="rsvp-qr-img"
               @error="qrError = true"
@@ -96,7 +114,7 @@
           <p class="rsvp-qr-name">{{ invitation.invite?.prenom }} {{ invitation.invite?.nom }}</p>
           <p class="rsvp-qr-hint">Présentez ce QR code à l'entrée de l'événement</p>
           <a
-            :href="`${apiUrl}/api/invitations/qr/${token}`"
+            :href="`${apiUrl}/api/invitations/qr/${cleanToken}`"
             target="_blank"
             download="qr-code-mvg.png"
             class="rsvp-btn-dl"
@@ -107,8 +125,8 @@
         </div>
       </div>
 
-      <!-- ─── Statut : En attente de réponse ─── -->
-      <div v-else-if="invitation.statut === 'pas_de_reaction'" class="rsvp-card rsvp-pending-card">
+      <!-- ─── Statut : En attente de réponse (envoye, pas_de_reaction, etc.) ─── -->
+      <div v-else class="rsvp-card rsvp-pending-card">
         <div class="rsvp-pending-title">Confirmer votre participation</div>
         <p class="rsvp-pending-desc">Merci de bien vouloir indiquer si vous serez présent(e) à cet événement.</p>
 
@@ -132,8 +150,8 @@
 
         <div v-if="rsvpError" class="rsvp-error-inline">{{ rsvpError }}</div>
 
-        <!-- Après confirmation -->
-        <div v-if="answered === 'inscrit'" class="rsvp-after-confirm">
+        <!-- Après confirmation si transition différée -->
+        <div v-if="answered === 'inscrit' && invitation.statut !== 'inscrit'" class="rsvp-after-confirm">
           <div class="rsvp-after-icon">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -144,7 +162,7 @@
           <p>Voici votre QR code d'accès. Présentez-le à l'entrée de l'événement.</p>
           <div class="rsvp-qr-frame">
             <img
-              :src="`${apiUrl}/api/invitations/qr/${token}.png`"
+              :src="`${apiUrl}/api/invitations/qr/${cleanToken}`"
               :alt="`QR Code — ${invitation.invite?.nom}`"
               class="rsvp-qr-img"
               @error="qrError = true"
@@ -153,7 +171,7 @@
           <p class="rsvp-qr-name">{{ invitation.invite?.prenom }} {{ invitation.invite?.nom }}</p>
           <p class="rsvp-qr-hint">Présentez ce QR code à l'entrée de l'événement</p>
           <a
-            :href="`${apiUrl}/api/invitations/qr/${token}.png`"
+            :href="`${apiUrl}/api/invitations/qr/${cleanToken}`"
             target="_blank"
             download="qr-code-mvg.png"
             class="rsvp-btn-dl"
@@ -163,7 +181,7 @@
           </a>
         </div>
 
-        <div v-if="answered === 'decline'" class="rsvp-after-decline">
+        <div v-if="answered === 'decline' && invitation.statut !== 'decline'" class="rsvp-after-decline">
           <p>Nous avons bien pris note de votre déclin. Nous espérons vous accueillir lors d'un prochain événement.</p>
         </div>
       </div>
@@ -179,12 +197,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const token = route.params.token
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const rawToken = String(route.params.token || '')
+const cleanToken = computed(() => {
+  let t = rawToken.trim().toLowerCase()
+  if (t.endsWith('.png')) t = t.slice(0, -4)
+  return t
+})
+const token = cleanToken.value
+
+const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '')
 
 const loading = ref(true)
 const error = ref('')
@@ -196,7 +221,7 @@ const qrError = ref(false)
 
 onMounted(async () => {
   try {
-    const res = await fetch(`${apiUrl}/api/rsvp/${token}`)
+    const res = await fetch(`${apiUrl}/api/rsvp/${cleanToken.value}`)
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
       throw new Error(body.error || 'Invitation introuvable ou lien invalide.')
@@ -223,7 +248,7 @@ async function respond(statut) {
   responding.value = statut
   rsvpError.value = ''
   try {
-    const res = await fetch(`${apiUrl}/api/rsvp/${token}`, {
+    const res = await fetch(`${apiUrl}/api/rsvp/${cleanToken.value}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ confirmed: statut === 'inscrit' })
@@ -232,7 +257,12 @@ async function respond(statut) {
       const body = await res.json().catch(() => ({}))
       throw new Error(body.error || 'Erreur lors de l\'enregistrement.')
     }
+    const data = await res.json().catch(() => ({}))
     answered.value = statut
+    if (invitation.value) {
+      invitation.value.statut = data.statut || statut
+      invitation.value.date_reponse = data.date_reponse || new Date().toISOString()
+    }
   } catch (err) {
     rsvpError.value = err.message
   } finally {
@@ -266,11 +296,14 @@ async function respond(statut) {
 }
 .rsvp-logo-wrap {
   width: 56px; height: 56px; border-radius: 50%; overflow: hidden;
-  border: 2.5px solid rgba(255,255,255,.35);
+  border: 2px solid rgba(255,255,255,.45);
   box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  background: #ffffff;
+  display: flex; align-items: center; justify-content: center;
+  padding: 6px;
   flex-shrink: 0;
 }
-.rsvp-logo { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rsvp-logo { width: 100%; height: 100%; object-fit: contain; display: block; }
 .rsvp-brand { font-size: 1.1rem; font-weight: 900; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 .rsvp-brand-sub { font-size: .72rem; color: rgba(255,255,255,.82); margin: 4px 0 0; letter-spacing: 1.2px; }
 

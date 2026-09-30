@@ -168,6 +168,7 @@ app.use('/api/rss', rssRouter)
 app.get('/api/invitations/qr/:token', async (req, res, next) => {
   try {
     let { token } = req.params
+    token = (token || '').trim().toLowerCase()
     if (token.endsWith('.png')) {
       token = token.slice(0, -4)
     }

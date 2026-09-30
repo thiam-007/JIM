@@ -385,7 +385,7 @@ function eventBlock(evenement) {
  * Send an invitation email with RSVP button.
  * @param {{ invite: object, evenement: object, rsvpUrl: string }} params
  */
-export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = false }) {
+export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = false, token }) {
   const fullName = `${invite.prenom} ${invite.nom}`
   const escapeText = value => String(value || '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character])
   const customIntro = evenement.email_intro
@@ -394,6 +394,14 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
         ? 'Nous vous rappelons que votre réponse à cette invitation est toujours attendue&nbsp;:'
         : 'Le <strong>Musée Virtuel de Guinée</strong> a le plaisir de vous convier à son prochain événement&nbsp;:')
   const customSignature = evenement.email_signature ? escapeText(evenement.email_signature).replace(/\n/g, '<br />') : '— L’équipe du Musée Virtuel de Guinée'
+
+  const backendBase = (
+    process.env.BACKEND_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
+    process.env.RENDER_EXTERNAL_URL ||
+    'http://localhost:3000'
+  ).replace(/\/$/, '')
+  const qrImgUrl = token ? `${backendBase}/api/invitations/qr/${token}.png` : null
 
   const body = `
     <!-- Greeting -->
@@ -430,6 +438,33 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
     </p>
     ` : ''}
 
+    ${qrImgUrl ? `
+    <!-- QR Code pass -->
+    <div style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;padding:24px;margin:24px 0;text-align:center;font-family:'Alexandria',sans-serif;">
+      <p style="margin:0 0 6px;color:#28336f;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+        Votre pass d'accès (QR Code)
+      </p>
+      <p style="margin:0 0 16px;color:#121526;font-size:13px;">
+        Présentez ce QR code à l'entrée de l'événement. Vous pouvez également confirmer votre présence en ligne ci-dessous :
+      </p>
+      <img
+        src="${qrImgUrl}"
+        alt="QR Code d'accès — ${evenement.titre}"
+        width="180"
+        height="180"
+        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;box-shadow:0 2px 12px rgba(40,51,111,0.15);"
+      />
+      <div style="margin-top:20px;">
+        <a href="${rsvpUrl}"
+           style="display:inline-block;background:linear-gradient(135deg,#b45332,#da373d);color:#FFFFFF;text-decoration:none;font-family:'Alexandria',sans-serif;font-size:14px;font-weight:bold;padding:12px 28px;border-radius:6px;letter-spacing:0.5px;">
+          Confirmer ma présence en ligne →
+        </a>
+      </div>
+      <p style="margin:12px 0 0;color:#28336f;font-size:11px;opacity:0.8;">
+        Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
+      </p>
+    </div>
+    ` : `
     <!-- RSVP section -->
     <div style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;padding:24px;margin:24px 0;text-align:center;">
       <p style="margin:0 0 8px;color:#28336f;font-size:13px;font-family:'Alexandria',sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
@@ -447,6 +482,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
         <span style="color:#b45332;">${rsvpUrl}</span>
       </p>
     </div>
+    `}
 
     <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
       Nous espérons avoir le plaisir de vous accueillir lors de cet événement.<br />
@@ -576,6 +612,16 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
 export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token }) {
   const fullName = `${invite.prenom} ${invite.nom}`
 
+  // Build the backend base URL so the QR code image is accessible via a public HTTPS URL.
+  // Brevo API does NOT support CID/inline attachments — only a real URL works universally.
+  const backendBase = (
+    process.env.BACKEND_URL ||
+    (process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : null) ||
+    process.env.RENDER_EXTERNAL_URL ||
+    'http://localhost:3000'
+  ).replace(/\/$/, '')
+  const qrImgUrl = `${backendBase}/api/invitations/qr/${token}.png`
+
   const body = `
     <!-- Success banner -->
     <div style="background:linear-gradient(135deg,#3e502a,#bdcec8);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
@@ -610,7 +656,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
         Présentez ce code à l'entrée de l'événement pour valider votre présence.
       </p>
       <img
-        src="cid:qr-code.png"
+        src="${qrImgUrl}"
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
@@ -650,14 +696,12 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
       replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Confirmation — ${evenement.titre}`,
       html: emailShell(body, 'CONFIRMATION'),
-      attachments: [
+      attachments: qrCodeDataUrl ? [
         {
-          filename: 'qr-code.png',
-          content: qrCodeDataUrl.split(',')[1],
-          encoding: 'base64',
-          cid: 'qr-code.png' // same cid value as in the html img src
+          filename: 'qr-code-mvg.png',
+          content: qrCodeDataUrl.includes(',') ? qrCodeDataUrl.split(',')[1] : qrCodeDataUrl
         }
-      ]
+      ] : []
     })
     return info
   } catch (error) {

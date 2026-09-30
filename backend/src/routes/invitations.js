@@ -197,7 +197,7 @@ router.post('/send', async (req, res, next) => {
 
       try {
         const rsvpUrl = `${frontendUrl}/rsvp/${invitation.token}`
-        await sendInvitation({ invite, evenement, rsvpUrl, isReminder: reminder })
+        await sendInvitation({ invite, evenement, rsvpUrl, isReminder: reminder, token: invitation.token })
 
         // Met à jour date_envoi
         const update = reminder
