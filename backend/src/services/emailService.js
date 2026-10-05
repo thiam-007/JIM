@@ -104,250 +104,183 @@ function formatDateFr(iso) {
 
 /**
  * Shared HTML email shell with brand colours.
+ * ✅ Compatible Outlook Desktop (Word engine), Exchange, Lotus Notes, clients institutionnels.
+ *    - Styles 100 % inline sur chaque élément structurel
+ *    - Layout table-based (aucun div de structure)
+ *    - Pas de linear-gradient, position:absolute, box-shadow, display:flex/grid
+ *    - Commentaires conditionnels <!--[if mso]--> pour Outlook
+ *    - @media queries conservées uniquement pour le rendu mobile (Outlook les ignore, c'est intentionnel)
  */
 function emailShell(bodyContent, options = {}) {
-  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
-  
+  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
+
   // Handle retro-compatibility where options was just a string title
-  const title = typeof options === 'string' ? options : (options.title || 'NOTIFICATION');
-  const edition = options.edition || 'Musée Virtuel de Guinée';
-  const label = options.label || 'NOTIFICATION';
-  const isFullWidth = options.isFullWidth || false;
-  
+  const title = typeof options === 'string' ? options : (options.title || 'NOTIFICATION')
+  const edition = options.edition || 'Musée Virtuel de Guinée'
+  const label = options.label || 'NOTIFICATION'
+  const isFullWidth = options.isFullWidth || false
+
+  // Wrapper du body : fullWidth passe le contenu directement, sinon on emballe dans une cellule paddée
+  const bodyWrapper = isFullWidth
+    ? bodyContent
+    : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="mobile-pad" bgcolor="#f4f7f5" style="padding:40px; background-color:#f4f7f5; color:#121526; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.7;">
+            ${bodyContent}
+          </td>
+        </tr>
+      </table>`
+
   return `<!DOCTYPE html>
 <html lang="fr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Musée Virtuel de Guinée</title>
+  <!--[if mso]>
+  <xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
+  <![endif]-->
   <style type="text/css">
-    @import url('https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lato:wght@300;400;700&display=swap');
-    
-    /* Fix Outlook Desktop (moteur Word) : neutralise l'espacement par défaut des tables
-       qui élargit progressivement le contenu imbriqué */
-    table {
-      mso-table-lspace: 0pt;
-      mso-table-rspace: 0pt;
-      border-collapse: collapse;
-    }
-    
-    body { background-color: #f4f7f5; font-family: 'Alexandria', 'Lato', sans-serif; padding: 30px 0; margin: 0; }
-    .wrapper { max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(40,51,111,0.15); }
-    .header { position: relative; background-color: #28336f; min-height: 190px; overflow: hidden; }
-    .header-pattern { position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 260px auto; background-repeat: repeat; opacity: 0.15; }
-    .header-overlay { position: absolute; inset: 0; background: linear-gradient(135deg, rgba(40,51,111,0.85) 0%, rgba(54,67,132,0.7) 100%); }
-    .header-text h1 em { color: #b45332; font-style: italic; }
-    .header-text .edition { font-size: 11px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin-top: 8px; }
-    .gold-band { background: #b45332; height: 8px; }
-    
-    /* Footer */
-    .footer { background: #28336f; padding: 32px 40px 24px; position: relative; overflow: hidden; }
-    .footer::after { content: ''; position: absolute; inset: 0; background-image: url('${frontendUrl}/images/motif-removebg-preview.png'); background-size: 180px; opacity: 0.15; }
-    .footer-inner { position: relative; z-index: 1; }
-    .footer-bottom { text-align: center; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 16px; }
-    .footer-bottom a { color: rgba(255,255,255,0.4); text-decoration: none; }
-    .or-bar-bottom { height: 5px; background: linear-gradient(to right, #28336f, #b45332, #da373d, #b45332, #28336f); }
-    
-    /* Bulletin specific styles */
-    .sommaire { background: #28336f; padding: 18px 40px; }
-    .sommaire-label { font-size: 9px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #b45332; margin-bottom: 10px; }
-    .sommaire-links { display: flex; flex-wrap: wrap; gap: 6px 20px; }
-    .sommaire-links a { font-family: 'Alexandria', 'Lato', sans-serif; font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.80); text-decoration: none; border-bottom: 1px solid rgba(180,83,50,0.3); padding-bottom: 1px; }
-    .sommaire-links .sep { color: rgba(255,255,255,0.2); font-size: 11px; }
-    
-    .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 9.5px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #da373d; margin-bottom: 14px; }
-    .section-label::before { content: ''; display: block; width: 22px; height: 2px; background: #b45332; }
-    
-    .edito { padding: 40px 40px 32px; background: #f4f7f5; border-top: 1px solid rgba(40,51,111,0.12); }
-    .edito h2 { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 900; color: #28336f; line-height: 1.2; margin-bottom: 14px; margin-top: 0; }
-    .edito p { font-size: 14px; line-height: 1.75; color: #121526; margin-bottom: 10px; }
-    .edito-author { margin-top: 18px; display: flex; align-items: center; gap: 10px; }
-    .edito-author-avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #b45332, #da373d); display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 15px; color: #FFFFFF; font-weight: 700; line-height: 38px; text-align: center; }
-    .edito-author-info strong { display: block; font-size: 12px; font-weight: 700; color: #28336f; }
-    .edito-author-info span { font-size: 11px; color: #b45332; }
-    .edito-aside { background: #28336f; border-radius: 2px; padding: 20px 18px; margin-top: 24px; }
-    .edito-aside .aside-title { font-family: 'Playfair Display', serif; font-size: 13px; font-weight: 700; color: #b45332; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid rgba(180,83,50,0.25); margin-top: 0; }
-    .edito-aside ul { list-style: none; display: flex; flex-direction: column; gap: 10px; padding: 0; margin: 0; }
-    .edito-aside ul li { font-size: 12px; color: rgba(255,255,255,0.8); line-height: 1.5; padding-left: 12px; position: relative; }
-    .edito-aside ul li::before { content: '▸'; position: absolute; left: 0; color: #b45332; font-size: 10px; }
-    
-    .actualites { padding: 36px 40px; background: #FFFFFF; }
-    .actualites h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #28336f; margin-bottom: 24px; margin-top: 0; }
-    .actu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .actu-card { border: 1px solid rgba(40,51,111,0.15); border-radius: 2px; overflow: hidden; }
-    .actu-card-top { height: 8px; background: #da373d; }
-    .actu-card.secondary .actu-card-top { background: #b45332; }
-    .actu-card.tertiary .actu-card-top { background: #bdcec8; }
-    .actu-card-body { padding: 16px; }
-    .actu-tag { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #da373d; margin-bottom: 6px; margin-top: 0; }
-    .actu-card.secondary .actu-tag { color: #b45332; }
-    .actu-card.tertiary .actu-tag { color: #3e502a; }
-    .actu-card h3 { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; color: #28336f; margin-bottom: 8px; margin-top: 0; line-height: 1.3; }
-    .actu-card p { font-size: 12px; color: #5A3E28; line-height: 1.6; margin: 0; }
-    .actu-card-full { grid-column: 1 / -1; }
-    .actu-card-img { width: 100%; height: 140px; object-fit: cover; }
-    
-    .zoom { background-color: #28336f; background: linear-gradient(135deg, #28336f 0%, #18204c 100%); padding: 36px 40px; position: relative; overflow: hidden; }
-    .zoom-inner { position: relative; z-index: 1; }
-    .zoom-inner .section-label { color: #b45332; }
-    .zoom-inner .section-label::before { background: #b45332; }
-    .zoom h2 { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 900; color: #FFFFFF; margin-bottom: 12px; margin-top: 0; }
-    .zoom p { font-size: 13.5px; color: #FFFFFF; line-height: 1.75; margin-bottom: 14px; margin-top: 0; }
-    .zoom-cta { display: inline-block; margin-top: 8px; background: #b45332; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; padding: 10px 22px; border-radius: 1px; }
-    
-    .nextstep { background: #f4f7f5; padding: 36px 40px; }
-    .nextstep h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #28336f; margin-bottom: 20px; margin-top: 0; }
-    
-    .galerie { background: #FFFFFF; padding: 36px 40px; }
-    .galerie-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    
-    /* ─────────────────────────────────────────────────────────────────
-       CARROUSEL HORIZONTAL — classes mutualisées (Zoom + Galerie)
-       Utilise overflow-x + inline-block, PAS de flexbox (peu fiable en email).
-       Rendu par défaut (Gmail web/app, Apple Mail, Outlook.com, Yahoo, mobile) :
-       vrai scroll horizontal.
-       Outlook Desktop (Windows, moteur Word) reçoit un fallback totalement
-       différent via les commentaires conditionnels <!--[if mso]-->, voir le HTML.
-       ───────────────────────────────────────────────────────────────── */
-    .carousel-scroll {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-      white-space: nowrap;
-      scroll-snap-type: x proximity;
-      -ms-overflow-style: none;
-    }
-    .carousel-scroll::-webkit-scrollbar { height: 6px; }
-    .carousel-scroll::-webkit-scrollbar-thumb { background: rgba(249,178,51,0.4); border-radius: 3px; }
-    .carousel-item {
-      display: inline-block;
-      white-space: normal;
-      vertical-align: top;
-      scroll-snap-align: start;
-    }
-    
-    @media (max-width: 600px) {
-      .actu-grid { display: block; }
-      .wrapper { width: 100% !important; max-width: 100% !important; box-shadow: none !important; border-radius: 0 !important; }
-      .mobile-padding { padding: 24px 20px !important; }
-      .mobile-stack { display: block !important; width: 100% !important; box-sizing: border-box !important; }
-      .mobile-center { text-align: center !important; }
-      .header-logo-container { padding-right: 0 !important; margin-bottom: 16px !important; }
-      .header-text-container { border-left: none !important; padding-left: 0 !important; }
-      .hide-mobile { display: none !important; }
-      
-      /* Force le défilement horizontal fluide par glissement tactile sur mobile */
-      .carousel-scroll {
-        overflow-x: scroll !important;
-        -webkit-overflow-scrolling: touch !important;
-        display: block !important;
-        width: 100% !important;
-        white-space: nowrap !important;
-      }
-      .carousel-item {
-        display: inline-block !important;
-        float: none !important;
-        white-space: normal !important;
-      }
-    }
-
-
-    /* Anti-overflow text wrapping for email clients */
-    .edito p, .edito h2, .actu-card p, .actu-card h3,
-    .zoom p, .zoom h2, .nextstep h2, .nextstep strong, .nextstep span,
-    .galerie h2, .galerie h4, .galerie p, .edito-aside li, .sommaire-links a {
-      word-wrap: break-word !important;
-      overflow-wrap: break-word !important;
-      word-break: break-word !important;
+    /* Resets Outlook / Word engine */
+    table { mso-table-lspace:0pt; mso-table-rspace:0pt; border-collapse:collapse; }
+    img { border:0; outline:none; text-decoration:none; display:block; -ms-interpolation-mode:bicubic; }
+    a[x-apple-data-detectors] { color:inherit !important; text-decoration:none !important; font-size:inherit !important; font-family:inherit !important; font-weight:inherit !important; line-height:inherit !important; }
+    /* Mobile only — Outlook Desktop ignore @media, c'est intentionnel */
+    @media (max-width:600px) {
+      .wrapper { width:100% !important; max-width:100% !important; }
+      .mobile-pad { padding:20px !important; }
+      .mobile-block { display:block !important; width:100% !important; box-sizing:border-box !important; }
+      .mobile-center { text-align:center !important; }
+      .hide-mobile { display:none !important; max-height:0 !important; overflow:hidden !important; }
+      .mobile-no-border { border-left:none !important; padding-left:0 !important; }
+      .carousel-scroll { overflow-x:scroll !important; -webkit-overflow-scrolling:touch !important; display:block !important; width:100% !important; white-space:nowrap !important; }
+      .carousel-item { display:inline-block !important; float:none !important; white-space:normal !important; }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f4f7f5;">
-  <center style="width: 100%; table-layout: fixed; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; background-color: #f4f7f5; padding: 30px 0;">
-    <!--[if mso]>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="680" align="center" style="width:680px; margin:0 auto;">
-      <tr>
-        <td align="center" valign="top" style="padding:0; margin:0;">
-    <![endif]-->
-    <div class="wrapper" style="max-width: 680px; margin: 0 auto; background: #FFFFFF; border-radius: 2px; overflow: hidden; box-shadow: 0 8px 40px rgba(40,51,111,0.15);">
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-pattern"></div>
-    <div class="header-overlay"></div>
-    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="position: relative; z-index: 2;">
-      <tr>
-        <td style="padding: 36px 40px 32px;" class="mobile-padding">
-          <table width="100%" cellpadding="0" cellspacing="0" border="0">
-            <tr>
-              <td width="120" valign="middle" align="center" style="width:120px;" class="mobile-stack header-logo-container">
-                <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png" alt="Musée Virtuel de Guinée" width="120" style="width: 120px; max-width: 100%; height: auto; display: block; margin: 0 auto;" />
-              </td>
-              <td width="24" style="width: 24px;" class="hide-mobile"></td>
-              <td valign="middle" style="border-left: 3px solid #b45332; padding-left: 24px;" class="mobile-stack header-text-container mobile-center">
-                <p style="font-family: 'Alexandria', 'Lato', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 3.5px; text-transform: uppercase; color: #b45332; margin: 0 0 6px 0;">${label}</p>
-                <h1 style="font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0;">${title.replace('N°', 'N°&nbsp;')}</h1>
-                <p style="font-size: 12px; font-weight: 300; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin: 8px 0 0 0;">${edition}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </div>
-  <div class="gold-band"></div>
+<body style="margin:0; padding:0; background-color:#f4f7f5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
 
-  <!-- BODY -->
-  ${isFullWidth ? bodyContent : '<div class="mobile-padding" style="padding: 40px; background: #f4f7f5; color: #121526; line-height: 1.7; font-size: 15px;">' + bodyContent + '</div>'}
+  <!-- Table de fond générale -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7f5" style="background-color:#f4f7f5;">
+    <tr>
+      <td align="center" valign="top" style="padding:30px 10px;">
 
-  <!-- FOOTER -->
-  <div class="footer mobile-padding">
-    <div class="footer-inner">
-       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom: 1px solid rgba(180,83,50,0.2); padding-bottom: 20px; margin-bottom: 18px;">
-        <tr>
-          <td valign="top" align="center" style="padding-bottom: 16px;">
-            <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png" alt="MVG" width="100" style="width: 100px; display: block; margin: 0 auto; height: auto;">
-            <p style="margin: 12px auto 0; font-size: 11px; color: rgba(255,255,255,0.4); line-height: 1.5; max-width: 240px; text-align: center;">Musée Virtuel de Guinée — Préserver et diffuser le patrimoine culturel guinéen.</p>
-          </td>
-        </tr>
-        <tr>
-          <td valign="top" align="center">
-            <h4 style="font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase; color: #b45332; margin: 0 0 12px 0;">Suivez-nous</h4>
-            <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
-              <tr>
-                <td align="center" style="padding: 0 6px;">
-                  <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; display:block;">
-                    <img src="https://img.icons8.com/ios-filled/36/b45332/facebook-new.png" alt="Facebook" width="36" height="36" style="display:block; border:none;" />
-                  </a>
-                </td>
-                <td align="center" style="padding: 0 6px;">
-                  <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none; display:block;">
-                    <img src="https://img.icons8.com/ios-filled/36/b45332/instagram-new.png" alt="Instagram" width="36" height="36" style="display:block; border:none;" />
-                  </a>
-                </td>
-                <td align="center" style="padding: 0 6px;">
-                  <a href="${frontendUrl}" style="text-decoration:none; display:block;">
-                    <img src="https://img.icons8.com/ios-filled/36/b45332/domain.png" alt="Web" width="36" height="36" style="display:block; border:none;" />
-                  </a>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-      <div class="footer-bottom">
-        <span style="display:block; text-align:center;">© ${new Date().getFullYear()} Musée Virtuel de Guinée — Tous droits réservés</span>
-      </div>
-    </div>
-  </div>
-  <div class="or-bar-bottom"></div>
-    </div>
-    <!--[if mso]>
-        </td>
-      </tr>
-    </table>
-    <![endif]-->
-  </center>
+        <!--[if mso]>
+        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="680" align="center" style="width:680px;"><tr><td>
+        <![endif]-->
+
+        <!-- Carte email principale -->
+         <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="#ffffff"
+           style="max-width:680px; width:100%; background-color:#FFFFFF; font-family:Arial,Helvetica,sans-serif;">
+
+          <!-- ══════════════ HEADER ══════════════ -->
+          <!-- Fond bleu marine uni (pas de gradient, pas de position:absolute) -->
+          <tr>
+            <td bgcolor="#28336f" style="background-color:#28336f; padding:0; margin:0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="mobile-pad" style="padding:36px 40px 32px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <!-- Logo -->
+                        <td width="120" valign="middle" align="center" style="width:120px;">
+                          <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png"
+                               alt="Musée Virtuel de Guinée" width="120"
+                               style="width:120px; max-width:100%; height:auto; display:block; margin:0 auto;" />
+                        </td>
+                        <!-- Espaceur desktop -->
+                        <td class="hide-mobile" width="24" style="width:24px;">&nbsp;</td>
+                        <!-- Titre + label -->
+                        <td valign="middle" class="mobile-block mobile-no-border mobile-center"
+                            style="border-left:3px solid #b45332; padding-left:24px; font-family:Arial,Helvetica,sans-serif;">
+                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:3.5px; text-transform:uppercase; color:#b45332; margin:0 0 6px 0;"><font color="#b45332">${label}</font></p>
+                          <h1 style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:#FFFFFF; line-height:1.25; margin:0;"><font color="#ffffff">${title.replace('N°', 'N°&nbsp;')}</font></h1>
+                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:300; letter-spacing:1.5px; color:rgba(255,255,255,0.6); margin:8px 0 0 0;"><font color="#ffffff">${edition}</font></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Bande couleur (couleur solide — pas de linear-gradient, ignoré par Outlook) -->
+          <tr>
+            <td height="8" style="height:8px; background-color:#b45332; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
+          </tr>
+
+          <!-- ══════════════ BODY ══════════════ -->
+          <tr>
+            <td bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:0; margin:0;">
+              ${bodyWrapper}
+            </td>
+          </tr>
+
+          <!-- ══════════════ FOOTER ══════════════ -->
+          <!-- Fond bleu marine uni, pas de ::after pseudo-element (ignoré par Outlook) -->
+          <tr>
+            <td class="mobile-pad" bgcolor="#28336f" style="background-color:#28336f; padding:32px 40px 24px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="border-bottom:1px solid #5a4030; padding-bottom:20px; margin-bottom:18px;">
+                <tr>
+                  <td align="center" style="padding-bottom:16px;">
+                    <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png"
+                         alt="MVG" width="100"
+                         style="width:100px; height:auto; display:block; margin:0 auto;" />
+                    <p style="margin:12px auto 0; font-size:11px; color:rgba(255,255,255,0.4); line-height:1.5; text-align:center; font-family:Arial,Helvetica,sans-serif;">
+                      Musée Virtuel de Guinée &mdash; Préserver et diffuser le patrimoine culturel guinéen.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <h4 style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:#b45332; margin:0 0 12px 0;">Suivez-nous</h4>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                      <tr>
+                        <td align="center" style="padding:0 6px;">
+                          <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; display:block;">
+                            <img src="https://img.icons8.com/ios-filled/36/b45332/facebook-new.png" alt="Facebook" width="36" height="36" style="display:block; border:none;" />
+                          </a>
+                        </td>
+                        <td align="center" style="padding:0 6px;">
+                          <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none; display:block;">
+                            <img src="https://img.icons8.com/ios-filled/36/b45332/instagram-new.png" alt="Instagram" width="36" height="36" style="display:block; border:none;" />
+                          </a>
+                        </td>
+                        <td align="center" style="padding:0 6px;">
+                          <a href="${frontendUrl}" style="text-decoration:none; display:block;">
+                            <img src="https://img.icons8.com/ios-filled/36/b45332/domain.png" alt="Site Web" width="36" height="36" style="display:block; border:none;" />
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <!-- Copyright -->
+              <p style="text-align:center; font-size:10px; color:rgba(255,255,255,0.3); margin:0; font-family:Arial,Helvetica,sans-serif;">
+                &copy; ${new Date().getFullYear()} Musée Virtuel de Guinée &mdash; Tous droits réservés
+              </p>
+            </td>
+          </tr>
+
+          <!-- Barre de bas de page (couleur solide) -->
+          <tr>
+            <td height="5" style="height:5px; background-color:#b45332; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
+          </tr>
+
+        </table>
+        <!-- /Carte email -->
+
+        <!--[if mso]></td></tr></table><![endif]-->
+
+      </td>
+    </tr>
+  </table>
+
 </body>
-</html>`;
+</html>`
 }
 
 // ─── Event detail block ────────────────────────────────────────────────────────
@@ -364,16 +297,16 @@ function eventBlock(evenement) {
   const rowsHtml = rows.map(([label, value]) => `
     <tr>
       <td style="padding:10px 16px;border-bottom:1px solid #bdcec8;">
-        <span style="color:#b45332;font-size:13px;font-family:'Alexandria',sans-serif;">${label}</span>
+        <span style="color:#b45332;font-size:13px;font-family:Arial,Helvetica,sans-serif;">${label}</span>
       </td>
       <td style="padding:10px 16px;border-bottom:1px solid #bdcec8;">
-        <span style="color:#28336f;font-size:14px;font-family:'Alexandria',sans-serif;font-weight:bold;">${value}</span>
+        <span style="color:#28336f;font-size:14px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">${value}</span>
       </td>
     </tr>
   `).join('')
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;overflow:hidden;margin:24px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;overflow:hidden;margin:24px 0;">
       ${rowsHtml}
     </table>
   `
@@ -405,26 +338,26 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
 
   const body = `
     <!-- Greeting -->
-    <p style="margin:0 0 8px;color:#b45332;font-size:13px;font-family:'Alexandria',sans-serif;letter-spacing:1px;text-transform:uppercase;">
+    <p style="margin:0 0 8px;color:#b45332;font-size:13px;font-family:Arial, Helvetica, sans-serif;letter-spacing:1px;text-transform:uppercase;">
       ${isReminder ? 'Rappel d’invitation' : 'Invitation personnelle'}
     </p>
-    <h2 style="margin:0 0 24px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+    <h2 style="margin:0 0 24px;color:#28336f;font-size:22px;font-weight:bold;font-family:Arial, Helvetica, sans-serif;">
       Cher(e) <strong>${fullName}</strong>,
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial, Helvetica, sans-serif;">
       ${customIntro}
     </p>
 
     <!-- Event title -->
-    <div style="background:linear-gradient(135deg,#28336f,#b45332);border-radius:8px;padding:20px 24px;margin:0 0 20px;text-align:center;">
-      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:'Alexandria',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#28336f" style="background-color:#28336f;margin:0 0 20px;"><tr><td align="center" bgcolor="#28336f" style="padding:20px 24px;text-align:center;">
+      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;"><font color="#ffffff">
         ${evenement.titre}
-      </h3>
-    </div>
+      </font></h3>
+    </td></tr></table>
 
     ${evenement.description ? `
-    <p style="margin:0 0 20px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 20px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       ${evenement.description}
     </p>
     ` : ''}
@@ -433,14 +366,14 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
 
     <!-- Organisation mention -->
     ${invite.organisation ? `
-    <p style="margin:0 0 20px;color:#b45332;font-size:14px;font-style:italic;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 20px;color:#b45332;font-size:14px;font-style:italic;font-family:Arial,Helvetica,sans-serif;">
       En votre qualité de représentant(e) de <strong>${invite.organisation}</strong>${invite.titre_poste ? ` — ${invite.titre_poste}` : ''}.
     </p>
     ` : ''}
 
     ${qrImgUrl ? `
     <!-- QR Code pass -->
-    <div style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;padding:24px;margin:24px 0;text-align:center;font-family:'Alexandria',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;margin:24px 0;font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" bgcolor="#f4f7f5" style="text-align:center;font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0 0 6px;color:#28336f;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
         Votre pass d'accès (QR Code)
       </p>
@@ -452,39 +385,36 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
         alt="QR Code d'accès — ${evenement.titre}"
         width="180"
         height="180"
-        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;box-shadow:0 2px 12px rgba(40,51,111,0.15);"
+        align="center"
+        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;"
       />
-      <div style="margin-top:20px;">
-        <a href="${rsvpUrl}"
-           style="display:inline-block;background:linear-gradient(135deg,#b45332,#da373d);color:#FFFFFF;text-decoration:none;font-family:'Alexandria',sans-serif;font-size:14px;font-weight:bold;padding:12px 28px;border-radius:6px;letter-spacing:0.5px;">
-          Confirmer ma présence en ligne →
-        </a>
-      </div>
-      <p style="margin:12px 0 0;color:#28336f;font-size:11px;opacity:0.8;">
+      <table role="presentation" align="center" cellpadding="12" cellspacing="0" border="0" bgcolor="#b45332" style="margin:20px auto 0;"><tr><td align="center" bgcolor="#b45332">
+        <a href="${rsvpUrl}" style="color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"><font color="#ffffff">Confirmer ma présence en ligne →</font></a>
+      </td></tr></table>
+      <p style="margin:12px 0 0;color:#28336f;font-size:11px;">
         Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
       </p>
-    </div>
+    </td></tr></table>
     ` : `
     <!-- RSVP section -->
-    <div style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;padding:24px;margin:24px 0;text-align:center;">
-      <p style="margin:0 0 8px;color:#28336f;font-size:13px;font-family:'Alexandria',sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
+    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;margin:24px 0;"><tr><td align="center" bgcolor="#f4f7f5" style="text-align:center;">
+      <p style="margin:0 0 8px;color:#28336f;font-size:13px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
         Merci de confirmer votre présence
       </p>
-      <p style="margin:0 0 20px;color:#121526;font-size:13px;font-family:'Alexandria',sans-serif;">
+      <p style="margin:0 0 20px;color:#121526;font-size:13px;font-family:Arial,Helvetica,sans-serif;">
         Cliquez sur le bouton ci-dessous pour répondre à cette invitation.
       </p>
-      <a href="${rsvpUrl}"
-         style="display:inline-block;background:linear-gradient(135deg,#b45332,#da373d);color:#FFFFFF;text-decoration:none;font-family:'Alexandria',sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
-        Répondre à l'invitation →
-      </a>
-      <p style="margin:16px 0 0;color:#28336f;font-size:11px;font-family:'Alexandria',sans-serif;opacity:0.8;">
+      <table role="presentation" align="center" cellpadding="14" cellspacing="0" border="0" bgcolor="#b45332"><tr><td align="center" bgcolor="#b45332">
+        <a href="${rsvpUrl}" style="color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;"><font color="#ffffff">Répondre à l'invitation →</font></a>
+      </td></tr></table>
+      <p style="margin:16px 0 0;color:#28336f;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
         Ou copiez ce lien dans votre navigateur :<br />
         <span style="color:#b45332;">${rsvpUrl}</span>
       </p>
-    </div>
+    </td></tr></table>
     `}
 
-    <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous espérons avoir le plaisir de vous accueillir lors de cet événement.<br />
       <span style="color:#b45332;">${customSignature}</span>
     </p>
@@ -516,15 +446,15 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
  */
 export async function sendContactMessage({ prenom, nom, email, sujet, message, recipient }) {
   const body = `
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
       Nouveau message de contact
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Une nouvelle demande a été envoyée depuis le site du Musée Virtuel de Guinée.
     </p>
 
-    <div style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;padding:20px;margin:24px 0;font-family:'Alexandria',sans-serif;">
+    <div style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;padding:20px;margin:24px 0;font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0 0 8px;color:#b45332;font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">Informations</p>
       <p style="margin:0 0 6px;color:#121526;font-size:14px;"><strong>Nom :</strong> ${prenom} ${nom}</p>
       <p style="margin:0 0 6px;color:#121526;font-size:14px;"><strong>Email :</strong> ${email}</p>
@@ -532,7 +462,7 @@ export async function sendContactMessage({ prenom, nom, email, sujet, message, r
       <p style="margin:12px 0 0;color:#121526;font-size:14px;line-height:1.7;"><strong>Message :</strong><br />${message.replace(/\n/g, '<br />')}</p>
     </div>
 
-    <p style="margin:0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Merci de traiter cette demande dans les meilleurs délais.<br />
       <span style="color:#b45332;">— L'équipe du Musée Virtuel de Guinée</span>
     </p>
@@ -563,25 +493,25 @@ export async function sendContactMessage({ prenom, nom, email, sujet, message, r
  */
 export async function sendContactReceipt({ prenom, email, sujet }) {
   const body = `
-    <div style="background:linear-gradient(135deg,#b45332,#da373d);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
-      <p style="margin:0;color:#FFFFFF;font-size:16px;font-family:'Alexandria',sans-serif;font-weight:bold;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#b45332;margin:0 0 24px;"><tr><td style="padding:16px 24px;text-align:center;">
+      <p style="margin:0;color:#FFFFFF;font-size:16px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">
         ✉️ Accusé de réception
       </p>
-    </div>
+    </td></tr></table>
 
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
       Bonjour ${prenom},
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous avons bien reçu votre message concernant le sujet <strong>"${sujet}"</strong>.
     </p>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Notre équipe vous répondra dans les plus brefs délais (généralement sous 48h).
     </p>
 
-    <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Cordialement,<br />
       <span style="color:#b45332;">— L'équipe du Musée Virtuel de Guinée</span>
     </p>
@@ -624,31 +554,31 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
 
   const body = `
     <!-- Success banner -->
-    <div style="background:linear-gradient(135deg,#3e502a,#bdcec8);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
-      <p style="margin:0;color:#ffffff;font-size:16px;font-family:'Alexandria',sans-serif;font-weight:bold;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#3e502a;margin:0 0 24px;"><tr><td style="padding:16px 24px;text-align:center;">
+      <p style="margin:0;color:#ffffff;font-size:16px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">
         ✅ Inscription confirmée !
       </p>
-    </div>
+    </td></tr></table>
 
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
       Cher(e) <strong>${fullName}</strong>,
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous avons bien enregistré votre participation à l'événement&nbsp;:
     </p>
 
     <!-- Event title -->
-    <div style="background:linear-gradient(135deg,#28336f,#b45332);border-radius:8px;padding:20px 24px;margin:0 0 20px;text-align:center;">
-      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:'Alexandria',sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#28336f;margin:0 0 20px;"><tr><td style="padding:20px 24px;text-align:center;">
+      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;">
         ${evenement.titre}
       </h3>
-    </div>
+    </td></tr></table>
 
     ${eventBlock(evenement)}
 
     <!-- QR Code section -->
-    <div style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;padding:28px;margin:24px 0;text-align:center;font-family:'Alexandria',sans-serif;">
+    <div style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;padding:28px;margin:24px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0 0 6px;color:#28336f;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
         Votre QR Code d'accès
       </p>
@@ -660,15 +590,15 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
-        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;box-shadow:0 2px 12px rgba(40,51,111,0.15);"
+        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;"
       />
-      <p style="margin:16px 0 0;color:#28336f;font-size:11px;opacity:0.8;">
+      <p style="margin:16px 0 0;color:#28336f;font-size:11px;">
         Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
       </p>
-    </div>
+    </td></tr></table>
 
     <!-- Reminder box -->
-    <div style="border-left:4px solid #b45332;padding:12px 16px;background-color:#f4f7f5;border-radius:0 6px 6px 0;margin:0 0 24px;font-family:'Alexandria',sans-serif;">
+    <div style="border-left:4px solid #b45332;padding:12px 16px;background-color:#f4f7f5;border-radius:0 6px 6px 0;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0;color:#28336f;font-size:13px;font-weight:bold;">
         Rappel important
       </p>
@@ -679,7 +609,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
       </ul>
     </div>
 
-    <p style="margin:0;color:#121526;font-size:14px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+    <p style="margin:0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous vous souhaitons une excellente journée et espérons vous voir bientôt.<br />
       <span style="color:#b45332;">— L'équipe du Musée Virtuel de Guinée</span>
     </p>
@@ -712,11 +642,11 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
 export async function sendNewsletterWelcome({ email }) {
   const body = `
     <!-- Success banner -->
-    <div style="background:linear-gradient(135deg,#b45332,#da373d);border-radius:8px;padding:16px 24px;margin:0 0 24px;text-align:center;">
-      <p style="margin:0;color:#FFFFFF;font-size:16px;font-family:'Alexandria',sans-serif;font-weight:bold;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#b45332;margin:0 0 24px;"><tr><td style="padding:16px 24px;text-align:center;">
+      <p style="margin:0;color:#FFFFFF;font-size:16px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">
         🎉 Bienvenue dans notre communauté !
       </p>
-    </div>
+    </td></tr></table>
 
     <h2 style="margin:0 0 16px;color:#3a2010;font-size:22px;font-weight:normal;">
       Bonjour,
@@ -762,17 +692,17 @@ export function generateNewsletterHtml({ titre, description, imageUrl, linkUrl, 
   if (contenuPersonnalise) {
     // Manual newsletter
     body = `
-      <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+      <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
         ${titre}
       </h2>
-      <div style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+      <div style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
         ${contenuPersonnalise.replace(/\n/g, '<br />')}
       </div>
     `;
     if (linkUrl) {
       body += `
         <div style="text-align:center;margin:32px 0;">
-          <a href="${linkUrl}" style="display:inline-block;background:linear-gradient(135deg,#b45332,#da373d);color:#FFFFFF;text-decoration:none;font-family:'Alexandria',sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
+          <a href="${linkUrl}" style="display:inline-block;background-color:#b45332;color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
             Découvrir
           </a>
         </div>
@@ -783,17 +713,17 @@ export function generateNewsletterHtml({ titre, description, imageUrl, linkUrl, 
     body = `
       ${imageUrl ? `
         <div style="text-align:center;margin-bottom:24px;">
-          <img src="${imageUrl}" alt="${titre}" width="600" style="max-width:100%;width:100%;height:auto;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);" />
+          <img src="${imageUrl}" alt="${titre}" width="600" style="max-width:100%;width:100%;height:auto;border-radius:8px;" />
         </div>
       ` : ''}
-      <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:'Alexandria',sans-serif;">
+      <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
         ${titre}
       </h2>
-      <p style="margin:0 0 24px;color:#121526;font-size:15px;line-height:1.7;font-family:'Alexandria',sans-serif;">
+      <p style="margin:0 0 24px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
         ${description}
       </p>
       <div style="text-align:center;margin:32px 0;">
-        <a href="${linkUrl}" style="display:inline-block;background:linear-gradient(135deg,#b45332,#da373d);color:#FFFFFF;text-decoration:none;font-family:'Alexandria',sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
+        <a href="${linkUrl}" style="display:inline-block;background-color:#b45332;color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;padding:14px 36px;border-radius:6px;letter-spacing:0.5px;">
           Lire la suite
         </a>
       </div>
@@ -900,8 +830,8 @@ export function generateBulletinHtml(data) {
       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
         <img src="${media.url}" width="${w}" height="${h}" style="width:${w}px;height:${h}px;display:block;margin:0 auto;border-radius:6px;" alt="Galerie" />
       </a>
-      <h4 style="font-family:'Alexandria',sans-serif;font-size:14px;font-weight:700;color:#28336f;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
-      ${media.description ? `<p style="font-family:'Alexandria',sans-serif;font-size:12px;color:#b45332;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
+      <h4 style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#28336f;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#b45332;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
       <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
       `;
     };
@@ -916,8 +846,8 @@ export function generateBulletinHtml(data) {
       <a href="${media.link || media.url}" target="_blank" style="text-decoration:none;display:block;text-align:center;">
         <img src="${media.url}" width="260" height="160" style="width:100%;max-width:260px;height:160px;object-fit:cover;border-radius:6px;display:block;margin:0 auto;" alt="Galerie" />
       </a>
-      <h4 style="font-family:'Alexandria',sans-serif;font-size:14px;font-weight:700;color:#28336f;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
-      ${media.description ? `<p style="font-family:'Alexandria',sans-serif;font-size:12px;color:#b45332;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
+      <h4 style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#28336f;margin:12px 0 6px 0;line-height:1.3;text-align:left;">${media.titre || ''}</h4>
+      ${media.description ? `<p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#b45332;line-height:1.45;margin:0 0 12px 0;text-align:left;">${media.description}</p>` : ''}
       <div style="text-align:center;margin-top:8px;">${btnHtml}</div>
       `;
     };
@@ -974,9 +904,9 @@ export function generateBulletinHtml(data) {
 
   const body = `
   <!-- ████ SOMMAIRE ████ -->
-  <div class="sommaire mobile-padding" style="background: #28336f; padding: 18px 40px; text-align: center;">
-    <p style="font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: #b45332; margin: 0 0 12px 0;">Sommaire</p>
-    <div style="font-family: 'Alexandria', 'Lato', sans-serif; font-size: 13px; line-height: 2;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="mobile-pad" style="background-color:#28336f;padding:18px 40px;text-align:center;">
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#b45332;margin:0 0 12px 0;">Sommaire</p>
+    <div style="font-family:Arial,Helvetica,sans-serif; font-size: 13px; line-height: 2;">
       <a href="#edito" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(180,83,50,0.3); padding-bottom: 1px;">L'Édito</a>
       &nbsp;&nbsp;<span style="color: rgba(255,255,255,0.2);">·</span>&nbsp;&nbsp;
       <a href="#actualites" style="color: rgba(255,255,255,0.85); text-decoration: none; border-bottom: 1px solid rgba(180,83,50,0.3); padding-bottom: 1px;">Actualités du projet</a>
@@ -993,11 +923,11 @@ export function generateBulletinHtml(data) {
 
   <!-- ████ EDITO ████ -->
   <a name="edito"></a>
-  <div class="edito mobile-padding" id="edito">
-    <div class="section-label">L'Édito</div>
-    <div class="edito-inner">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td id="edito" class="mobile-pad" style="padding:40px 40px 32px;background-color:#f4f7f5;border-top:1px solid rgba(40,51,111,0.12);">
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#da373d;margin:0 0 14px 0;border-left:3px solid #b45332;padding-left:8px;">L'Édito</div>
+    <div>
       <div style="margin-bottom: 24px;">
-        <h2>${editoTitre}</h2>
+        <h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#28336f;line-height:1.2;margin:0 0 14px 0;">${editoTitre}</h2>
         ${editoHtml}
         <table cellpadding="0" cellspacing="0" border="0" style="margin-top: 18px;">
           <tr>
@@ -1013,8 +943,8 @@ export function generateBulletinHtml(data) {
         </table>
       </div>
       ${editoBref.length > 0 ? `
-      <div class="edito-aside">
-        <p class="aside-title">📌 En bref ce mois-ci</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#28336f;padding:20px 18px;margin-top:24px;"><tr><td style="padding:20px 18px;">
+        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;color:#b45332;margin:0 0 14px 0;padding-bottom:8px;border-bottom:1px solid rgba(180,83,50,0.25);">📌 En bref ce mois-ci</p>
         <table cellpadding="0" cellspacing="0" border="0" width="100%">
           ${editoBref.map(item => {
             const label = typeof item === 'string' ? item : (item.text || '');
@@ -1037,17 +967,17 @@ export function generateBulletinHtml(data) {
   <!-- ████ ACTUALITES ████ -->
   ${actus.length > 0 ? `
   <a name="actualites"></a>
-  <div class="actualites mobile-padding" id="actualites">
-    <div class="section-label">Actualités du projet</div>
-    <h2>Ce qui s'est passé ce mois-ci</h2>
-    <div class="actu-grid" style="display: block;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td id="actualites" class="mobile-pad" style="padding:36px 40px;background-color:#FFFFFF;">
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#da373d;margin:0 0 14px 0;border-left:3px solid #b45332;padding-left:8px;">Actualités du projet</div>
+    <h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:#28336f;margin:0 0 24px 0;">Ce qui s'est passé ce mois-ci</h2>
+    <div style="display:block;">
       ${actus.map((actu, index) => `
       <div style="border: 1px solid rgba(40,51,111,0.15); border-radius: 2px; overflow: hidden; margin-bottom: 16px; background: #ffffff;">
         <div style="height: 8px; background: ${index === 0 ? '#da373d' : (index === 1 ? '#b45332' : '#bdcec8')};"></div>
         ${actu.imageUrl ? `<img src="${actu.imageUrl}" width="598" height="250" style="width: 100%; max-width: 598px; height: 250px; object-fit: cover; display: block;" alt="Actualité" />` : ''}
         <div style="padding: 16px;">
           <p style="font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: ${index === 0 ? '#da373d' : (index === 1 ? '#b45332' : '#3e502a')}; margin: 0 0 6px 0;">${actu.tag || 'Actualité'}</p>
-          <h3 style="font-family: 'Alexandria', sans-serif; font-size: 16px; font-weight: 700; color: #28336f; margin: 0 0 8px 0; line-height: 1.3;">${actu.titre}</h3>
+          <h3 style="font-family:Arial,Helvetica,sans-serif; font-size: 16px; font-weight: 700; color: #28336f; margin: 0 0 8px 0; line-height: 1.3;">${actu.titre}</h3>
           <p style="font-size: 13px; color: #5A3E28; line-height: 1.6; margin: 0 0 12px 0;">${actu.description}</p>
           <a href="${actu.linkUrl}" style="color:#da373d; font-size:12px; font-weight:bold; text-decoration:none;">Lire la suite →</a>
         </div>
@@ -1060,15 +990,15 @@ export function generateBulletinHtml(data) {
   <!-- ████ ZOOM SUR ████ -->
   ${zoomTitre ? `
   <a name="zoom"></a>
-  <div class="zoom mobile-padding" id="zoom" style="background-color: #28336f;">
-    <div class="zoom-inner">
-      <div class="section-label">Zoom sur…</div>
-      <h2>${zoomTitre}</h2>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td id="zoom" class="mobile-pad" style="padding:36px 40px;background-color:#28336f;">
+    <div>
+      <p style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#da373d;margin:0 0 14px 0;border-left:3px solid #b45332;padding-left:8px;">Zoom sur…</div>
+      <h2 style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;margin:0 0 12px 0;">${zoomTitre}</h2>
       <p style="color: #FFFFFF;">${zoomTexte.replace(/\n/g, '<br />')}</p>
       
       <!-- Médias Zoom (Email-safe stacked layout + beautiful CSS slide carousel in modern web/preview views) -->
       ${zoomMedia && zoomMedia.length > 0 ? `
-      <div class="zoom-media-gallery" style="margin-top: 24px;">
+      <div style="margin-top:24px;">
         <!--[if mso]>
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;table-layout:fixed;">
           ${zoomMedia.map((media, index) => {
@@ -1134,9 +1064,9 @@ export function generateBulletinHtml(data) {
   <!-- ████ NEXT STEP ████ -->
   ${etapes.length > 0 ? `
   <a name="nextstep"></a>
-  <div class="nextstep mobile-padding" id="nextstep">
-    <div class="section-label">Prochaines étapes</div>
-    <h2>Au programme du mois prochain</h2>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td id="nextstep" class="mobile-pad" style="padding:36px 40px;background-color:#f4f7f5;">
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#da373d;margin:0 0 14px 0;border-left:3px solid #b45332;padding-left:8px;">Prochaines étapes</div>
+    <h2 style="font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:700;color:#28336f;margin:0 0 20px 0;">Au programme du mois prochain</h2>
     <table cellpadding="0" cellspacing="0" border="0" width="100%">
       ${etapes.map((etape, index) => `
       <tr>
@@ -1164,7 +1094,7 @@ export function generateBulletinHtml(data) {
   ${galerie && galerie.medias && galerie.medias.length > 0 ? `
   <a name="galerie"></a>
   <div class="galerie mobile-padding" id="galerie" style="padding: 36px 40px; background: #FFFFFF; border-top: 1px solid rgba(40,51,111,0.12);">
-    <div class="section-label">${galerie.titre || 'Visuels'}</div>
+    <p style="font-family:Arial,Helvetica,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#da373d;margin:0 0 14px 0;border-left:3px solid #b45332;padding-left:8px;">${galerie.titre || 'Visuels'}</div>
     <h2 style="font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 900; color: #28336f; margin-bottom: 24px; margin-top: 0;">${galerie.titre || 'Rétrospective visuelle'}</h2>
     
     ${galerieHtml}
