@@ -170,10 +170,13 @@
         </div>
 
         <!-- Bannière mise à jour PWA -->
-        <div v-if="needsRefresh" class="pwa-update-banner">
+        <div v-if="needsRefresh && canApproveAppUpdate" class="pwa-update-banner">
           <AppIcon name="refresh-cw" :size="16" />
-          <span>Nouvelle version disponible</span>
-          <button @click="updateApp">Mettre à jour</button>
+          <span>Nouvelle version disponible pour toute l’application</span>
+          <button @click="approveAppUpdate" :disabled="approvingUpdate || !pendingBuildHash">
+            {{ approvingUpdate ? 'Publication…' : 'Publier pour tous' }}
+          </button>
+          <span v-if="updateApprovalError" role="alert">{{ updateApprovalError }}</span>
         </div>
 
         <main>
@@ -512,13 +515,73 @@ const { needRefresh: needsRefresh, updateServiceWorker } = useRegisterSW({
     r && setInterval(() => r.update(), 60_000)
   }
 })
-function updateApp() {
-  updateServiceWorker(true)
-}
 
 const route = useRoute()
 const router = useRouter()
 const apiStore = useApiStore()
+const canApproveAppUpdate = computed(() => ['admin', 'super_admin'].includes(apiStore.userRole))
+const pendingBuildHash = ref('')
+const approvingUpdate = ref(false)
+const updateApprovalError = ref('')
+let updateApprovalPoll = null
+let isCheckingUpdateApproval = false
+
+async function getPendingBuildHash() {
+  const registration = await navigator.serviceWorker?.getRegistration()
+  const waitingWorker = registration?.waiting
+  if (!waitingWorker) return null
+
+  const response = await fetch(waitingWorker.scriptURL, { cache: 'no-store' })
+  if (!response.ok) throw new Error('Impossible de vérifier la version du service worker')
+
+  const source = await response.arrayBuffer()
+  const digest = await crypto.subtle.digest('SHA-256', source)
+  return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function checkGlobalUpdateApproval() {
+  if (!needsRefresh.value || isCheckingUpdateApproval) return
+  isCheckingUpdateApproval = true
+
+  try {
+    const buildHash = await getPendingBuildHash()
+    if (!buildHash) return
+    pendingBuildHash.value = buildHash
+
+    if (canApproveAppUpdate.value) return
+
+    const release = await apiStore.get('/api/app-updates')
+    if (release.buildHash === buildHash) updateServiceWorker(true)
+  } catch (error) {
+    console.warn('Vérification de la mise à jour globale impossible :', error.message)
+  } finally {
+    isCheckingUpdateApproval = false
+  }
+}
+
+watch(needsRefresh, (hasPendingUpdate) => {
+  clearInterval(updateApprovalPoll)
+  pendingBuildHash.value = ''
+  if (!hasPendingUpdate) return
+
+  checkGlobalUpdateApproval()
+  updateApprovalPoll = setInterval(checkGlobalUpdateApproval, 15000)
+}, { immediate: true })
+
+async function approveAppUpdate() {
+  if (!pendingBuildHash.value || approvingUpdate.value) return
+
+  approvingUpdate.value = true
+  updateApprovalError.value = ''
+  try {
+    await apiStore.post('/api/app-updates/approve', { buildHash: pendingBuildHash.value })
+    updateServiceWorker(true)
+  } catch (error) {
+    updateApprovalError.value = error.message || 'La publication de la mise à jour a échoué.'
+  } finally {
+    approvingUpdate.value = false
+  }
+}
 
 // Détection réactive du sous-domaine admin
 const isAdminDomain = computed(() => {
@@ -768,6 +831,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('open-login', openLogin)
   window.removeEventListener('scroll', onScroll)
+  clearInterval(updateApprovalPoll)
   if (particlesCleanUp) particlesCleanUp()
 })
 </script>

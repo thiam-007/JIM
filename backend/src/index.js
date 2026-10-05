@@ -20,6 +20,7 @@ import revuePresseRouter from './routes/revuePresse.js'
 import heroSlidesRouter from './routes/heroSlides.js'
 import livreDorRouter from './routes/livreDor.js'
 import rssRouter from './routes/rss.js'
+import appUpdatesRouter from './routes/appUpdates.js'
 
 // Services (for the public QR endpoint)
 import { generateQrPng } from './services/qrService.js'
@@ -200,6 +201,7 @@ app.get('/api/invitations/qr/:token', async (req, res, next) => {
 // ─── Protected routes (JWT required) ──────────────────────────────────────────
 
 app.use('/api/auth', authRouter)
+app.use('/api/app-updates', appUpdatesRouter)
 
 app.use('/api/evenements', evenementsRouter)
 app.use('/api/invites', invitesRouter)
