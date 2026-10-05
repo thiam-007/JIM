@@ -110,6 +110,41 @@
             class="inv-search-input"
           />
         </div>
+        <div class="inv-actions">
+          <RouterLink
+            :to="`/invitations/${eventId}/demandes`"
+            class="inv-icon-action inv-requests-link"
+            title="Consulter les demandes reçues"
+            aria-label="Demandes reçues"
+          >
+            <AppIcon name="mail" :size="16" />
+            <span class="compact-action-label">Demandes reçues</span>
+          </RouterLink>
+          <RouterLink
+            :to="`/checkin/${eventId}`"
+            class="btn-scan inv-icon-action inv-icon-action-blue"
+            title="Lancer le scanner"
+            aria-label="Lancer le scanner"
+          >
+            <AppIcon name="scan" :size="16" />
+            <span class="compact-action-label">Lancer le scanner</span>
+          </RouterLink>
+          <button class="btn-send" title="Envoyer les invitations en attente" aria-label="Envoyer les invitations en attente" @click="sendPending" :disabled="sending || pendingCount === 0">
+            <AppIcon :name="sending ? 'loader' : 'send'" :size="15" />
+            Envoyer ({{ pendingCount }})
+          </button>
+          <button class="btn-send btn-reminder" title="Relancer les invités sans réponse" aria-label="Relancer les invités sans réponse" @click="sendReminders" :disabled="sending || reminderCount === 0">
+            <AppIcon :name="sending ? 'loader' : 'refresh-cw'" :size="15" />
+            Relancer ({{ reminderCount }})
+          </button>
+          <button class="inv-icon-action inv-report-action" type="button" @click="printEventReport" title="Exporter le rapport PDF de l’événement" aria-label="Exporter le rapport PDF de l’événement">
+            <AppIcon name="file-text" :size="16" />
+            <span class="compact-action-label">Rapport PDF</span>
+          </button>
+          <button class="btn-create" @click="openAddInvites">
+            <AppIcon name="plus" :size="15" /> Ajouter des invités
+          </button>
+        </div>
         <div class="inv-filter-wrap">
           <select v-model="filterStatut" class="inv-filter-select">
             <option value="">Tous les statuts</option>
@@ -120,28 +155,6 @@
             <option value="decline">Déclinés</option>
             <option value="present">Présents</option>
           </select>
-        </div>
-        <div class="inv-actions">
-          <RouterLink :to="`/invitations/${eventId}/demandes`" class="btn-import">
-            <AppIcon name="mail" :size="15" /> Demandes reçues
-          </RouterLink>
-          <RouterLink :to="`/checkin/${eventId}`" class="btn-scan">
-            <AppIcon name="scan" :size="15" /> Lancer le Scanner
-          </RouterLink>
-          <button class="btn-send" @click="sendPending" :disabled="sending || pendingCount === 0">
-            <AppIcon :name="sending ? 'loader' : 'send'" :size="15" />
-            Envoyer invitations ({{ pendingCount }})
-          </button>
-          <button class="btn-send btn-reminder" @click="sendReminders" :disabled="sending || reminderCount === 0">
-            <AppIcon :name="sending ? 'loader' : 'refresh-cw'" :size="15" />
-            Relancer sans réponse ({{ reminderCount }})
-          </button>
-          <button class="btn-import" type="button" @click="printEventReport" title="Exporter le rapport PDF de l’événement">
-            <AppIcon name="file-text" :size="15" /> Rapport PDF
-          </button>
-          <button class="btn-create" @click="openAddInvites">
-            <AppIcon name="plus" :size="15" /> Ajouter des invités
-          </button>
         </div>
       </div>
     </div>
@@ -1109,6 +1122,22 @@ async function importExcelOrCSV(event) {
 }
 .btn-scan:hover { background: #1565c0; color: #fff; }
 
+.inv-requests-link {
+  color: #934329;
+}
+.inv-icon-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0;
+  border: 1.5px solid rgba(180,83,50,.28); border-radius: 50%;
+  background: rgba(180,83,50,.08); color: #934329; text-decoration: none;
+  flex: 0 0 44px; cursor: pointer; transition: background .2s, color .2s, border-color .2s;
+}
+.inv-icon-action:hover { border-color: #b45332; background: #b45332; color: #fff; }
+.inv-icon-action-blue { border-color: rgba(21,101,192,.3); background: rgba(21,101,192,.1); color: #1565c0; }
+.inv-icon-action-blue:hover { border-color: #1565c0; background: #1565c0; color: #fff; }
+.inv-icon-action:focus-visible { outline: 3px solid rgba(180,83,50,.35); outline-offset: 2px; }
+.compact-action-label { display: none; }
+
 /* Loading */
 .inv-loading {
   display: flex; align-items: center; justify-content: center; gap: 14px;
@@ -1171,11 +1200,14 @@ async function importExcelOrCSV(event) {
 
 @media (min-width: 769px) {
   .inv-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; }
-  .inv-search-wrap { flex: 1; min-width: 180px; width: auto; }
-  .inv-actions { flex-direction: row; width: auto; flex-shrink: 0; flex-wrap: wrap; }
-  .btn-send, .btn-create, .btn-scan { white-space: nowrap; min-height: 0; }
+  .inv-search-wrap { flex: 1 1 100%; min-width: 180px; width: 100%; }
+  .inv-actions { flex: 1 1 auto; flex-direction: row; width: auto; min-width: 0; flex-shrink: 1; flex-wrap: nowrap; justify-content: space-between; gap: 10px; }
+  .inv-filter-wrap { flex: 0 0 auto; }
+  .btn-send, .btn-create, .btn-scan { white-space: nowrap; min-height: 44px; }
 }
 @media (max-width: 768px) {
+  .inv-icon-action { width: auto; min-width: 0; height: 44px; min-height: 44px; padding: 0 14px; flex: 0 1 auto; border-radius: 999px; }
+  .compact-action-label { display: inline; }
   .row-btn-qr, .row-btn-delete {
     width: 44px; height: 44px;
   }
