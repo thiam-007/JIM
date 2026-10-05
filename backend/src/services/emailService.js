@@ -319,6 +319,12 @@ function eventBlock(evenement) {
  * @param {{ invite: object, evenement: object, rsvpUrl: string }} params
  */
 export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = false, token }) {
+  const startDate = Date.parse(evenement?.date_debut)
+  const endDate = Date.parse(evenement?.date_fin)
+  if (!Number.isFinite(startDate) || !Number.isFinite(endDate) || endDate < startDate) {
+    throw new Error('Les dates et heures de début et de fin de l’événement doivent être renseignées et valides.')
+  }
+
   const fullName = `${invite.prenom} ${invite.nom}`
   const escapeText = value => String(value || '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character])
   const customIntro = evenement.email_intro

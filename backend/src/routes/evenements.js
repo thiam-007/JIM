@@ -6,6 +6,19 @@ import { recordAudit } from '../utils/audit.js'
 
 const router = Router()
 
+function validateEventSchedule(date_debut, date_fin) {
+  if (!date_debut || !date_fin) return 'Les dates et heures de début et de fin sont obligatoires'
+
+  const start = new Date(date_debut)
+  const end = new Date(date_fin)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return 'Les dates et heures de l’événement sont invalides'
+  }
+  if (end < start) return 'La date et l’heure de fin doivent être postérieures au début'
+
+  return null
+}
+
 // ─── List all evenements ───────────────────────────────────────────────────────
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
@@ -222,6 +235,8 @@ router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
     const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
 
     if (!titre) return res.status(400).json({ error: 'Le titre est requis' })
+    const scheduleError = validateEventSchedule(date_debut, date_fin)
+    if (scheduleError) return res.status(400).json({ error: scheduleError })
 
     const uploadedImageUrl = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
 
@@ -259,6 +274,11 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
     const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
+
+    if (date_debut !== undefined || date_fin !== undefined) {
+      const scheduleError = validateEventSchedule(date_debut, date_fin)
+      if (scheduleError) return res.status(400).json({ error: scheduleError })
+    }
 
     const updates = {}
     if (titre !== undefined) updates.titre = titre

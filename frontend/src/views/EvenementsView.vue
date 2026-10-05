@@ -212,12 +212,12 @@
 
               <div class="fr">
                 <div class="fg">
-                  <label>Date de début</label>
-                  <input type="datetime-local" v-model="form.date_debut" />
+                  <label>Date et heure de début *</label>
+                  <input type="datetime-local" v-model="form.date_debut" required />
                 </div>
                 <div class="fg">
-                  <label>Date de fin</label>
-                  <input type="datetime-local" v-model="form.date_fin" />
+                  <label>Date et heure de fin *</label>
+                  <input type="datetime-local" v-model="form.date_fin" :min="form.date_debut" required />
                 </div>
               </div>
 
@@ -698,6 +698,14 @@ function closeModal() {
 async function saveEvt() {
   formError.value = ''
   if (!form.value.titre.trim()) { formError.value = 'Le titre est obligatoire.'; return }
+  if (!form.value.date_debut || !form.value.date_fin) {
+    formError.value = 'Les dates et heures de début et de fin sont obligatoires.'
+    return
+  }
+  if (new Date(form.value.date_fin) < new Date(form.value.date_debut)) {
+    formError.value = 'La date et l’heure de fin doivent être postérieures au début.'
+    return
+  }
   saving.value = true
   try {
     let finalImageUrl = normalizeImageSource(form.value.image_url) || null
@@ -720,8 +728,6 @@ async function saveEvt() {
     body.partenaires = listFromInput(body.partenaires)
     body.sponsors = listFromInput(body.sponsors)
     if (!body.capacite) delete body.capacite
-    if (!body.date_debut) delete body.date_debut
-    if (!body.date_fin) delete body.date_fin
     if (editingEvt.value) {
       const updated = await api.put(`/api/evenements/${editingEvt.value.id}`, body)
       const idx = api.evenements.findIndex(e => e.id === editingEvt.value.id)
