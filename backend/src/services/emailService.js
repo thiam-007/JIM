@@ -176,7 +176,7 @@ function emailShell(bodyContent, options = {}) {
           <!-- ══════════════ HEADER ══════════════ -->
           <!-- Fond bleu marine uni (pas de gradient, pas de position:absolute) -->
           <tr>
-            <td bgcolor="#28336f" style="background-color:#28336f; padding:0; margin:0;">
+            <td bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:0; margin:0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td class="mobile-pad" style="padding:36px 40px 32px;">
@@ -184,7 +184,7 @@ function emailShell(bodyContent, options = {}) {
                       <tr>
                         <!-- Logo -->
                         <td width="120" valign="middle" align="center" style="width:120px;">
-                          <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png"
+                           <img src="${frontendUrl}/images/logo-dark.jpg"
                                alt="Musée Virtuel de Guinée" width="120"
                                style="width:120px; max-width:100%; height:auto; display:block; margin:0 auto;" />
                         </td>
@@ -194,8 +194,8 @@ function emailShell(bodyContent, options = {}) {
                         <td valign="middle" class="mobile-block mobile-no-border mobile-center"
                             style="border-left:3px solid #b45332; padding-left:24px; font-family:Arial,Helvetica,sans-serif;">
                           <p style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:3.5px; text-transform:uppercase; color:#b45332; margin:0 0 6px 0;"><font color="#b45332">${label}</font></p>
-                          <h1 style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:#FFFFFF; line-height:1.25; margin:0;"><font color="#ffffff">${title.replace('N°', 'N°&nbsp;')}</font></h1>
-                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:300; letter-spacing:1.5px; color:rgba(255,255,255,0.6); margin:8px 0 0 0;"><font color="#ffffff">${edition}</font></p>
+                          <h1 style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:#28336f; line-height:1.25; margin:0;"><font color="#28336f">${title.replace('N°', 'N°&nbsp;')}</font></h1>
+                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:300; letter-spacing:1.5px; color:#28336f; margin:8px 0 0 0;"><font color="#28336f">${edition}</font></p>
                         </td>
                       </tr>
                     </table>
@@ -220,15 +220,15 @@ function emailShell(bodyContent, options = {}) {
           <!-- ══════════════ FOOTER ══════════════ -->
           <!-- Fond bleu marine uni, pas de ::after pseudo-element (ignoré par Outlook) -->
           <tr>
-            <td class="mobile-pad" bgcolor="#28336f" style="background-color:#28336f; padding:32px 40px 24px;">
+            <td class="mobile-pad" bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:32px 40px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
                      style="border-bottom:1px solid #5a4030; padding-bottom:20px; margin-bottom:18px;">
                 <tr>
                   <td align="center" style="padding-bottom:16px;">
-                    <img src="https://vxbaqwyotalslelyhlxs.supabase.co/storage/v1/object/public/actualites/logo-white.png"
+                    <img src="${frontendUrl}/images/logo-dark.jpg"
                          alt="MVG" width="100"
                          style="width:100px; height:auto; display:block; margin:0 auto;" />
-                    <p style="margin:12px auto 0; font-size:11px; color:rgba(255,255,255,0.4); line-height:1.5; text-align:center; font-family:Arial,Helvetica,sans-serif;">
+                    <p style="margin:12px auto 0; font-size:11px; color:#28336f; line-height:1.5; text-align:center; font-family:Arial,Helvetica,sans-serif;">
                       Musée Virtuel de Guinée &mdash; Préserver et diffuser le patrimoine culturel guinéen.
                     </p>
                   </td>
@@ -259,7 +259,7 @@ function emailShell(bodyContent, options = {}) {
                 </tr>
               </table>
               <!-- Copyright -->
-              <p style="text-align:center; font-size:10px; color:rgba(255,255,255,0.3); margin:0; font-family:Arial,Helvetica,sans-serif;">
+                    <p style="text-align:center; font-size:10px; color:#28336f; margin:0; font-family:Arial,Helvetica,sans-serif;">
                 &copy; ${new Date().getFullYear()} Musée Virtuel de Guinée &mdash; Tous droits réservés
               </p>
             </td>
@@ -350,8 +350,8 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
     </p>
 
     <!-- Event title -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#28336f" style="background-color:#28336f;margin:0 0 20px;"><tr><td align="center" bgcolor="#28336f" style="padding:20px 24px;text-align:center;">
-      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;"><font color="#ffffff">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eef2ef" style="background-color:#eef2ef;margin:0 0 20px;"><tr><td align="center" bgcolor="#eef2ef" style="padding:20px 24px;text-align:center;">
+      <h3 style="margin:0;color:#28336f;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;"><font color="#28336f">
         ${evenement.titre}
       </font></h3>
     </td></tr></table>
@@ -388,8 +388,8 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
         align="center"
         style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;"
       />
-      <table role="presentation" align="center" cellpadding="12" cellspacing="0" border="0" bgcolor="#b45332" style="margin:20px auto 0;"><tr><td align="center" bgcolor="#b45332">
-        <a href="${rsvpUrl}" style="color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"><font color="#ffffff">Confirmer ma présence en ligne →</font></a>
+      <table role="presentation" align="center" cellpadding="12" cellspacing="0" border="1" bordercolor="#b45332" bgcolor="#f4f7f5" style="margin:20px auto 0;"><tr><td align="center" bgcolor="#f4f7f5">
+        <a href="${rsvpUrl}" style="color:#b45332;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"><font color="#b45332">Confirmer ma présence en ligne →</font></a>
       </td></tr></table>
       <p style="margin:12px 0 0;color:#28336f;font-size:11px;">
         Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
@@ -404,8 +404,8 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
       <p style="margin:0 0 20px;color:#121526;font-size:13px;font-family:Arial,Helvetica,sans-serif;">
         Cliquez sur le bouton ci-dessous pour répondre à cette invitation.
       </p>
-      <table role="presentation" align="center" cellpadding="14" cellspacing="0" border="0" bgcolor="#b45332"><tr><td align="center" bgcolor="#b45332">
-        <a href="${rsvpUrl}" style="color:#FFFFFF;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;"><font color="#ffffff">Répondre à l'invitation →</font></a>
+      <table role="presentation" align="center" cellpadding="14" cellspacing="0" border="1" bordercolor="#b45332" bgcolor="#f4f7f5"><tr><td align="center" bgcolor="#f4f7f5">
+        <a href="${rsvpUrl}" style="color:#b45332;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;"><font color="#b45332">Répondre à l'invitation →</font></a>
       </td></tr></table>
       <p style="margin:16px 0 0;color:#28336f;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
         Ou copiez ce lien dans votre navigateur :<br />
