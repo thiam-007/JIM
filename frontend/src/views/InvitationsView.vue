@@ -122,6 +122,9 @@
           </select>
         </div>
         <div class="inv-actions">
+          <RouterLink :to="`/invitations/${eventId}/demandes`" class="btn-import">
+            <AppIcon name="mail" :size="15" /> Demandes reçues
+          </RouterLink>
           <RouterLink :to="`/checkin/${eventId}`" class="btn-scan">
             <AppIcon name="scan" :size="15" /> Lancer le Scanner
           </RouterLink>

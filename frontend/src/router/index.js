@@ -4,9 +4,11 @@ import HomeView from '../views/HomeView.vue'
 import EvenementsView from '../views/EvenementsView.vue'
 import InvitesView from '../views/InvitesView.vue'
 import InvitationsView from '../views/InvitationsView.vue'
+import InvitationRequestsView from '../views/InvitationRequestsView.vue'
 import CheckinView from '../views/CheckinView.vue'
 import RsvpView from '../views/RsvpView.vue'
 import InscriptionView from '../views/InscriptionView.vue'
+import InvitationRequestView from '../views/InvitationRequestView.vue'
 import AproposView from '../views/AproposView.vue'
 import ActualitesView from '../views/ActualitesView.vue'
 import ActualiteDetailView from '../views/ActualiteDetailView.vue'
@@ -24,6 +26,7 @@ import { useApiStore } from '../store/api.js'
 const routes = [
   { path: '/rsvp/:token', name: 'Rsvp', component: RsvpView, meta: { public: true } },
   { path: '/inscription/:eventId', name: 'Inscription', component: InscriptionView, meta: { public: true } },
+  { path: '/demande-invitation/:eventId', name: 'InvitationRequest', component: InvitationRequestView, meta: { public: true } },
   { path: '/', name: 'Home', component: HomeView },
   { path: '/a-propos', name: 'Apropos', component: AproposView },
   { path: '/actualites', name: 'Actualites', component: ActualitesView },
@@ -37,6 +40,7 @@ const routes = [
   { path: '/evenements', name: 'Evenements', component: EvenementsView },
   { path: '/invites', name: 'Invites', component: InvitesView, meta: { roles: ['super_admin', 'admin'] } },
   { path: '/invitations/:eventId', name: 'Invitations', component: InvitationsView, meta: { roles: ['super_admin', 'admin'] } },
+  { path: '/invitations/:eventId/demandes', name: 'InvitationRequests', component: InvitationRequestsView, meta: { roles: ['super_admin', 'admin'] } },
   { path: '/checkin/:eventId', name: 'Checkin', component: CheckinView, meta: { roles: ['super_admin', 'admin', 'accueil'] } },
   { path: '/admin/actualites', name: 'ManageActualites', component: ManageActualitesView },
   { path: '/admin/utilisateurs', name: 'ManageAdmins', component: ManageAdminsView },
@@ -62,7 +66,7 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const apiStore = useApiStore()
-  const protectedRoutes = ['Invites', 'Invitations', 'Checkin', 'ManageActualites', 'ManageAdmins', 'AuditLogs', 'Profile', 'ManageNewsletters', 'ManageRevuePresse', 'ManageHeroSlides', 'ManageLivreDor']
+  const protectedRoutes = ['Invites', 'Invitations', 'InvitationRequests', 'Checkin', 'ManageActualites', 'ManageAdmins', 'AuditLogs', 'Profile', 'ManageNewsletters', 'ManageRevuePresse', 'ManageHeroSlides', 'ManageLivreDor']
   if (protectedRoutes.includes(to.name) && !apiStore.isConnected) {
     next({ name: 'Home' })
   } else {

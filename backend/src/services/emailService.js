@@ -444,6 +444,48 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
   }
 }
 
+export async function sendInvitationRequestReceipt({ request, evenement }) {
+  const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
+  const body = `
+    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous avons bien reçu votre demande d’invitation pour l’événement <strong>${escape(evenement.titre)}</strong>.</p>
+    <p style="margin:0;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">L’équipe du Musée Virtuel de Guinée va l’examiner. Cet accusé de réception ne confirme pas encore votre participation. Vous recevrez un autre e-mail si votre demande est approuvée.</p>
+  `
+
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
+  }
+
+  return transporter.sendMail({
+    from: getFromAddress(),
+    to: request.email,
+    replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
+    subject: `Demande d’invitation reçue — ${evenement.titre}`,
+    html: emailShell(body, 'DEMANDE REÇUE')
+  })
+}
+
+export async function sendInvitationRequestRejection({ request, evenement }) {
+  const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
+  const body = `
+    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
+    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Après examen, nous ne pouvons malheureusement pas donner suite à votre demande d’invitation pour <strong>${escape(evenement.titre)}</strong>.</p>
+    <p style="margin:0;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous vous remercions de votre intérêt pour le Musée Virtuel de Guinée.</p>
+  `
+
+  if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
+    throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
+  }
+
+  return transporter.sendMail({
+    from: getFromAddress(),
+    to: request.email,
+    replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
+    subject: `Réponse à votre demande d’invitation — ${evenement.titre}`,
+    html: emailShell(body, 'RÉPONSE À VOTRE DEMANDE')
+  })
+}
+
 // ─── sendConfirmation ──────────────────────────────────────────────────────────
 
 /**

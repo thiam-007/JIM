@@ -405,9 +405,17 @@
 
               <div class="ev-form-actions mt-4" style="justify-content: space-between;">
                 <button class="btn-cancel" @click="closeDetailModal">Fermer</button>
-                <button class="btn-primary-custom" @click="shareEvent" style="padding: 10px 16px; width: auto; font-size: 0.9rem;">
-                  <AppIcon name="share-2" :size="16" /> Partager
-                </button>
+                <div style="display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px;">
+                  <button v-if="detailEvt?.statut === 'publie'" class="btn-cancel" @click="router.push({ name: 'Inscription', params: { eventId: detailEvt.id } })">
+                    Inscription directe
+                  </button>
+                  <button v-if="detailEvt?.statut === 'publie'" class="btn-primary-custom" @click="router.push({ name: 'InvitationRequest', params: { eventId: detailEvt.id } })" style="padding: 10px 16px; width: auto; font-size: 0.9rem;">
+                    <AppIcon name="mail" :size="16" /> Demander une invitation
+                  </button>
+                  <button class="btn-primary-custom" @click="shareEvent" style="padding: 10px 16px; width: auto; font-size: 0.9rem;">
+                    <AppIcon name="share-2" :size="16" /> Partager
+                  </button>
+                </div>
               </div>
             </div>
           </div>
