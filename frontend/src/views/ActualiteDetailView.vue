@@ -302,6 +302,7 @@ async function submitRating(star) {
 }
 .article-meta-overlay {
   position: absolute;
+  z-index: 2;
   bottom: 0;
   left: 0;
   right: 0;
