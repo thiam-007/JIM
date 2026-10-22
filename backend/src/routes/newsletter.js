@@ -122,18 +122,35 @@ router.put('/subscribers/:id', authMiddleware, requireAdmin, async (req, res) =>
   try {
     const { id } = req.params;
     const { prenom, nom, institution, fonction, email } = req.body;
-    
+
+    // Vérifier manuellement si l'email est déjà pris par un autre abonné
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const { data: existing } = await supabase
+        .from('newsletter_subscribers')
+        .select('id')
+        .eq('email', normalizedEmail)
+        .neq('id', id)
+        .maybeSingle();
+
+      if (existing) {
+        return res.status(400).json({
+          error: `L'adresse e-mail "${normalizedEmail}" est déjà utilisée par un autre abonné. Chaque email doit être unique.`
+        });
+      }
+    }
+
     // On met à jour
     const { data, error } = await supabase
       .from('newsletter_subscribers')
-      .update({ prenom, nom, institution, fonction, email })
+      .update({ prenom, nom, institution, fonction, email: email ? email.trim().toLowerCase() : email })
       .eq('id', id)
       .select()
       .single();
 
     if (error) {
       if (error.code === '23505') {
-        return res.status(400).json({ error: "Cet e-mail est déjà utilisé par un autre abonné." });
+        return res.status(400).json({ error: "Cet e-mail est déjà utilisé par un autre abonné. Chaque adresse email doit être unique." });
       }
       throw error;
     }
@@ -141,6 +158,137 @@ router.put('/subscribers/:id', authMiddleware, requireAdmin, async (req, res) =>
   } catch (err) {
     console.error('Erreur mise à jour abonné:', err);
     res.status(500).json({ error: "Erreur lors de la mise à jour de l'abonné: " + (err.message || JSON.stringify(err)) });
+  }
+});
+
+// POST /api/newsletter/clean-duplicates (Admin)
+// Détecte et supprime les abonnés en doublon d'email.
+// Pour chaque groupe, conserve celui dont le nom correspond le mieux à la partie locale de l'email.
+router.post('/clean-duplicates', authMiddleware, requireAdmin, async (req, res) => {
+  try {
+    const { dry_run = false } = req.body;
+
+    // Récupérer tous les abonnés
+    const { data: allSubs, error: fetchErr } = await supabase
+      .from('newsletter_subscribers')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (fetchErr) throw fetchErr;
+
+    /**
+     * Normalise une chaîne : minuscules, sans accents, alphanumériques seulement.
+     */
+    function normalize(str) {
+      if (!str) return '';
+      return str
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    /**
+     * Score de correspondance nom/prénom ↔ partie locale de l'email.
+     */
+    function matchScore(subscriber, localPart) {
+      const local = normalize(localPart);
+      const prenom = normalize(subscriber.prenom);
+      const nom = normalize(subscriber.nom);
+      let score = 0;
+      if (prenom && local.includes(prenom)) score += 2;
+      if (nom && local.includes(nom)) score += 2;
+      const full = prenom + nom;
+      if (full && full.length > 2 && local.includes(full)) score += 3;
+      if (subscriber.institution) score += 0.5;
+      if (subscriber.fonction) score += 0.5;
+      return score;
+    }
+
+    // Grouper par email (insensible à la casse)
+    const groups = new Map();
+    for (const sub of allSubs) {
+      const key = sub.email.toLowerCase().trim();
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(sub);
+    }
+
+    const duplicateGroups = [...groups.entries()].filter(([, subs]) => subs.length > 1);
+
+    if (duplicateGroups.length === 0) {
+      return res.json({
+        message: 'Aucun doublon détecté. La base est déjà propre !',
+        duplicates_found: 0,
+        deleted: 0,
+        details: []
+      });
+    }
+
+    const toDelete = [];
+    const details = [];
+
+    for (const [email, subs] of duplicateGroups) {
+      const localPart = email.split('@')[0];
+
+      const sorted = [...subs].sort((a, b) => {
+        const scoreDiff = matchScore(b, localPart) - matchScore(a, localPart);
+        if (scoreDiff !== 0) return scoreDiff;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      const keeper = sorted[0];
+      const duplicates = sorted.slice(1);
+
+      details.push({
+        email,
+        kept: { id: keeper.id, prenom: keeper.prenom, nom: keeper.nom, score: matchScore(keeper, localPart) },
+        removed: duplicates.map(d => ({ id: d.id, prenom: d.prenom, nom: d.nom, score: matchScore(d, localPart) }))
+      });
+
+      for (const dup of duplicates) {
+        toDelete.push(dup.id);
+      }
+    }
+
+    if (dry_run || toDelete.length === 0) {
+      return res.json({
+        message: dry_run
+          ? `[Simulation] ${toDelete.length} doublon(s) seraient supprimés.`
+          : 'Aucun doublon à supprimer.',
+        duplicates_found: duplicateGroups.length,
+        deleted: 0,
+        details
+      });
+    }
+
+    // Supprimer par lots de 50
+    let deleted = 0;
+    const chunkSize = 50;
+    for (let i = 0; i < toDelete.length; i += chunkSize) {
+      const chunk = toDelete.slice(i, i + chunkSize);
+      const { error: delError } = await supabase
+        .from('newsletter_subscribers')
+        .delete()
+        .in('id', chunk);
+
+      if (delError) {
+        console.error('Erreur suppression doublons lot', i / chunkSize + 1, ':', delError.message);
+      } else {
+        deleted += chunk.length;
+      }
+    }
+
+    console.log(`[newsletter] Nettoyage doublons : ${deleted}/${toDelete.length} supprimés.`);
+
+    res.json({
+      message: `Nettoyage terminé : ${deleted} doublon(s) supprimé(s).`,
+      duplicates_found: duplicateGroups.length,
+      deleted,
+      details
+    });
+  } catch (err) {
+    console.error('Erreur clean-duplicates:', err);
+    res.status(500).json({ error: "Erreur lors du nettoyage : " + (err.message || JSON.stringify(err)) });
   }
 });
 
@@ -182,7 +330,7 @@ router.post('/admin/add-subscribers', authMiddleware, requireAdmin, async (req, 
   try {
     const { emails, subscribers } = req.body;
     let inputList = [];
-    
+
     if (subscribers && Array.isArray(subscribers) && subscribers.length > 0) {
       inputList = subscribers;
     } else if (emails && Array.isArray(emails) && emails.length > 0) {
@@ -193,11 +341,13 @@ router.post('/admin/add-subscribers', authMiddleware, requireAdmin, async (req, 
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const validSubsMap = new Map();
+    let invalidCount = 0;
 
     for (const sub of inputList) {
-      if (!sub.email || typeof sub.email !== 'string') continue;
+      if (!sub.email || typeof sub.email !== 'string') { invalidCount++; continue; }
       const cleanEmail = sub.email.trim().toLowerCase();
-      if (emailRegex.test(cleanEmail) && !validSubsMap.has(cleanEmail)) {
+      if (!emailRegex.test(cleanEmail)) { invalidCount++; continue; }
+      if (!validSubsMap.has(cleanEmail)) {
         validSubsMap.set(cleanEmail, {
           email: cleanEmail,
           prenom: sub.prenom?.trim() || null,
@@ -212,10 +362,12 @@ router.post('/admin/add-subscribers', authMiddleware, requireAdmin, async (req, 
     const validEmails = Array.from(validSubsMap.keys());
 
     if (validEmails.length === 0) {
-      return res.status(400).json({ error: "Aucun email valide fourni." });
+      return res.status(400).json({
+        error: `Aucun email valide fourni (${invalidCount} email(s) ignoré(s) car mal formatés ou vides).`
+      });
     }
 
-    // Fetch existing
+    // Récupérer les emails déjà existants
     const { data: existing, error: fetchErr } = await supabase
       .from('newsletter_subscribers')
       .select('email')
@@ -225,21 +377,34 @@ router.post('/admin/add-subscribers', authMiddleware, requireAdmin, async (req, 
 
     const existingEmails = existing.map(e => e.email);
     const toInsert = Array.from(validSubsMap.values()).filter(s => !existingEmails.includes(s.email));
+    const alreadyCount = existingEmails.length;
 
     if (toInsert.length > 0) {
       const { data, error: insertErr } = await supabase
         .from('newsletter_subscribers')
         .insert(toInsert)
         .select();
-      if (insertErr) throw insertErr;
-      
-      return res.json({ message: `${toInsert.length} abonné(s) ajouté(s).`, newSubscribers: data });
+      if (insertErr) {
+        if (insertErr.code === '23505') {
+          return res.status(400).json({ error: "Un ou plusieurs emails sont déjà inscrits (contrainte d'unicité). Relancez l'import." });
+        }
+        throw insertErr;
+      }
+
+      let msg = `${toInsert.length} abonné(s) ajouté(s).`;
+      if (alreadyCount > 0) msg += ` (${alreadyCount} email(s) ignoré(s) car déjà inscrits)`;
+      if (invalidCount > 0) msg += ` (${invalidCount} email(s) invalide(s) ignoré(s))`;
+
+      return res.json({ message: msg, newSubscribers: data });
     }
 
-    res.json({ message: "Tous ces emails étaient déjà inscrits.", newSubscribers: [] });
+    // Aucun nouveau à insérer
+    let msg = `Tous ces emails étaient déjà inscrits (${alreadyCount} au total).`;
+    if (invalidCount > 0) msg += ` ${invalidCount} email(s) invalide(s) ignoré(s).`;
+    res.json({ message: msg, newSubscribers: [] });
   } catch (err) {
     console.error('Erreur admin/add-subscribers:', err.message);
-    res.status(500).json({ error: "Erreur lors de l'ajout." });
+    res.status(500).json({ error: "Erreur lors de l'ajout : " + (err.message || 'Erreur serveur') });
   }
 });
 

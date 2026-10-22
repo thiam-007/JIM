@@ -423,21 +423,48 @@ async function importExcelOrCSV(event) {
       const workbook = XLSX.read(data, { type: 'array' })
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
-      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+      // Conversion en matrice pour trouver la vraie ligne d'en-têtes (ex: CONTACT, EMAIL, etc.)
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" })
+      
+      const normalizeHeader = str => String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+      
+      // Trouver l'index de la ligne contenant les en-têtes (CONTACT, EMAIL, NOM, etc.)
+      let headerRowIndex = rawRows.findIndex(row => 
+        Array.isArray(row) && row.some(cell => {
+          const norm = normalizeHeader(cell)
+          return norm === 'contact' || norm === 'email' || norm === 'nom' || norm === 'e-mail' || norm === 'courriel'
+        })
+      )
+      if (headerRowIndex === -1) headerRowIndex = 0
+
+      const headers = (rawRows[headerRowIndex] || []).map(h => String(h || '').trim())
+      const dataRows = rawRows.slice(headerRowIndex + 1)
+
+      const json = dataRows
+        .filter(row => Array.isArray(row) && row.some(c => String(c || '').trim() !== ''))
+        .map(row => {
+          const obj = {}
+          headers.forEach((h, i) => {
+            if (h) obj[h] = row[i] !== undefined ? row[i] : ""
+          })
+          return obj
+        })
       
       const records = []
       const rejected = []
       
       json.forEach((row, rowIndex) => {
-        // Recherche des clés sans sensibilité à la casse
-        const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'first name' || k.toLowerCase() === 'firstname')
-        const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom' || k.toLowerCase() === 'last name' || k.toLowerCase() === 'lastname')
-        const eKey = Object.keys(row).find(k => k.toLowerCase() === 'email' || k.toLowerCase() === 'e-mail' || k.toLowerCase() === 'courriel')
-        const tKey = Object.keys(row).find(k => k.toLowerCase() === 'téléphone' || k.toLowerCase() === 'telephone' || k.toLowerCase() === 'tel' || k.toLowerCase() === 'phone')
-        const oKey = Object.keys(row).find(k => k.toLowerCase() === 'organisation' || k.toLowerCase() === 'société' || k.toLowerCase() === 'entreprise' || k.toLowerCase() === 'company' || k.toLowerCase() === 'institution')
-        const posKey = Object.keys(row).find(k => k.toLowerCase() === 'poste' || k.toLowerCase() === 'fonction' || k.toLowerCase() === 'titre' || k.toLowerCase() === 'position' || k.toLowerCase() === 'role')
-        const notesKey = Object.keys(row).find(k => k.toLowerCase() === 'notes' || k.toLowerCase() === 'note' || k.toLowerCase() === 'observation' || k.toLowerCase() === 'observations')
-        const categoryKey = Object.keys(row).find(k => ['catégorie', 'categorie', 'category'].includes(k.toLowerCase()))
+        // Normalisation des clés sans accents ni espaces pour la comparaison
+        const normalizeKey = k => k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+
+        const pKey = Object.keys(row).find(k => ['prenom', 'first name', 'firstname', 'givenname'].includes(normalizeKey(k)))
+        const nKey = Object.keys(row).find(k => ['nom', 'last name', 'lastname', 'familyname', 'surname'].includes(normalizeKey(k)))
+        const eKey = Object.keys(row).find(k => ['email', 'e-mail', 'mail', 'courriel', 'adresse email'].includes(normalizeKey(k)))
+        const tKey = Object.keys(row).find(k => ['telephone', 'tel', 'phone', 'mobile', 'cellulaire', 'contact tel'].includes(normalizeKey(k)))
+        const oKey = Object.keys(row).find(k => ['organisation', 'organization', 'societe', 'entreprise', 'company', 'institution'].includes(normalizeKey(k)))
+        const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'titre', 'position', 'role', 'title', 'job'].includes(normalizeKey(k)))
+        const notesKey = Object.keys(row).find(k => ['notes', 'note', 'observation', 'observations', 'commentaire', 'commentaires'].includes(normalizeKey(k)))
+        const categoryKey = Object.keys(row).find(k => ['categorie', 'category'].includes(normalizeKey(k)))
         
         let prenom = pKey ? String(row[pKey]).trim() : ''
         let nom = nKey ? String(row[nKey]).trim() : ''
@@ -448,24 +475,37 @@ async function importExcelOrCSV(event) {
         const categorie = categoryKey ? String(row[categoryKey]).trim() : 'Participant'
         const notes = notesKey ? String(row[notesKey]).trim() : ''
 
-        // Gestion du cas où le nom complet figure dans une seule colonne
+        // Gestion du cas où le nom complet figure dans une seule colonne (ex: CONTACT, NOM COMPLET, NOM ET PRENOM, NAME)
         if (!prenom && !nom) {
-          const fullnameKey = Object.keys(row).find(k => k.toLowerCase().includes('nom complet') || k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom') || k.toLowerCase() === 'name' || k.toLowerCase() === 'fullname')
+          const fullnameKey = Object.keys(row).find(k => {
+            const nk = normalizeKey(k)
+            return nk === 'contact' ||
+                   nk.includes('nom complet') || 
+                   nk.includes('nom prenom') || 
+                   nk.includes('prenom nom') ||
+                   nk === 'name' || 
+                   nk === 'fullname'
+          })
           if (fullnameKey && row[fullnameKey]) {
             const parts = String(row[fullnameKey]).trim().split(/\s+/)
             if (parts.length > 1) {
               prenom = parts[0]
               nom = parts.slice(1).join(' ')
-            } else {
-              nom = parts[0]
+            } else if (parts.length === 1 && parts[0]) {
+              prenom = parts[0]
+              nom = parts[0] // Fallback pour satisfaire la validation requise
             }
           }
+        } else if (!prenom && nom) {
+          prenom = nom
+        } else if (prenom && !nom) {
+          nom = prenom
         }
 
         if (prenom && nom) {
           records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, notes })
         } else {
-          rejected.push({ row: rowIndex + 2, reason: 'Prénom ou nom manquant' })
+          rejected.push({ row: rowIndex + 2, reason: 'Prénom ou nom manquant (colonne CONTACT vide ou non reconnue)' })
         }
       })
 
@@ -483,7 +523,7 @@ async function importExcelOrCSV(event) {
       await api.fetchInvites()
     } catch (err) {
       console.error(err)
-      importMsg.value = { type: 'error', text: 'Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.' }
+      importMsg.value = { type: 'error', text: err.message || 'Erreur lors de la lecture ou de l\'import du fichier.' }
     }
   }
   

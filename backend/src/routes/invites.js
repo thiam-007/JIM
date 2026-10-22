@@ -8,6 +8,17 @@ const router = Router()
 
 router.use(authMiddleware, requireAdmin)
 
+function isDuplicateEmailError(error) {
+  return error?.code === '23505' && error.message?.includes('idx_invites_email_normalized_unique')
+}
+
+function handleInviteError(error, res, next) {
+  if (isDuplicateEmailError(error)) {
+    return res.status(409).json({ error: 'Un contact existe déjà avec cette adresse email.' })
+  }
+  return next(error)
+}
+
 // ─── List all invites (with optional search) ───────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
@@ -31,7 +42,7 @@ router.get('/', async (req, res, next) => {
     if (error) throw error
     res.json(data)
   } catch (err) {
-    next(err)
+    handleInviteError(err, res, next)
   }
 })
 
@@ -62,7 +73,7 @@ router.post('/', async (req, res, next) => {
     await recordAudit(req, { action: 'invite_created', entityType: 'invite', entityId: data.id })
     res.status(201).json(data)
   } catch (err) {
-    next(err)
+    handleInviteError(err, res, next)
   }
 })
 
@@ -116,21 +127,100 @@ router.post('/bulk', async (req, res, next) => {
       return res.status(400).json({ error: 'Aucun invité valide fourni', details: errors })
     }
 
-    const { data, error } = await supabase
-      .from('invites')
-      .insert(validInvites)
-      .select()
+    // ── Déduplication en mémoire selon le scoring nom/email ──────────────────
+    function normalizeStr(str) {
+      if (!str) return ''
+      return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '')
+    }
 
-    if (error) throw error
-    await recordAudit(req, { action: 'invites_imported', entityType: 'invite', metadata: { count: data.length, rejected: errors.length } })
+    function matchScore(sub, localPart) {
+      const local = normalizeStr(localPart)
+      const prenom = normalizeStr(sub.prenom)
+      const nom = normalizeStr(sub.nom)
+      let score = 0
+      if (prenom && local.includes(prenom)) score += 2
+      if (nom && local.includes(nom)) score += 2
+      const full = prenom + nom
+      if (full && full.length > 2 && local.includes(full)) score += 3
+      if (sub.organisation) score += 0.5
+      if (sub.titre_poste) score += 0.5
+      return score
+    }
+
+    const uniqueEmailMap = new Map()
+    const invitesWithoutEmail = []
+
+    for (const inv of validInvites) {
+      if (!inv.email) {
+        invitesWithoutEmail.push(inv)
+        continue
+      }
+      const emailKey = inv.email.toLowerCase().trim()
+      const localPart = emailKey.split('@')[0]
+      if (!uniqueEmailMap.has(emailKey)) {
+        uniqueEmailMap.set(emailKey, inv)
+      } else {
+        const existing = uniqueEmailMap.get(emailKey)
+        if (matchScore(inv, localPart) > matchScore(existing, localPart)) {
+          errors.push({ error: `Doublon ignoré dans le fichier au profit d'une meilleure correspondance: ${existing.prenom} ${existing.nom}`, data: existing })
+          uniqueEmailMap.set(emailKey, inv)
+        } else {
+          errors.push({ error: `Doublon ignoré dans le fichier: ${inv.prenom} ${inv.nom}`, data: inv })
+        }
+      }
+    }
+
+    // Vérifier les emails déjà existants en base pour ne pas violer la contrainte UNIQUE
+    const candidateEmails = Array.from(uniqueEmailMap.keys())
+    let existingEmailsSet = new Set()
+
+    if (candidateEmails.length > 0) {
+      const { data: dbExisting, error: fetchErr } = await supabase
+        .from('invites')
+        .select('email')
+        .in('email', candidateEmails)
+
+      if (fetchErr) throw fetchErr
+      if (dbExisting) {
+        existingEmailsSet = new Set(dbExisting.map(e => (e.email || '').toLowerCase().trim()).filter(Boolean))
+      }
+    }
+
+    const toInsert = [
+      ...Array.from(uniqueEmailMap.values()).filter(inv => {
+        if (existingEmailsSet.has(inv.email.toLowerCase().trim())) {
+          errors.push({ error: `Déjà existant en base (ignoré): ${inv.email}`, data: inv })
+          return false
+        }
+        return true
+      }),
+      ...invitesWithoutEmail
+    ]
+
+    let insertedData = []
+    if (toInsert.length > 0) {
+      const { data, error } = await supabase
+        .from('invites')
+        .insert(toInsert)
+        .select()
+
+      if (error) throw error
+      insertedData = data || []
+    }
+
+    await recordAudit(req, { 
+      action: 'invites_imported', 
+      entityType: 'invite', 
+      metadata: { count: insertedData.length, skipped: errors.length } 
+    })
 
     res.status(201).json({
-      created: data.length,
-      invites: data,
+      created: insertedData.length,
+      invites: insertedData,
       ...(errors.length > 0 && { skipped: errors })
     })
   } catch (err) {
-    next(err)
+    handleInviteError(err, res, next)
   }
 })
 
@@ -187,7 +277,7 @@ router.put('/:id', async (req, res, next) => {
     await recordAudit(req, { action: 'invite_updated', entityType: 'invite', entityId: req.params.id, metadata: { fields: Object.keys(updates) } })
     res.json(data)
   } catch (err) {
-    next(err)
+    handleInviteError(err, res, next)
   }
 })
 

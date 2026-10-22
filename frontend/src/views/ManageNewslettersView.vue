@@ -24,10 +24,63 @@
 
     <!-- TAB: SUBSCRIBERS -->
     <div v-else-if="currentTab === 'subscribers'">
-      <div class="campaign-actions" style="margin-bottom: 20px; text-align: right;">
-        <button class="btn-create" @click="openAddSubscriberModal">
-          <AppIcon name="user-plus" :size="16" /> Ajouter des abonnés
-        </button>
+      <div class="campaign-actions" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <!-- Bandeau d'info si des doublons ont été détectés -->
+        <div v-if="duplicateCount > 0" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #B1222A; background: rgba(177,34,42,0.07); border: 1px solid rgba(177,34,42,0.2); border-radius: 8px; padding: 8px 14px;">
+          <AppIcon name="alert-triangle" :size="15" />
+          <span><strong>{{ duplicateCount }}</strong> email(s) en doublon détecté(s).</span>
+        </div>
+        <div v-else-if="cleanupDone" style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #2e7d32; background: #e8f5e9; border: 1px solid #4caf50; border-radius: 8px; padding: 8px 14px;">
+          <AppIcon name="check-circle" :size="15" />
+          <span>Base propre — aucun doublon d'email.</span>
+        </div>
+        <div v-else style="flex: 1;"></div>
+
+        <div style="display: flex; gap: 10px;">
+          <button class="btn-cancel" @click="runCleanDuplicates(true)" :disabled="cleaning" title="Analyser sans supprimer" style="display: flex; align-items: center; gap: 6px;">
+            <AppIcon :name="cleaning ? 'loader' : 'search'" :class="{ spin: cleaning }" :size="15" />
+            Analyser les doublons
+          </button>
+          <button
+            v-if="duplicateCount > 0"
+            class="bsub"
+            style="background: linear-gradient(135deg, #B1222A, #ff4d4d); color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600;"
+            @click="runCleanDuplicates(false)"
+            :disabled="cleaning"
+            title="Supprimer les doublons définitivement"
+          >
+            <AppIcon :name="cleaning ? 'loader' : 'trash-2'" :class="{ spin: cleaning }" :size="15" />
+            {{ cleaning ? 'Nettoyage…' : `Nettoyer (${duplicateCount} doublon${duplicateCount > 1 ? 's' : ''})` }}
+          </button>
+          <button class="btn-create" @click="openAddSubscriberModal">
+            <AppIcon name="user-plus" :size="16" /> Ajouter des abonnés
+          </button>
+        </div>
+      </div>
+
+      <!-- Résultats du nettoyage -->
+      <div v-if="cleanupDetails.length > 0" class="form-card" style="margin-bottom: 20px; padding: 0; overflow: hidden;">
+        <div style="background: rgba(132,89,54,0.06); padding: 14px 20px; border-bottom: 1px solid rgba(132,89,54,0.12); display: flex; align-items: center; gap: 8px;">
+          <AppIcon name="list" :size="16" />
+          <strong style="font-size: 14px;">Détail du nettoyage</strong>
+        </div>
+        <div style="padding: 16px 20px; max-height: 320px; overflow-y: auto;">
+          <div v-for="detail in cleanupDetails" :key="detail.email" style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(132,89,54,0.1);">
+            <div style="font-weight: 600; font-size: 13px; color: var(--brun); margin-bottom: 8px;">
+              📧 {{ detail.email }}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #2e7d32; margin-bottom: 4px;">
+              <AppIcon name="check-circle" :size="13" />
+              <span>Conservé : <strong>{{ [detail.kept.prenom, detail.kept.nom].filter(Boolean).join(' ') || '(sans nom)' }}</strong></span>
+              <span style="color: #9e9e9e;">(score: {{ detail.kept.score }})</span>
+            </div>
+            <div v-for="removed in detail.removed" :key="removed.id" style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #c62828;">
+              <AppIcon name="x-circle" :size="13" />
+              <span>Supprimé : <strong>{{ [removed.prenom, removed.nom].filter(Boolean).join(' ') || '(sans nom)' }}</strong></span>
+              <span style="color: #9e9e9e;">(score: {{ removed.score }})</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="subscribers.length === 0" class="actus-empty">
@@ -623,18 +676,40 @@
             <form @submit.prevent="submitAddSubscribers" class="ev-form">
               <div class="fg" style="margin-bottom: 20px;">
                 <label>Importer depuis un fichier Excel / CSV</label>
+                <p style="font-size: 11px; color: #888; margin: 4px 0 8px;">
+                  La colonne email doit s'appeler : <strong>Email</strong>, <strong>E-mail</strong>, <strong>Mail</strong>, <strong>Courriel</strong> ou <strong>Adresse électronique</strong>.
+                </p>
                 <input type="file" accept=".xlsx, .xls, .csv" @change="handleFileUpload" />
-                <div v-if="parsedSubscribers.length > 0" style="margin-top: 10px; font-size: 13px; color: #2e7d32;">
-                  <AppIcon name="check-circle" :size="14" style="vertical-align: middle;" />
-                  {{ parsedSubscribers.length }} contact(s) extrait(s) du fichier.
+
+                <!-- Succès : aperçu des contacts extraits -->
+                <div v-if="parsedSubscribers.length > 0 && !addSubscriberError.startsWith('⚠️')" style="margin-top: 10px;">
+                  <div style="font-size: 13px; color: #2e7d32; display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                    <AppIcon name="check-circle" :size="14" />
+                    <strong>{{ parsedSubscribers.length }} contact(s) extrait(s)</strong>
+                  </div>
+                  <!-- Aperçu des 3 premiers -->
+                  <div style="background: #f5f5f5; border-radius: 6px; padding: 8px 12px; font-size: 12px; font-family: monospace; max-height: 90px; overflow-y: auto;">
+                    <div v-for="(sub, i) in parsedSubscribers.slice(0, 3)" :key="i" style="color: #333;">
+                      {{ sub.email }}<span v-if="sub.prenom || sub.nom" style="color: #888;"> — {{ [sub.prenom, sub.nom].filter(Boolean).join(' ') }}</span>
+                    </div>
+                    <div v-if="parsedSubscribers.length > 3" style="color: #9e9e9e; margin-top: 4px;">
+                      … et {{ parsedSubscribers.length - 3 }} autre(s)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Avertissement (fallback sans colonne nommée) -->
+                <div v-if="parsedSubscribers.length > 0 && addSubscriberError.startsWith('⚠️')" style="margin-top: 10px; background: #fff8e1; border: 1px solid #f9a825; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #795548;">
+                  {{ addSubscriberError }}
                 </div>
               </div>
               <div class="fg">
                 <label>Ou collez manuellement (e-mails uniquement)</label>
                 <textarea v-model="newEmailsText" rows="6" placeholder="email1@exemple.com&#10;email2@exemple.com"></textarea>
               </div>
-              
-              <div v-if="addSubscriberError" class="ev-form-error">
+
+              <!-- Erreur bloquante (aucun email trouvé) -->
+              <div v-if="addSubscriberError && !addSubscriberError.startsWith('⚠️')" class="ev-form-error" style="white-space: pre-line;">
                 <AppIcon name="alert-triangle" :size="15" /> {{ addSubscriberError }}
               </div>
               <div v-if="addSubscriberSuccess" class="ev-form-success" style="color: #2e7d32; background: #e8f5e9; border: 1px solid #4caf50; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 13px;">
@@ -746,6 +821,42 @@ const editSubscriberError = ref('')
 const editSubscriberSuccess = ref('')
 const failedEmailsList = ref([])
 const copySuccess = ref(false)
+
+// ─── Nettoyage des doublons ──────────────────────────────────────────────────
+const cleaning = ref(false)
+const duplicateCount = ref(0)
+const cleanupDone = ref(false)
+const cleanupDetails = ref([])
+
+async function runCleanDuplicates(dryRun = false) {
+  cleaning.value = true
+  cleanupDetails.value = []
+  try {
+    const res = await api.post('/api/newsletter/clean-duplicates', { dry_run: dryRun })
+
+    duplicateCount.value = dryRun ? res.duplicates_found : 0
+    cleanupDone.value = res.duplicates_found === 0
+
+    if (res.details && res.details.length > 0) {
+      cleanupDetails.value = res.details
+    }
+
+    if (!dryRun && res.deleted > 0) {
+      // Recharger la liste des abonnés
+      await fetchData()
+      cleanupDone.value = true
+    }
+
+    if (res.message) {
+      alert(res.message)
+    }
+  } catch (err) {
+    alert('Erreur lors du nettoyage : ' + (err.message || err))
+  } finally {
+    cleaning.value = false
+  }
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 const itemsPerPage = 25
 const currentPageSubscribers = ref(1)
@@ -1326,7 +1437,8 @@ function handleFileUpload(event) {
   const file = event.target.files[0]
   if (!file) return
   addSubscriberError.value = ''
-  
+  parsedSubscribers.value = []
+
   const reader = new FileReader()
   reader.onload = (e) => {
     try {
@@ -1334,56 +1446,164 @@ function handleFileUpload(event) {
       const workbook = XLSX.read(data, { type: 'array' })
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
-      const json = XLSX.utils.sheet_to_json(worksheet, { defval: "" })
+      const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" })
       
-      let extracted = []
+      const normalizeHeader = str => String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
       
-      json.forEach(row => {
-        const emailKey = Object.keys(row).find(k => k.toLowerCase().includes('email') || k.toLowerCase().includes('e-mail'))
-        const email = emailKey ? row[emailKey] : null
-        if (!email) return
-
-        let prenom = null, nom = null, institution = null, fonction = null
-
-        const nomPrenomKey = Object.keys(row).find(k => k.toLowerCase().includes('nom prénom') || k.toLowerCase().includes('nom prenom'))
-        if (nomPrenomKey && row[nomPrenomKey]) {
-           const parts = String(row[nomPrenomKey]).trim().split(' ')
-           if (parts.length > 1) {
-             nom = parts[0]
-             prenom = parts.slice(1).join(' ')
-           } else {
-             nom = parts[0]
-           }
-        } else {
-           const pKey = Object.keys(row).find(k => k.toLowerCase() === 'prénom' || k.toLowerCase() === 'prenom' || k.toLowerCase() === 'civilité')
-           const nKey = Object.keys(row).find(k => k.toLowerCase() === 'nom')
-           if (pKey) prenom = row[pKey]
-           if (nKey) nom = row[nKey]
-        }
-
-        const instKey = Object.keys(row).find(k => k.toLowerCase().includes('institution') || k.toLowerCase().includes('entité') || k.toLowerCase().includes('entite'))
-        if (instKey) institution = row[instKey]
-
-        const fKey = Object.keys(row).find(k => k.toLowerCase().includes('fonction') || k.toLowerCase().includes('statut'))
-        if (fKey) fonction = row[fKey]
-
-        extracted.push({
-          email: String(email).trim(),
-          prenom: prenom ? String(prenom).trim() : '',
-          nom: nom ? String(nom).trim() : '',
-          institution: institution ? String(institution).trim() : '',
-          fonction: fonction ? String(fonction).trim() : ''
+      let headerRowIndex = rawRows.findIndex(row => 
+        Array.isArray(row) && row.some(cell => {
+          const norm = normalizeHeader(cell)
+          return norm === 'contact' || norm === 'email' || norm === 'nom' || norm === 'e-mail' || norm === 'courriel'
         })
+      )
+      if (headerRowIndex === -1) headerRowIndex = 0
+
+      const headers = (rawRows[headerRowIndex] || []).map(h => String(h || '').trim())
+      const dataRows = rawRows.slice(headerRowIndex + 1)
+
+      const json = dataRows
+        .filter(row => Array.isArray(row) && row.some(c => String(c || '').trim() !== ''))
+        .map(row => {
+          const obj = {}
+          headers.forEach((h, i) => {
+            if (h) obj[h] = row[i] !== undefined ? row[i] : ""
+          })
+          return obj
+        })
+
+      if (json.length === 0) {
+        addSubscriberError.value = "Le fichier est vide ou ne contient aucune donnée lisible."
+        return
+      }
+
+      // ── Détection de la colonne email (très large) ──────────────────────
+      const EMAIL_PATTERNS = [
+        'email', 'e-mail', 'e_mail', 'mail', 'courriel',
+        'adresse email', 'adresse e-mail', 'adresse mail',
+        'adresse électronique', 'adresse electronique',
+        'email address', 'e-mail address', 'emailaddress'
+      ]
+
+      const allKeys = Object.keys(json[0] || {})
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+      // 1. Chercher une colonne dont le nom correspond à l'un des patterns
+      let emailKey = allKeys.find(k => {
+        const kl = k.toLowerCase().trim()
+        return EMAIL_PATTERNS.some(p => kl === p || kl.includes(p))
       })
-      
+
+      let extracted = []
+
+      if (emailKey) {
+        // Mode colonne nommée : on lit la colonne identifiée
+        json.forEach(row => {
+          const rawEmail = String(row[emailKey] ?? '').trim()
+          if (!rawEmail || !emailRegex.test(rawEmail)) return
+
+          let prenom = null, nom = null, institution = null, fonction = null
+
+          // Colonne "Nom Prénom" combinée ou "Contact"
+          const nomPrenomKey = allKeys.find(k => {
+            const kl = k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+            return kl === 'contact' ||
+                   kl.includes('nom prenom') ||
+                   kl.includes('prenom nom') ||
+                   kl.includes('fullname') || kl.includes('full name') ||
+                   kl.includes('nom complet') || kl === 'name'
+          })
+          if (nomPrenomKey && row[nomPrenomKey]) {
+            const parts = String(row[nomPrenomKey]).trim().split(/\s+/)
+            if (parts.length > 1) {
+              nom = parts[0]
+              prenom = parts.slice(1).join(' ')
+            } else {
+              nom = parts[0]
+            }
+          } else {
+            const pKey = allKeys.find(k => {
+              const kl = k.toLowerCase()
+              return kl === 'prénom' || kl === 'prenom' || kl === 'first name' ||
+                     kl === 'firstname' || kl === 'civilité' || kl === 'civilite' ||
+                     kl === 'givenname'
+            })
+            const nKey = allKeys.find(k => {
+              const kl = k.toLowerCase()
+              return kl === 'nom' || kl === 'last name' || kl === 'lastname' ||
+                     kl === 'surname' || kl === 'familyname'
+            })
+            if (pKey) prenom = String(row[pKey] ?? '').trim() || null
+            if (nKey) nom = String(row[nKey] ?? '').trim() || null
+          }
+
+          const instKey = allKeys.find(k => {
+            const kl = k.toLowerCase()
+            return kl.includes('institution') || kl.includes('entité') ||
+                   kl.includes('entite') || kl.includes('organisation') ||
+                   kl.includes('organization') || kl.includes('société') ||
+                   kl.includes('societe') || kl.includes('company')
+          })
+          if (instKey) institution = String(row[instKey] ?? '').trim() || null
+
+          const fKey = allKeys.find(k => {
+            const kl = k.toLowerCase()
+            return kl.includes('fonction') || kl.includes('poste') ||
+                   kl.includes('title') || kl.includes('role') ||
+                   kl.includes('job') || kl.includes('position')
+          })
+          if (fKey) fonction = String(row[fKey] ?? '').trim() || null
+
+          extracted.push({
+            email: rawEmail.toLowerCase(),
+            prenom: prenom || '',
+            nom: nom || '',
+            institution: institution || '',
+            fonction: fonction || ''
+          })
+        })
+      } else {
+        // Fallback : aucune colonne clairement nommée → scanner toutes les cellules
+        // et extraire celles qui ressemblent à des emails
+        json.forEach(row => {
+          for (const key of allKeys) {
+            const val = String(row[key] ?? '').trim()
+            if (val && emailRegex.test(val)) {
+              extracted.push({
+                email: val.toLowerCase(),
+                prenom: '',
+                nom: '',
+                institution: '',
+                fonction: ''
+              })
+              break // une seule adresse par ligne
+            }
+          }
+        })
+
+        if (extracted.length > 0) {
+          addSubscriberError.value =
+            `⚠️ Aucune colonne "Email" clairement identifiée — ${extracted.length} adresse(s) détectée(s) automatiquement (sans nom ni institution). Vérifiez l'aperçu avant de valider.`
+        }
+      }
+
+      if (extracted.length === 0) {
+        const colonnes = allKeys.join(', ')
+        addSubscriberError.value =
+          `Aucune adresse email valide trouvée dans ce fichier.\n` +
+          `Colonnes détectées : ${colonnes || '(aucune)'}\n` +
+          `Renommez la colonne email en "Email" ou "E-mail" et réessayez.`
+        return
+      }
+
       parsedSubscribers.value = extracted
     } catch(err) {
-      addSubscriberError.value = "Erreur lors de la lecture du fichier Excel."
+      addSubscriberError.value = "Erreur lors de la lecture du fichier. Vérifiez qu'il s'agit bien d'un fichier Excel (.xlsx, .xls) ou CSV valide."
       console.error(err)
     }
   }
   reader.readAsArrayBuffer(file)
 }
+
 
 async function submitAddSubscribers() {
   addSubscriberError.value = ''

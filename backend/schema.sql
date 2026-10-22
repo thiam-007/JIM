@@ -49,6 +49,10 @@ CREATE TABLE IF NOT EXISTS invites (
 
 ALTER TABLE invites ADD COLUMN IF NOT EXISTS categorie VARCHAR DEFAULT 'Participant';
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invites_email_normalized_unique
+  ON invites (lower(btrim(email)))
+  WHERE email IS NOT NULL AND btrim(email) <> '';
+
 -- invitations
 CREATE TABLE IF NOT EXISTS invitations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
