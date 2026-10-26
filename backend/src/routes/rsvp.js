@@ -160,28 +160,37 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
 
     const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '')
     let qr_url = null
+    let confirmationEmailSent = null
 
     // If confirmed, send confirmation email with QR code
     if (confirmed && invitation.invites?.email) {
-      const qrCodeDataUrl = await generateQrDataUrl(token, frontendUrl)
-
       try {
-        await sendConfirmation({
+        const qrCodeDataUrl = await generateQrDataUrl(token, frontendUrl)
+        const delivery = await sendConfirmation({
           invite: invitation.invites,
           evenement: invitation.evenements,
           qrCodeDataUrl,
           token
         })
+        confirmationEmailSent = true
+        console.info('Confirmation email accepted by transport', {
+          event_id: invitation.evenements.id,
+          recipient_domain: invitation.invites.email.split('@').pop(),
+          message_id: delivery?.messageId || delivery?.message_id || null
+        })
       } catch (emailErr) {
-        // Don't fail the whole request if email fails — just log it
-        console.error('Failed to send confirmation email:', emailErr)
+        confirmationEmailSent = false
+        console.error('Failed to send confirmation email:', emailErr.message)
       }
     }
 
     res.json({
       statut: updated.statut,
       date_reponse: updated.date_reponse,
-      ...(confirmed && { qr_url: `/api/invitations/qr/${token}.png` })
+      ...(confirmed && {
+        qr_url: `/api/invitations/qr/${token}.png`,
+        confirmation_email_sent: confirmationEmailSent
+      })
     })
   } catch (err) {
     next(err)

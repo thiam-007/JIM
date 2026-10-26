@@ -99,6 +99,8 @@
         </div>
         <h3>Inscription confirmée !</h3>
         <p>Votre présence est confirmée. Présentez le QR code ci-dessous à l'entrée de l'événement.</p>
+        <p v-if="confirmationEmailSent === true" class="rsvp-email-sent">Le service d’e-mail a accepté votre confirmation avec la carte et le QR code. Vérifiez aussi vos courriers indésirables si elle n’apparaît pas.</p>
+        <p v-else-if="confirmationEmailSent === false" class="rsvp-email-warning">Votre présence est confirmée, mais l’envoi du mail a échoué. Le QR code reste disponible ci-dessous; contactez l’équipe pour recevoir la carte.</p>
 
         <div class="rsvp-qr-section">
           <div class="rsvp-qr-frame">
@@ -217,6 +219,7 @@ const responding = ref(false)
 const answered = ref('')
 const rsvpError = ref('')
 const qrError = ref(false)
+const confirmationEmailSent = ref(null)
 
 onMounted(async () => {
   try {
@@ -258,6 +261,7 @@ async function respond(statut) {
     }
     const data = await res.json().catch(() => ({}))
     answered.value = statut
+    if (statut === 'inscrit') confirmationEmailSent.value = data.confirmation_email_sent ?? null
     if (invitation.value) {
       invitation.value.statut = data.statut || statut
       invitation.value.date_reponse = data.date_reponse || new Date().toISOString()
@@ -375,6 +379,9 @@ async function respond(statut) {
 .rsvp-status-icon { display: flex; justify-content: center; margin-bottom: 16px; }
 .rsvp-confirmed-card .rsvp-status-icon { color: #59623a; }
 .rsvp-confirmed-card h3 { color: #59623a; font-size: 1.2rem; }
+.rsvp-email-sent, .rsvp-email-warning { margin-top: 12px !important; padding: 10px 12px; border-radius: 6px; font-size: .84rem !important; }
+.rsvp-email-sent { background: rgba(89,98,58,.1); color: #4a5230 !important; }
+.rsvp-email-warning { background: rgba(181,121,50,.12); color: #805322 !important; }
 
 /* Declined */
 .rsvp-declined-card { border-color: rgba(122,96,80,.2); }
