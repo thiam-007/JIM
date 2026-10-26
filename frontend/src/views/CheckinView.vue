@@ -81,7 +81,7 @@
           <AppIcon name="download" :size="16" /> CSV invités
         </button>
         <button type="button" class="btn-report btn-report-secondary" @click="exportAttendanceExcel">
-          <AppIcon name="file-text" :size="16" /> Excel invités + scans
+          <AppIcon name="file-text" :size="16" /> Excel émargement
         </button>
         <select v-model="badgeCategory" class="ck-badge-category" aria-label="Catégorie des badges">
           <option value="Participant">Participant</option>
@@ -399,7 +399,6 @@ import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
-import * as XLSX from 'xlsx'
 
 const route = useRoute()
 const api = useApiStore()
@@ -1069,9 +1068,46 @@ function invitationRows() {
   ])
 }
 
-function exportAttendanceExcel() {
-  const workbook = XLSX.utils.book_new()
-  const invitationHeaders = ['Prenom', 'Nom', 'Email', 'Telephone', 'Organisation', 'Fonction', 'Statut', 'Date de reponse', 'Heure d arrivee', 'Agent']
+async function exportAttendanceExcel() {
+  const { default: ExcelJS } = await import('exceljs')
+  const workbook = new ExcelJS.Workbook()
+  const attendanceSheet = workbook.addWorksheet('Émargement')
+  attendanceSheet.columns = [
+    { header: 'Nom', key: 'nom', width: 24 },
+    { header: 'Prénom', key: 'prenom', width: 22 },
+    { header: 'Email', key: 'email', width: 32 },
+    { header: 'Téléphone', key: 'telephone', width: 18 },
+    { header: 'Fonction/Structure', key: 'fonctionStructure', width: 34 },
+    { header: 'Statut/Présence', key: 'presence', width: 20 }
+  ]
+
+  const headerRow = attendanceSheet.getRow(1)
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF174C43' } }
+  headerRow.alignment = { vertical: 'middle', wrapText: true }
+  headerRow.height = 30
+
+  invitationsList.value.forEach(invitation => {
+    const invite = invitation.invites || {}
+    const roleAndStructure = [invite.titre_poste, invite.organisation].filter(Boolean).join(' / ')
+    const row = attendanceSheet.addRow({
+      nom: invite.nom || '',
+      prenom: invite.prenom || '',
+      email: invite.email || '',
+      telephone: invite.telephone || invite.phone || '',
+      fonctionStructure: roleAndStructure,
+      presence: invitation.statut === 'present' ? 'Présent' : 'Absent'
+    })
+    row.getCell(6).dataValidation = {
+      type: 'list',
+      allowBlank: false,
+      formulae: ['"Présent,Absent"'],
+      showErrorMessage: true,
+      errorTitle: 'Valeur non valide',
+      error: 'Sélectionnez Présent ou Absent.'
+    }
+  })
+
   const scanHeaders = ['Date', 'Heure', 'Prenom', 'Nom', 'Organisation', 'Fonction', 'Agent', 'Resultat']
   const scanRows = checkinLog.value.map(entry => [
     entry.checked_at ? new Date(entry.checked_at).toLocaleDateString('fr-FR') : '',
@@ -1084,9 +1120,19 @@ function exportAttendanceExcel() {
     entry.success === false ? 'Refuse' : 'Present'
   ])
 
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([invitationHeaders, ...invitationRows()]), 'Invites')
-  XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([scanHeaders, ...scanRows]), 'Historique scans')
-  XLSX.writeFile(workbook, `${eventFileName()}_rapport.xlsx`)
+  const scanSheet = workbook.addWorksheet('Historique scans')
+  scanSheet.addRows([scanHeaders, ...scanRows])
+
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${eventFileName()}_emargement.xlsx`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 function eventFileName() {
