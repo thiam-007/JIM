@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS evenements (
   email_intro TEXT,
   email_signature TEXT,
   image_url TEXT,
+  invitation_card_url TEXT,
   statut VARCHAR DEFAULT 'brouillon',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS evenements (
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_sujet VARCHAR;
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_intro TEXT;
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS email_signature TEXT;
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS invitation_card_url TEXT;
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS programme JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS intervenants JSONB NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS partenaires JSONB NOT NULL DEFAULT '[]'::jsonb;

@@ -19,6 +19,20 @@ function validateEventSchedule(date_debut, date_fin) {
   return null
 }
 
+function validateInvitationCardUrl(value) {
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'string' || value.length > 2048) return 'URL de carte d’invitation invalide'
+  try {
+    const parsed = new URL(value)
+    if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password) {
+      return 'La carte d’invitation doit être une image accessible par URL HTTP(S)'
+    }
+  } catch {
+    return 'URL de carte d’invitation invalide'
+  }
+  return null
+}
+
 // ─── List all evenements ───────────────────────────────────────────────────────
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
@@ -232,17 +246,20 @@ router.get('/dashboard/activities', authMiddleware, requireAdmin, async (req, re
 // ─── Create evenement ─────────────────────────────────────────────────────────
 router.post('/', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, invitation_card_url, statut, format } = req.body
 
     if (!titre) return res.status(400).json({ error: 'Le titre est requis' })
     const scheduleError = validateEventSchedule(date_debut, date_fin)
     if (scheduleError) return res.status(400).json({ error: scheduleError })
+    const invitationCardUrlError = validateInvitationCardUrl(invitation_card_url)
+    if (invitationCardUrlError) return res.status(400).json({ error: invitationCardUrlError })
 
     const uploadedImageUrl = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
+    const uploadedInvitationCardUrl = invitation_card_url ? await uploadExternalUrlToSupabase(invitation_card_url, 'evenements') : null
 
     const { data, error } = await supabase
       .from('evenements')
-      .insert({ titre, description, date_debut, date_fin, lieu, capacite, programme: Array.isArray(programme) ? programme : [], intervenants: Array.isArray(intervenants) ? intervenants : [], partenaires: Array.isArray(partenaires) ? partenaires : [], sponsors: Array.isArray(sponsors) ? sponsors : [], email_sujet, email_intro, email_signature, image_url: uploadedImageUrl, statut: statut || 'brouillon', format: format || 'presentiel' })
+      .insert({ titre, description, date_debut, date_fin, lieu, capacite, programme: Array.isArray(programme) ? programme : [], intervenants: Array.isArray(intervenants) ? intervenants : [], partenaires: Array.isArray(partenaires) ? partenaires : [], sponsors: Array.isArray(sponsors) ? sponsors : [], email_sujet, email_intro, email_signature, image_url: uploadedImageUrl, invitation_card_url: uploadedInvitationCardUrl, statut: statut || 'brouillon', format: format || 'presentiel' })
       .select()
       .single()
 
@@ -273,7 +290,7 @@ router.get('/:id', optionalAuth, async (req, res, next) => {
 // ─── Update evenement ─────────────────────────────────────────────────────────
 router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
   try {
-    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, statut, format } = req.body
+    const { titre, description, date_debut, date_fin, lieu, capacite, programme, intervenants, partenaires, sponsors, email_sujet, email_intro, email_signature, image_url, invitation_card_url, statut, format } = req.body
 
     if (date_debut !== undefined || date_fin !== undefined) {
       const scheduleError = validateEventSchedule(date_debut, date_fin)
@@ -294,6 +311,11 @@ router.put('/:id', authMiddleware, requireAdmin, async (req, res, next) => {
     if (email_sujet !== undefined) updates.email_sujet = email_sujet?.trim() || null
     if (email_intro !== undefined) updates.email_intro = email_intro?.trim() || null
     if (email_signature !== undefined) updates.email_signature = email_signature?.trim() || null
+    if (invitation_card_url !== undefined) {
+      const invitationCardUrlError = validateInvitationCardUrl(invitation_card_url)
+      if (invitationCardUrlError) return res.status(400).json({ error: invitationCardUrlError })
+      updates.invitation_card_url = invitation_card_url ? await uploadExternalUrlToSupabase(invitation_card_url, 'evenements') : null
+    }
     if (image_url !== undefined) {
       updates.image_url = image_url ? await uploadExternalUrlToSupabase(image_url, 'evenements') : image_url
     }

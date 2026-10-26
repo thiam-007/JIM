@@ -306,6 +306,21 @@
                 </div>
               </div>
 
+              <div class="fg">
+                <label for="invitation-card-input">Carte d’invitation à joindre à la confirmation (JPEG ou PNG)</label>
+                <input id="invitation-card-input" type="file" accept="image/jpeg,image/png" @change="onInvitationCardChange($event)" />
+                <div v-if="invitationCardFile || form.invitation_card_url" class="preview-row" style="margin-top: 12px;">
+                  <div class="preview-img-wrap">
+                    <img :src="invitationCardFile ? invitationCardFile.base64 : getPreviewSrc(form.invitation_card_url)" class="preview-img" alt="Aperçu de la carte d’invitation" />
+                  </div>
+                  <div class="preview-details">
+                    <div class="preview-filename">{{ invitationCardFile?.name || 'Carte d’invitation actuelle' }}</div>
+                    <button type="button" class="btn-cancel" style="margin-top: 8px;" @click="removeInvitationCard">Retirer la carte</button>
+                  </div>
+                </div>
+                <small style="display: block; margin-top: 6px; color: #6a5040;">Cette image sera jointe au mail de confirmation, en plus du QR code. Taille maximale : 7 Mo.</small>
+              </div>
+
               <div v-if="formError" class="ev-form-error">
                 <AppIcon name="alert-triangle" :size="15" /> {{ formError }}
               </div>
@@ -497,10 +512,12 @@ const form = ref({
   intervenants: [],
   partenaires: [],
   sponsors: [],
-  image_url: ''
+  image_url: '',
+  invitation_card_url: ''
 })
 
 const imageFile = ref(null) // { base64: '', name: '', mimeType: '' }
+const invitationCardFile = ref(null)
 const imageMode = ref('file') // 'file' | 'url'
 const imagePlaceholder = '/images/side-photo.jpeg'
 
@@ -563,6 +580,39 @@ function removeFile() {
   const input = document.getElementById('event-file-input')
   if (input) input.value = ''
   form.value.image_url = ''
+}
+
+function onInvitationCardChange(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  if (!['image/jpeg', 'image/png'].includes(file.type)) {
+    formError.value = 'La carte d’invitation doit être au format JPEG ou PNG.'
+    event.target.value = ''
+    return
+  }
+  if (file.size > 7 * 1024 * 1024) {
+    formError.value = 'La carte d’invitation ne doit pas dépasser 7 Mo.'
+    event.target.value = ''
+    return
+  }
+
+  formError.value = ''
+  const reader = new FileReader()
+  reader.onload = result => {
+    invitationCardFile.value = {
+      base64: result.target.result,
+      name: file.name,
+      mimeType: file.type
+    }
+  }
+  reader.readAsDataURL(file)
+}
+
+function removeInvitationCard() {
+  invitationCardFile.value = null
+  form.value.invitation_card_url = ''
+  const input = document.getElementById('invitation-card-input')
+  if (input) input.value = ''
 }
 
 onMounted(async () => {
@@ -654,8 +704,9 @@ function statutLabel(statut) {
 
 function openCreate() {
   editingEvt.value = null
-  form.value = { titre: '', description: '', date_debut: '', date_fin: '', lieu: '', capacite: '', format: 'presentiel', statut: 'brouillon', email_sujet: '', email_intro: '', email_signature: '', programme: [], intervenants: [], partenaires: [], sponsors: [], image_url: '' }
+  form.value = { titre: '', description: '', date_debut: '', date_fin: '', lieu: '', capacite: '', format: 'presentiel', statut: 'brouillon', email_sujet: '', email_intro: '', email_signature: '', programme: [], intervenants: [], partenaires: [], sponsors: [], image_url: '', invitation_card_url: '' }
   imageFile.value = null
+  invitationCardFile.value = null
   imageMode.value = 'file'
   formError.value = ''
   showModal.value = true
@@ -679,9 +730,11 @@ function openEdit(evt) {
     intervenants: Array.isArray(evt.intervenants) ? evt.intervenants.join(', ') : '',
     partenaires: Array.isArray(evt.partenaires) ? evt.partenaires.join(', ') : '',
     sponsors: Array.isArray(evt.sponsors) ? evt.sponsors.join(', ') : '',
-    image_url: evt.image_url === '/images/side-photo.jpeg' ? '' : (evt.image_url || '')
+    image_url: evt.image_url === '/images/side-photo.jpeg' ? '' : (evt.image_url || ''),
+    invitation_card_url: evt.invitation_card_url || ''
   }
   imageFile.value = null
+  invitationCardFile.value = null
   imageMode.value = (evt.image_url && !evt.image_url.startsWith('data:') && !evt.image_url.includes('supabase.co') && evt.image_url !== '/images/side-photo.jpeg') ? 'url' : 'file'
   formError.value = ''
   showModal.value = true
@@ -725,9 +778,21 @@ async function saveEvt() {
       finalImageUrl = uploadRes.url
     }
 
+    let finalInvitationCardUrl = normalizeImageSource(form.value.invitation_card_url) || null
+    if (invitationCardFile.value) {
+      const uploadRes = await api.post('/api/actualites/upload', {
+        file: invitationCardFile.value.base64,
+        fileName: invitationCardFile.value.name,
+        mimeType: invitationCardFile.value.mimeType,
+        bucket: 'evenements'
+      })
+      finalInvitationCardUrl = uploadRes.url
+    }
+
     const body = { 
       ...form.value,
-      image_url: finalImageUrl
+      image_url: finalImageUrl,
+      invitation_card_url: finalInvitationCardUrl
     }
     body.intervenants = listFromInput(body.intervenants)
     body.partenaires = listFromInput(body.partenaires)

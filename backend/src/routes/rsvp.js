@@ -17,7 +17,7 @@ const rsvpLimiter = rateLimit({
 async function promoteNextWaiting(evenementId) {
   const { data: waiting, error } = await supabase
     .from('invitations')
-    .select('id, token, invites ( prenom, nom, email, organisation, titre_poste ), evenements ( id, titre, description, date_debut, date_fin, lieu )')
+    .select('id, token, invites ( prenom, nom, email, organisation, titre_poste ), evenements ( id, titre, description, date_debut, date_fin, lieu, invitation_card_url )')
     .eq('evenement_id', evenementId)
     .eq('statut', 'liste_attente')
     .order('created_at', { ascending: true })
@@ -126,7 +126,7 @@ router.post('/:token', rsvpLimiter, async (req, res, next) => {
         revoked_at,
         statut,
         invites ( prenom, nom, email, organisation, titre_poste ),
-        evenements ( id, titre, description, date_debut, date_fin, lieu, image_url )
+        evenements ( id, titre, description, date_debut, date_fin, lieu, image_url, invitation_card_url )
       `)
       .eq('token', token)
       .single()

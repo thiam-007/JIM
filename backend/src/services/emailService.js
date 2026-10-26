@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { validateRemoteUrl } from '../utils/remoteUrl.js'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -115,6 +116,60 @@ const INVITATION_COLORS = {
   headerText: '#fffaf0',
   footer: '#59623a',
   footerText: '#fffaf0'
+}
+
+async function getInvitationCardAttachment(cardUrl) {
+  if (!cardUrl) return null
+
+  try {
+    const safeUrl = await validateRemoteUrl(cardUrl)
+    const response = await fetch(safeUrl, {
+      redirect: 'manual',
+      signal: AbortSignal.timeout(10000)
+    })
+    if (!response.ok || [301, 302, 303, 307, 308].includes(response.status)) {
+      throw new Error(`Téléchargement de la carte refusé (${response.status})`)
+    }
+
+    const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
+    if (!['image/jpeg', 'image/png'].includes(contentType)) {
+      throw new Error('La carte doit être un fichier JPEG ou PNG')
+    }
+
+    const maxSize = 8 * 1024 * 1024
+    const declaredSize = Number(response.headers.get('content-length'))
+    if (declaredSize > maxSize) throw new Error('La carte dépasse 8 Mo')
+
+    const reader = response.body?.getReader()
+    if (!reader) throw new Error('Fichier de carte vide')
+    const chunks = []
+    let totalSize = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      totalSize += value.byteLength
+      if (totalSize > maxSize) {
+        await reader.cancel()
+        throw new Error('La carte dépasse 8 Mo')
+      }
+      chunks.push(Buffer.from(value))
+    }
+
+    const image = Buffer.concat(chunks)
+    const isPng = contentType === 'image/png' && image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+    const isJpeg = contentType === 'image/jpeg' && image[0] === 255 && image[1] === 216 && image[2] === 255
+    if (!image.length || (!isPng && !isJpeg)) throw new Error('Le contenu de la carte n’est pas un JPEG ou PNG valide')
+
+    const extension = isPng ? 'png' : 'jpg'
+    return {
+      filename: `carte-invitation.${extension}`,
+      content: image.toString('base64'),
+      encoding: 'base64'
+    }
+  } catch (error) {
+    console.warn('Carte d’invitation non jointe à la confirmation:', error.message)
+    return null
+  }
 }
 
 /**
@@ -655,7 +710,8 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
     ${eventBlock(evenement, true)}
 
     <!-- QR Code section -->
-    <div style="background-color:${palette.canvas};border:2px solid ${palette.border};border-radius:10px;padding:28px;margin:24px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="${palette.border}" bgcolor="${palette.canvas}" style="background-color:${palette.canvas};border:2px solid ${palette.border};margin:24px 0;font-family:Arial,Helvetica,sans-serif;">
+      <tr><td align="center" bgcolor="${palette.canvas}" style="padding:28px;text-align:center;font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0 0 6px;color:${palette.heading};font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
         Votre QR Code d'accès
       </p>
@@ -672,10 +728,14 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
       <p style="margin:16px 0 0;color:${palette.heading};font-size:11px;">
         Réf. invitation : <code style="color:${palette.ochre};background:${palette.soft};padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
       </p>
-    </td></tr></table>
+      </td></tr>
+    </table>
 
     <!-- Reminder box -->
-    <div style="border-left:4px solid ${palette.ochre};padding:12px 16px;background-color:${palette.canvas};border-radius:0 6px 6px 0;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
+      <tr>
+        <td width="4" bgcolor="${palette.ochre}" style="width:4px;font-size:0;line-height:0;">&nbsp;</td>
+        <td bgcolor="${palette.canvas}" style="padding:12px 16px;background-color:${palette.canvas};font-family:Arial,Helvetica,sans-serif;">
       <p style="margin:0;color:${palette.heading};font-size:13px;font-weight:bold;">
         Rappel important
       </p>
@@ -684,7 +744,9 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
         <li>Présentez-vous ${evenement.lieu ? `à <strong>${evenement.lieu}</strong>` : "au lieu indiqué"} le ${formatDateFr(evenement.date_debut)}.</li>
         <li>Le QR code est strictement personnel et non transférable.</li>
       </ul>
-    </div>
+        </td>
+      </tr>
+    </table>
 
     <p style="margin:0;color:${palette.text};font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous vous souhaitons une excellente journée et espérons vous voir bientôt.<br />
@@ -696,6 +758,16 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
     throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
+  const cardAttachment = await getInvitationCardAttachment(evenement.invitation_card_url)
+  const attachments = [
+    ...(cardAttachment ? [cardAttachment] : []),
+    ...(qrCodeDataUrl ? [{
+      filename: 'qr-code-mvg.png',
+      content: qrCodeDataUrl.includes(',') ? qrCodeDataUrl.split(',')[1] : qrCodeDataUrl,
+      encoding: 'base64'
+    }] : [])
+  ]
+
   try {
     const info = await transporter.sendMail({
       from: getFromAddress(),
@@ -703,12 +775,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
       replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Confirmation — ${evenement.titre}`,
       html: emailShell(body, { title: 'CONFIRMATION', palette: 'invitation' }),
-      attachments: qrCodeDataUrl ? [
-        {
-          filename: 'qr-code-mvg.png',
-          content: qrCodeDataUrl.includes(',') ? qrCodeDataUrl.split(',')[1] : qrCodeDataUrl
-        }
-      ] : []
+      attachments
     })
     return info
   } catch (error) {
