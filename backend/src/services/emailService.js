@@ -102,6 +102,21 @@ function formatDateFr(iso) {
   }).replace(',', ' à')
 }
 
+const INVITATION_COLORS = {
+  canvas: '#f5f1e7',
+  surface: '#fffdf8',
+  text: '#352b22',
+  accent: '#b57932',
+  ochre: '#b57932',
+  heading: '#59623a',
+  border: '#d8cfb9',
+  soft: '#ece6d6',
+  header: '#4a3025',
+  headerText: '#fffaf0',
+  footer: '#59623a',
+  footerText: '#fffaf0'
+}
+
 /**
  * Shared HTML email shell with brand colours.
  * ✅ Compatible Outlook Desktop (Word engine), Exchange, Lotus Notes, clients institutionnels.
@@ -119,13 +134,20 @@ function emailShell(bodyContent, options = {}) {
   const edition = options.edition || 'Musée Virtuel de Guinée'
   const label = options.label || 'NOTIFICATION'
   const isFullWidth = options.isFullWidth || false
+  const isInvitation = typeof options === 'object' && options.palette === 'invitation'
+  const colors = isInvitation
+    ? INVITATION_COLORS
+    : { canvas: '#f4f7f5', surface: '#ffffff', text: '#121526', accent: '#b45332', heading: '#28336f', border: '#bdcec8', soft: '#eef2ef', header: '#f4f7f5', headerText: '#28336f', footer: '#f4f7f5', footerText: '#28336f' }
+  const logoSrc = isInvitation ? '/images/logo-white.png' : '/images/logo-dark.jpg'
+  const headerLogoWidth = isInvitation ? 100 : 120
+  const footerLogoWidth = isInvitation ? 82 : 100
 
   // Wrapper du body : fullWidth passe le contenu directement, sinon on emballe dans une cellule paddée
   const bodyWrapper = isFullWidth
     ? bodyContent
     : `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="mobile-pad" bgcolor="#f4f7f5" style="padding:40px; background-color:#f4f7f5; color:#121526; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.7;">
+          <td class="mobile-pad" bgcolor="${colors.canvas}" style="padding:40px; background-color:${colors.canvas}; color:${colors.text}; font-family:Arial,Helvetica,sans-serif; font-size:15px; line-height:1.7;">
             ${bodyContent}
           </td>
         </tr>
@@ -158,10 +180,10 @@ function emailShell(bodyContent, options = {}) {
     }
   </style>
 </head>
-<body style="margin:0; padding:0; background-color:#f4f7f5; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
+<body style="margin:0; padding:0; background-color:${colors.canvas}; -webkit-text-size-adjust:100%; -ms-text-size-adjust:100%;">
 
   <!-- Table de fond générale -->
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f4f7f5" style="background-color:#f4f7f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${colors.canvas}" style="background-color:${colors.canvas};">
     <tr>
       <td align="center" valign="top" style="padding:30px 10px;">
 
@@ -170,32 +192,32 @@ function emailShell(bodyContent, options = {}) {
         <![endif]-->
 
         <!-- Carte email principale -->
-         <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="#ffffff"
-           style="max-width:680px; width:100%; background-color:#FFFFFF; font-family:Arial,Helvetica,sans-serif;">
+         <table role="presentation" class="wrapper" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" bgcolor="${colors.surface}"
+           style="max-width:680px; width:100%; background-color:${colors.surface}; font-family:Arial,Helvetica,sans-serif;">
 
           <!-- ══════════════ HEADER ══════════════ -->
-          <!-- Fond bleu marine uni (pas de gradient, pas de position:absolute) -->
+          <!-- Bandeau de marque uni, compatible Outlook -->
           <tr>
-            <td bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:0; margin:0;">
+            <td bgcolor="${colors.header}" style="background-color:${colors.header}; padding:0; margin:0;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td class="mobile-pad" style="padding:36px 40px 32px;">
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <!-- Logo -->
-                        <td width="120" valign="middle" align="center" style="width:120px;">
-                           <img src="${frontendUrl}/images/logo-dark.jpg"
-                               alt="Musée Virtuel de Guinée" width="120"
-                               style="width:120px; max-width:100%; height:auto; display:block; margin:0 auto;" />
+                        <td width="${headerLogoWidth}" valign="middle" align="center" style="width:${headerLogoWidth}px;">
+                           <img src="${frontendUrl}${logoSrc}"
+                             alt="Musée Virtuel de Guinée" width="${headerLogoWidth}"
+                             style="width:${headerLogoWidth}px; max-width:100%; height:auto; display:block; margin:0 auto;" />
                         </td>
                         <!-- Espaceur desktop -->
                         <td class="hide-mobile" width="24" style="width:24px;">&nbsp;</td>
                         <!-- Titre + label -->
                         <td valign="middle" class="mobile-block mobile-no-border mobile-center"
-                            style="border-left:3px solid #b45332; padding-left:24px; font-family:Arial,Helvetica,sans-serif;">
-                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:3.5px; text-transform:uppercase; color:#b45332; margin:0 0 6px 0;"><font color="#b45332">${label}</font></p>
-                          <h1 style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:#28336f; line-height:1.25; margin:0;"><font color="#28336f">${title.replace('N°', 'N°&nbsp;')}</font></h1>
-                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:300; letter-spacing:1.5px; color:#28336f; margin:8px 0 0 0;"><font color="#28336f">${edition}</font></p>
+                            style="border-left:3px solid ${colors.accent}; padding-left:24px; font-family:Arial,Helvetica,sans-serif;">
+                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:3.5px; text-transform:uppercase; color:${colors.accent}; margin:0 0 6px 0;"><font color="${colors.accent}">${label}</font></p>
+                          <h1 style="font-family:Arial,Helvetica,sans-serif; font-size:24px; font-weight:700; color:${colors.headerText}; line-height:1.25; margin:0;"><font color="${colors.headerText}">${title.replace('N°', 'N°&nbsp;')}</font></h1>
+                          <p style="font-family:Arial,Helvetica,sans-serif; font-size:12px; font-weight:300; letter-spacing:1.5px; color:${colors.headerText}; margin:8px 0 0 0;"><font color="${colors.headerText}">${edition}</font></p>
                         </td>
                       </tr>
                     </table>
@@ -207,12 +229,12 @@ function emailShell(bodyContent, options = {}) {
 
           <!-- Bande couleur (couleur solide — pas de linear-gradient, ignoré par Outlook) -->
           <tr>
-            <td height="8" style="height:8px; background-color:#b45332; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
+            <td height="8" style="height:8px; background-color:${colors.accent}; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
           </tr>
 
           <!-- ══════════════ BODY ══════════════ -->
           <tr>
-            <td bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:0; margin:0;">
+            <td bgcolor="${colors.canvas}" style="background-color:${colors.canvas}; padding:0; margin:0;">
               ${bodyWrapper}
             </td>
           </tr>
@@ -220,37 +242,37 @@ function emailShell(bodyContent, options = {}) {
           <!-- ══════════════ FOOTER ══════════════ -->
           <!-- Fond bleu marine uni, pas de ::after pseudo-element (ignoré par Outlook) -->
           <tr>
-            <td class="mobile-pad" bgcolor="#f4f7f5" style="background-color:#f4f7f5; padding:32px 40px 24px;">
+            <td class="mobile-pad" bgcolor="${colors.footer}" style="background-color:${colors.footer}; padding:32px 40px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
-                     style="border-bottom:1px solid #5a4030; padding-bottom:20px; margin-bottom:18px;">
+                     style="border-bottom:1px solid ${colors.border}; padding-bottom:20px; margin-bottom:18px;">
                 <tr>
                   <td align="center" style="padding-bottom:16px;">
-                    <img src="${frontendUrl}/images/logo-dark.jpg"
-                         alt="MVG" width="100"
-                         style="width:100px; height:auto; display:block; margin:0 auto;" />
-                    <p style="margin:12px auto 0; font-size:11px; color:#28336f; line-height:1.5; text-align:center; font-family:Arial,Helvetica,sans-serif;">
+                    <img src="${frontendUrl}${logoSrc}"
+                      alt="MVG" width="${footerLogoWidth}"
+                      style="width:${footerLogoWidth}px; height:auto; display:block; margin:0 auto;" />
+                    <p style="margin:12px auto 0; font-size:11px; color:${colors.footerText}; line-height:1.5; text-align:center; font-family:Arial,Helvetica,sans-serif;">
                       Musée Virtuel de Guinée &mdash; Préserver et diffuser le patrimoine culturel guinéen.
                     </p>
                   </td>
                 </tr>
                 <tr>
                   <td align="center">
-                    <h4 style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:#b45332; margin:0 0 12px 0;">Suivez-nous</h4>
+                    <h4 style="font-family:Arial,Helvetica,sans-serif; font-size:10px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:${colors.accent}; margin:0 0 12px 0;">Suivez-nous</h4>
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
                       <tr>
                         <td align="center" style="padding:0 6px;">
                           <a href="https://www.facebook.com/profile.php?id=61584717626322" style="text-decoration:none; display:block;">
-                            <img src="https://img.icons8.com/ios-filled/36/b45332/facebook-new.png" alt="Facebook" width="36" height="36" style="display:block; border:none;" />
+                            <img src="https://img.icons8.com/ios-filled/36/${colors.accent.slice(1)}/facebook-new.png" alt="Facebook" width="36" height="36" style="display:block; border:none;" />
                           </a>
                         </td>
                         <td align="center" style="padding:0 6px;">
                           <a href="https://www.instagram.com/museevirtuelguinee" style="text-decoration:none; display:block;">
-                            <img src="https://img.icons8.com/ios-filled/36/b45332/instagram-new.png" alt="Instagram" width="36" height="36" style="display:block; border:none;" />
+                            <img src="https://img.icons8.com/ios-filled/36/${colors.accent.slice(1)}/instagram-new.png" alt="Instagram" width="36" height="36" style="display:block; border:none;" />
                           </a>
                         </td>
                         <td align="center" style="padding:0 6px;">
                           <a href="${frontendUrl}" style="text-decoration:none; display:block;">
-                            <img src="https://img.icons8.com/ios-filled/36/b45332/domain.png" alt="Site Web" width="36" height="36" style="display:block; border:none;" />
+                            <img src="https://img.icons8.com/ios-filled/36/${colors.accent.slice(1)}/domain.png" alt="Site Web" width="36" height="36" style="display:block; border:none;" />
                           </a>
                         </td>
                       </tr>
@@ -259,7 +281,7 @@ function emailShell(bodyContent, options = {}) {
                 </tr>
               </table>
               <!-- Copyright -->
-                    <p style="text-align:center; font-size:10px; color:#28336f; margin:0; font-family:Arial,Helvetica,sans-serif;">
+                    <p style="text-align:center; font-size:10px; color:${colors.footerText}; margin:0; font-family:Arial,Helvetica,sans-serif;">
                 &copy; ${new Date().getFullYear()} Musée Virtuel de Guinée &mdash; Tous droits réservés
               </p>
             </td>
@@ -267,7 +289,7 @@ function emailShell(bodyContent, options = {}) {
 
           <!-- Barre de bas de page (couleur solide) -->
           <tr>
-            <td height="5" style="height:5px; background-color:#b45332; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
+            <td height="5" style="height:5px; background-color:${colors.accent}; font-size:0; line-height:0; mso-line-height-rule:exactly;">&nbsp;</td>
           </tr>
 
         </table>
@@ -285,7 +307,10 @@ function emailShell(bodyContent, options = {}) {
 
 // ─── Event detail block ────────────────────────────────────────────────────────
 
-function eventBlock(evenement) {
+function eventBlock(evenement, useInvitationPalette = false) {
+  const colors = useInvitationPalette
+    ? INVITATION_COLORS
+    : { canvas: '#f4f7f5', text: '#121526', accent: '#b45332', heading: '#28336f', border: '#bdcec8' }
   const rows = [
     evenement.date_debut ? ['📅 Date', formatDateFr(evenement.date_debut)] : null,
     evenement.date_fin ? ['⏰ Fin', formatDateFr(evenement.date_fin)] : null,
@@ -296,17 +321,17 @@ function eventBlock(evenement) {
 
   const rowsHtml = rows.map(([label, value]) => `
     <tr>
-      <td style="padding:10px 16px;border-bottom:1px solid #bdcec8;">
-        <span style="color:#b45332;font-size:13px;font-family:Arial,Helvetica,sans-serif;">${label}</span>
+      <td style="padding:10px 16px;border-bottom:1px solid ${colors.border};">
+        <span style="color:${colors.accent};font-size:13px;font-family:Arial,Helvetica,sans-serif;">${label}</span>
       </td>
-      <td style="padding:10px 16px;border-bottom:1px solid #bdcec8;">
-        <span style="color:#28336f;font-size:14px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">${value}</span>
+      <td style="padding:10px 16px;border-bottom:1px solid ${colors.border};">
+        <span style="color:${colors.heading};font-size:14px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">${value}</span>
       </td>
     </tr>
   `).join('')
 
   return `
-    <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;overflow:hidden;margin:24px 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="1" bordercolor="${colors.border}" bgcolor="${colors.canvas}" style="background-color:${colors.canvas};border:1px solid ${colors.border};border-radius:8px;overflow:hidden;margin:24px 0;">
       ${rowsHtml}
     </table>
   `
@@ -319,6 +344,7 @@ function eventBlock(evenement) {
  * @param {{ invite: object, evenement: object, rsvpUrl: string }} params
  */
 export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = false, token }) {
+  const palette = INVITATION_COLORS
   const startDate = Date.parse(evenement?.date_debut)
   const endDate = Date.parse(evenement?.date_fin)
   if (!Number.isFinite(startDate) || !Number.isFinite(endDate) || endDate < startDate) {
@@ -344,46 +370,46 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
 
   const body = `
     <!-- Greeting -->
-    <p style="margin:0 0 8px;color:#b45332;font-size:13px;font-family:Arial, Helvetica, sans-serif;letter-spacing:1px;text-transform:uppercase;">
+    <p style="margin:0 0 8px;color:${palette.accent};font-size:13px;font-family:Arial, Helvetica, sans-serif;letter-spacing:1px;text-transform:uppercase;">
       ${isReminder ? 'Rappel d’invitation' : 'Invitation personnelle'}
     </p>
-    <h2 style="margin:0 0 24px;color:#28336f;font-size:22px;font-weight:bold;font-family:Arial, Helvetica, sans-serif;">
+    <h2 style="margin:0 0 24px;color:${palette.heading};font-size:22px;font-weight:bold;font-family:Arial, Helvetica, sans-serif;">
       Cher(e) <strong>${fullName}</strong>,
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial, Helvetica, sans-serif;">
+    <p style="margin:0 0 16px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial, Helvetica, sans-serif;">
       ${customIntro}
     </p>
 
     <!-- Event title -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#eef2ef" style="background-color:#eef2ef;margin:0 0 20px;"><tr><td align="center" bgcolor="#eef2ef" style="padding:20px 24px;text-align:center;">
-      <h3 style="margin:0;color:#28336f;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;"><font color="#28336f">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.soft}" style="background-color:${palette.soft};margin:0 0 20px;"><tr><td align="center" bgcolor="${palette.soft}" style="padding:20px 24px;text-align:center;">
+      <h3 style="margin:0;color:${palette.heading};font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;"><font color="${palette.heading}">
         ${evenement.titre}
       </font></h3>
     </td></tr></table>
 
     ${evenement.description ? `
-    <p style="margin:0 0 20px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
+    <p style="margin:0 0 20px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       ${evenement.description}
     </p>
     ` : ''}
 
-    ${eventBlock(evenement)}
+    ${eventBlock(evenement, true)}
 
     <!-- Organisation mention -->
     ${invite.organisation ? `
-    <p style="margin:0 0 20px;color:#b45332;font-size:14px;font-style:italic;font-family:Arial,Helvetica,sans-serif;">
+    <p style="margin:0 0 20px;color:${palette.ochre};font-size:14px;font-style:italic;font-family:Arial,Helvetica,sans-serif;">
       En votre qualité de représentant(e) de <strong>${invite.organisation}</strong>${invite.titre_poste ? ` — ${invite.titre_poste}` : ''}.
     </p>
     ` : ''}
 
     ${qrImgUrl ? `
     <!-- QR Code pass -->
-    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;margin:24px 0;font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" bgcolor="#f4f7f5" style="text-align:center;font-family:Arial,Helvetica,sans-serif;">
-      <p style="margin:0 0 6px;color:#28336f;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="${palette.border}" bgcolor="${palette.canvas}" style="background-color:${palette.canvas};border:2px solid ${palette.border};border-radius:10px;margin:24px 0;font-family:Arial,Helvetica,sans-serif;"><tr><td align="center" bgcolor="${palette.canvas}" style="text-align:center;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0 0 6px;color:${palette.heading};font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
         Votre pass d'accès (QR Code)
       </p>
-      <p style="margin:0 0 16px;color:#121526;font-size:13px;">
+      <p style="margin:0 0 16px;color:${palette.text};font-size:13px;">
         Présentez ce QR code à l'entrée de l'événement. Vous pouvez également confirmer votre présence en ligne ci-dessous :
       </p>
       <img
@@ -392,37 +418,37 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
         width="180"
         height="180"
         align="center"
-        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;"
+        style="display:block;margin:0 auto;border:6px solid ${palette.surface};border-radius:8px;"
       />
-      <table role="presentation" align="center" cellpadding="12" cellspacing="0" border="1" bordercolor="#b45332" bgcolor="#f4f7f5" style="margin:20px auto 0;"><tr><td align="center" bgcolor="#f4f7f5">
-        <a href="${rsvpUrl}" style="color:#b45332;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"><font color="#b45332">Confirmer ma présence en ligne →</font></a>
+      <table role="presentation" align="center" cellpadding="12" cellspacing="0" border="1" bordercolor="${palette.ochre}" bgcolor="${palette.canvas}" style="margin:20px auto 0;"><tr><td align="center" bgcolor="${palette.canvas}">
+        <a href="${rsvpUrl}" style="color:${palette.ochre};text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"><font color="${palette.ochre}">Confirmer ma présence en ligne →</font></a>
       </td></tr></table>
-      <p style="margin:12px 0 0;color:#28336f;font-size:11px;">
-        Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
+      <p style="margin:12px 0 0;color:${palette.heading};font-size:11px;">
+        Réf. invitation : <code style="color:${palette.ochre};background:${palette.soft};padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
       </p>
     </td></tr></table>
     ` : `
     <!-- RSVP section -->
-    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="#bdcec8" bgcolor="#f4f7f5" style="background-color:#f4f7f5;border:1px solid #bdcec8;border-radius:8px;margin:24px 0;"><tr><td align="center" bgcolor="#f4f7f5" style="text-align:center;">
-      <p style="margin:0 0 8px;color:#28336f;font-size:13px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
+    <table role="presentation" width="100%" cellpadding="24" cellspacing="0" border="1" bordercolor="${palette.border}" bgcolor="${palette.canvas}" style="background-color:${palette.canvas};border:1px solid ${palette.border};border-radius:8px;margin:24px 0;"><tr><td align="center" bgcolor="${palette.canvas}" style="text-align:center;">
+      <p style="margin:0 0 8px;color:${palette.heading};font-size:13px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;letter-spacing:1px;text-transform:uppercase;">
         Merci de confirmer votre présence
       </p>
-      <p style="margin:0 0 20px;color:#121526;font-size:13px;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0 0 20px;color:${palette.text};font-size:13px;font-family:Arial,Helvetica,sans-serif;">
         Cliquez sur le bouton ci-dessous pour répondre à cette invitation.
       </p>
-      <table role="presentation" align="center" cellpadding="14" cellspacing="0" border="1" bordercolor="#b45332" bgcolor="#f4f7f5"><tr><td align="center" bgcolor="#f4f7f5">
-        <a href="${rsvpUrl}" style="color:#b45332;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;"><font color="#b45332">Répondre à l'invitation →</font></a>
+      <table role="presentation" align="center" cellpadding="14" cellspacing="0" border="1" bordercolor="${palette.ochre}" bgcolor="${palette.canvas}"><tr><td align="center" bgcolor="${palette.canvas}">
+        <a href="${rsvpUrl}" style="color:${palette.ochre};text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;"><font color="${palette.ochre}">Répondre à l'invitation →</font></a>
       </td></tr></table>
-      <p style="margin:16px 0 0;color:#28336f;font-size:11px;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:16px 0 0;color:${palette.heading};font-size:11px;font-family:Arial,Helvetica,sans-serif;">
         Ou copiez ce lien dans votre navigateur :<br />
-        <span style="color:#b45332;">${rsvpUrl}</span>
+        <span style="color:${palette.ochre};">${rsvpUrl}</span>
       </p>
     </td></tr></table>
     `}
 
-    <p style="margin:24px 0 0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
+    <p style="margin:24px 0 0;color:${palette.text};font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous espérons avoir le plaisir de vous accueillir lors de cet événement.<br />
-      <span style="color:#b45332;">${customSignature}</span>
+      <span style="color:${palette.ochre};">${customSignature}</span>
     </p>
   `
 
@@ -436,7 +462,7 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
       to: invite.email,
       replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: isReminder ? `Rappel — ${evenement.email_sujet || `Invitation — ${evenement.titre}`}` : (evenement.email_sujet || `Invitation — ${evenement.titre}`),
-      html: emailShell(body, 'INVITATION OFFICIELLE')
+      html: emailShell(body, { title: 'INVITATION OFFICIELLE', palette: 'invitation' })
     })
     return info
   } catch (error) {
@@ -445,11 +471,12 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
 }
 
 export async function sendInvitationRequestReceipt({ request, evenement }) {
+  const palette = INVITATION_COLORS
   const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
   const body = `
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous avons bien reçu votre demande d’invitation pour l’événement <strong>${escape(evenement.titre)}</strong>.</p>
-    <p style="margin:0;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">L’équipe du Musée Virtuel de Guinée va l’examiner. Cet accusé de réception ne confirme pas encore votre participation. Vous recevrez un autre e-mail si votre demande est approuvée.</p>
+    <h2 style="margin:0 0 16px;color:${palette.heading};font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
+    <p style="margin:0 0 16px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous avons bien reçu votre demande d’invitation pour l’événement <strong>${escape(evenement.titre)}</strong>.</p>
+    <p style="margin:0;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">L’équipe du Musée Virtuel de Guinée va l’examiner. Cet accusé de réception ne confirme pas encore votre participation. Vous recevrez un autre e-mail si votre demande est approuvée.</p>
   `
 
   if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
@@ -461,16 +488,17 @@ export async function sendInvitationRequestReceipt({ request, evenement }) {
     to: request.email,
     replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
     subject: `Demande d’invitation reçue — ${evenement.titre}`,
-    html: emailShell(body, 'DEMANDE REÇUE')
+    html: emailShell(body, { title: 'DEMANDE REÇUE', palette: 'invitation' })
   })
 }
 
 export async function sendInvitationRequestRejection({ request, evenement }) {
+  const palette = INVITATION_COLORS
   const escape = value => String(value || '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character])
   const body = `
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Après examen, nous ne pouvons malheureusement pas donner suite à votre demande d’invitation pour <strong>${escape(evenement.titre)}</strong>.</p>
-    <p style="margin:0;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous vous remercions de votre intérêt pour le Musée Virtuel de Guinée.</p>
+    <h2 style="margin:0 0 16px;color:${palette.heading};font-size:22px;font-family:Arial,Helvetica,sans-serif;">Bonjour ${escape(request.first_name)},</h2>
+    <p style="margin:0 0 16px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Après examen, nous ne pouvons malheureusement pas donner suite à votre demande d’invitation pour <strong>${escape(evenement.titre)}</strong>.</p>
+    <p style="margin:0;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">Nous vous remercions de votre intérêt pour le Musée Virtuel de Guinée.</p>
   `
 
   if (!process.env.BREVO_API_KEY && (!process.env.EMAIL_USER || !process.env.EMAIL_PASS)) {
@@ -482,7 +510,7 @@ export async function sendInvitationRequestRejection({ request, evenement }) {
     to: request.email,
     replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
     subject: `Réponse à votre demande d’invitation — ${evenement.titre}`,
-    html: emailShell(body, 'RÉPONSE À VOTRE DEMANDE')
+    html: emailShell(body, { title: 'RÉPONSE À VOTRE DEMANDE', palette: 'invitation' })
   })
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="app-wrapper">
+  <div class="app-wrapper" :class="{ 'invitation-app-theme': isInvitationRoute }">
     <!-- Écran de chargement global -->
     <transition name="fade">
       <div v-if="isAppLoading" class="global-app-loader">
@@ -62,7 +62,7 @@
               <div class="header-logo-tag">PATRIMOINE & NUMÉRIQUE</div>
             </div>
           </RouterLink>
-          <div class="theme-switcher">
+          <div v-if="!isInvitationRoute" class="theme-switcher">
             <button @click="changeTheme('indigo')" class="theme-dot theme-dot-indigo" :class="{ active: currentTheme === 'indigo' }" title="Thème Bleu Indigo"></button>
             <button @click="changeTheme('terracotta')" class="theme-dot theme-dot-terracotta" :class="{ active: currentTheme === 'terracotta' }" title="Thème Terracotta"></button>
             <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
@@ -253,7 +253,7 @@
         </div>
         <div class="footer-bottom">
           <span>&copy; {{ new Date().getFullYear() }} Musée Virtuel de Guinée · MVG event's</span>
-          <div class="theme-switcher footer-theme-switcher">
+          <div v-if="!isInvitationRoute" class="theme-switcher footer-theme-switcher">
             <button @click="changeTheme('indigo')" class="theme-dot theme-dot-indigo" :class="{ active: currentTheme === 'indigo' }" title="Thème Bleu Indigo"></button>
             <button @click="changeTheme('terracotta')" class="theme-dot theme-dot-terracotta" :class="{ active: currentTheme === 'terracotta' }" title="Thème Terracotta"></button>
             <button @click="changeTheme('forest')" class="theme-dot theme-dot-forest" :class="{ active: currentTheme === 'forest' }" title="Thème Vert Forêt"></button>
@@ -519,6 +519,7 @@ const { needRefresh: needsRefresh, updateServiceWorker } = useRegisterSW({
 const route = useRoute()
 const router = useRouter()
 const apiStore = useApiStore()
+const isInvitationRoute = computed(() => ['InvitationRequest', 'Rsvp'].includes(route.name))
 const canApproveAppUpdate = computed(() => ['admin', 'super_admin'].includes(apiStore.userRole))
 const pendingBuildHash = ref('')
 const approvingUpdate = ref(false)
@@ -1168,6 +1169,24 @@ html { scroll-behavior: smooth; }
 ::selection { background: rgba(180, 83, 50, 0.25); color: var(--noir); }
 button, input, textarea, select { font: inherit; }
 .app-wrapper { display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+.app-wrapper.invitation-app-theme {
+  --brun: #4a3025;
+  --or: #d2a45d;
+  --terre: #b57932;
+  --rouge: #8a3d35;
+  --blanc: #fffaf0;
+  --noir: #352b22;
+  --creme: #f5f1e7;
+  --surface: rgba(255,253,248,.94);
+  --shadow: 0 12px 40px rgba(74,48,37,.15);
+  --hover-glow: rgba(181,121,50,.2);
+  --header-grad-1: rgba(74,48,37,.98);
+  --header-grad-2: rgba(98,80,53,.96);
+  --header-grad-3: rgba(50,39,30,1);
+}
+.app-wrapper.invitation-app-theme .partners-marquee-section,
+.app-wrapper.invitation-app-theme .main-footer,
+.app-wrapper.invitation-app-theme .scroll-top-btn { display: none; }
 .app-shell { max-width: 1180px; margin: 0 auto; padding: 0 16px 28px; width: 100%; flex: 1; }
 
 /* ─── Header ─── */

@@ -1,7 +1,7 @@
 <template>
   <div class="request-shell">
     <header class="request-header">
-      <img src="/images/logo-dark.jpg" alt="Musée Virtuel de Guinée" />
+      <img src="/images/logo-white.png" alt="Musée Virtuel de Guinée" />
       <div>
         <p>Musée Virtuel de Guinée</p>
         <h1>Demande d’invitation</h1>
@@ -119,30 +119,30 @@ function formatDate(value) {
 </script>
 
 <style scoped>
-.request-shell { min-height: 100vh; padding: 0 16px 32px; background: #f4f7f5; color: #17211e; font-family: Arial, Helvetica, sans-serif; }
-.request-header { display: flex; align-items: center; gap: 16px; max-width: 760px; margin: 0 auto; padding: 24px 0; border-bottom: 1px solid #bdcec8; }
-.request-header img { width: 86px; height: 54px; object-fit: contain; }
-.request-header p { margin: 0 0 4px; color: #b45332; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-.request-header h1 { margin: 0; color: #28336f; font-size: 22px; }
+.request-shell { min-height: 100vh; padding: 0 16px 32px; background: #f5f1e7; color: #352b22; font-family: Arial, Helvetica, sans-serif; }
+.request-header { display: flex; align-items: center; gap: 16px; max-width: 760px; margin: 0 auto; padding: 24px; background: #4a3025; }
+.request-header img { width: 100px; height: 64px; object-fit: contain; }
+.request-header p { margin: 0 0 4px; color: #d2a45d; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.request-header h1 { margin: 0; color: #fffaf0; font-size: 22px; }
 .request-main { display: grid; gap: 18px; width: 100%; max-width: 680px; margin: 28px auto; }
-.request-event { padding: 22px 24px; border-left: 4px solid #b45332; background: #fff; }
-.request-kicker { margin: 0 0 8px; color: #b45332; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-.request-event h2, .request-state h2, .request-success h2 { margin: 0; color: #28336f; font-size: 21px; }
-.request-date { margin: 10px 0 0; color: #3f514b; }
-.request-note { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid #e2eae6; line-height: 1.6; }
-.request-panel { padding: 24px; border: 1px solid #d5e0dc; background: #fff; }
+.request-event { padding: 22px 24px; border-left: 4px solid #b57932; background: #fffdf8; }
+.request-kicker { margin: 0 0 8px; color: #a66c2d; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.request-event h2, .request-state h2, .request-success h2 { margin: 0; color: #59623a; font-size: 21px; }
+.request-date { margin: 10px 0 0; color: #625b4b; }
+.request-note { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid #e4dcc9; line-height: 1.6; }
+.request-panel { padding: 24px; border: 1px solid #d8cfb9; background: #fffdf8; }
 .request-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.request-field-grid label { display: grid; gap: 7px; color: #28336f; font-size: 13px; font-weight: 700; }
+.request-field-grid label { display: grid; gap: 7px; color: #4a3025; font-size: 13px; font-weight: 700; }
 .field-wide { grid-column: 1 / -1; }
-.request-field-grid input, .request-field-grid textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #bdcec8; border-radius: 4px; background: #fff; color: #17211e; font: inherit; font-weight: 400; }
-.request-field-grid input:focus, .request-field-grid textarea:focus { border-color: #28336f; outline: 2px solid #28336f22; }
-.request-submit { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; margin-top: 20px; padding: 0 18px; border: 0; border-radius: 4px; background: #28336f; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.request-field-grid input, .request-field-grid textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #d8cfb9; border-radius: 4px; background: #fff; color: #352b22; font: inherit; font-weight: 400; }
+.request-field-grid input:focus, .request-field-grid textarea:focus { border-color: #59623a; outline: 2px solid rgba(89,98,58,.2); }
+.request-submit { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; margin-top: 20px; padding: 0 18px; border: 0; border-radius: 4px; background: #59623a; color: #fffaf0; font: inherit; font-weight: 700; cursor: pointer; }
 .request-submit:disabled { opacity: .6; cursor: wait; }
-.request-privacy { margin: 16px 0 0; color: #61716b; font-size: 12px; line-height: 1.5; }
+.request-privacy { margin: 16px 0 0; color: #716b5d; font-size: 12px; line-height: 1.5; }
 .request-error { color: #a42d34; }
-.request-success { color: #20623a; }
+.request-success { color: #59623a; }
 .request-success svg { margin-bottom: 10px; }
 .request-state { line-height: 1.6; }
-.request-footer { max-width: 680px; margin: 0 auto; padding-top: 16px; border-top: 1px solid #bdcec8; color: #52635d; font-size: 12px; text-align: center; }
+.request-footer { max-width: 680px; margin: 0 auto; padding-top: 16px; border-top: 1px solid #d8cfb9; color: #716b5d; font-size: 12px; text-align: center; }
 @media (max-width: 560px) { .request-field-grid { grid-template-columns: 1fr; } .request-field-grid label { grid-column: 1 / -1; } .request-panel, .request-event { padding: 18px; } .request-submit { width: 100%; } }
 </style>
