@@ -617,6 +617,7 @@ export async function sendContactReceipt({ prenom, email, sujet }) {
  */
 export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token }) {
   const fullName = `${invite.prenom} ${invite.nom}`
+  const palette = INVITATION_COLORS
 
   // Build the backend base URL so the QR code image is accessible via a public HTTPS URL.
   // Brevo API does NOT support CID/inline attachments — only a real URL works universally.
@@ -630,35 +631,35 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
 
   const body = `
     <!-- Success banner -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#3e502a;margin:0 0 24px;"><tr><td style="padding:16px 24px;text-align:center;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${palette.heading};margin:0 0 24px;"><tr><td style="padding:16px 24px;text-align:center;">
       <p style="margin:0;color:#ffffff;font-size:16px;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">
         ✅ Inscription confirmée !
       </p>
     </td></tr></table>
 
-    <h2 style="margin:0 0 16px;color:#28336f;font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
+    <h2 style="margin:0 0 16px;color:${palette.heading};font-size:22px;font-weight:normal;font-family:Arial,Helvetica,sans-serif;">
       Cher(e) <strong>${fullName}</strong>,
     </h2>
 
-    <p style="margin:0 0 16px;color:#121526;font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
+    <p style="margin:0 0 16px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous avons bien enregistré votre participation à l'événement&nbsp;:
     </p>
 
     <!-- Event title -->
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#28336f;margin:0 0 20px;"><tr><td style="padding:20px 24px;text-align:center;">
-      <h3 style="margin:0;color:#FFFFFF;font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${palette.header};margin:0 0 20px;"><tr><td style="padding:20px 24px;text-align:center;">
+      <h3 style="margin:0;color:${palette.headerText};font-size:20px;font-weight:normal;letter-spacing:0.5px;font-family:Arial,Helvetica,sans-serif;">
         ${evenement.titre}
       </h3>
     </td></tr></table>
 
-    ${eventBlock(evenement)}
+    ${eventBlock(evenement, true)}
 
     <!-- QR Code section -->
-    <div style="background-color:#f4f7f5;border:2px solid #bdcec8;border-radius:10px;padding:28px;margin:24px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;">
-      <p style="margin:0 0 6px;color:#28336f;font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
+    <div style="background-color:${palette.canvas};border:2px solid ${palette.border};border-radius:10px;padding:28px;margin:24px 0;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0 0 6px;color:${palette.heading};font-size:13px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;">
         Votre QR Code d'accès
       </p>
-      <p style="margin:0 0 20px;color:#121526;font-size:13px;">
+      <p style="margin:0 0 20px;color:${palette.text};font-size:13px;">
         Présentez ce code à l'entrée de l'événement pour valider votre présence.
       </p>
       <img
@@ -666,28 +667,28 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
         alt="QR Code d'accès — ${evenement.titre}"
         width="200"
         height="200"
-        style="display:block;margin:0 auto;border:6px solid #FFFFFF;border-radius:8px;"
+        style="display:block;margin:0 auto;border:6px solid ${palette.surface};border-radius:8px;"
       />
-      <p style="margin:16px 0 0;color:#28336f;font-size:11px;">
-        Réf. invitation : <code style="color:#b45332;background:#eef2ef;padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
+      <p style="margin:16px 0 0;color:${palette.heading};font-size:11px;">
+        Réf. invitation : <code style="color:${palette.ochre};background:${palette.soft};padding:2px 6px;border-radius:3px;">${token.substring(0, 8).toUpperCase()}</code>
       </p>
     </td></tr></table>
 
     <!-- Reminder box -->
-    <div style="border-left:4px solid #b45332;padding:12px 16px;background-color:#f4f7f5;border-radius:0 6px 6px 0;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
-      <p style="margin:0;color:#28336f;font-size:13px;font-weight:bold;">
+    <div style="border-left:4px solid ${palette.ochre};padding:12px 16px;background-color:${palette.canvas};border-radius:0 6px 6px 0;margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
+      <p style="margin:0;color:${palette.heading};font-size:13px;font-weight:bold;">
         Rappel important
       </p>
-      <ul style="margin:8px 0 0;padding-left:18px;color:#121526;font-size:13px;line-height:1.8;">
+      <ul style="margin:8px 0 0;padding-left:18px;color:${palette.text};font-size:13px;line-height:1.8;">
         <li>Conservez cet e-mail ou faites une capture d'écran de votre QR code.</li>
         <li>Présentez-vous ${evenement.lieu ? `à <strong>${evenement.lieu}</strong>` : "au lieu indiqué"} le ${formatDateFr(evenement.date_debut)}.</li>
         <li>Le QR code est strictement personnel et non transférable.</li>
       </ul>
     </div>
 
-    <p style="margin:0;color:#121526;font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
+    <p style="margin:0;color:${palette.text};font-size:14px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
       Nous vous souhaitons une excellente journée et espérons vous voir bientôt.<br />
-      <span style="color:#b45332;">— L'équipe du Musée Virtuel de Guinée</span>
+      <span style="color:${palette.ochre};">— L'équipe du Musée Virtuel de Guinée</span>
     </p>
   `
 
@@ -701,7 +702,7 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
       to: invite.email,
       replyTo: process.env.CONTACT_EMAIL || 'musee@expertisefrance.fr',
       subject: `Confirmation — ${evenement.titre}`,
-      html: emailShell(body, 'CONFIRMATION'),
+      html: emailShell(body, { title: 'CONFIRMATION', palette: 'invitation' }),
       attachments: qrCodeDataUrl ? [
         {
           filename: 'qr-code-mvg.png',

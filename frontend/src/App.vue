@@ -672,7 +672,7 @@ function onScroll() {
 }
 
 // Theme Switcher Logic
-const currentTheme = ref(localStorage.getItem('mvg_theme') || 'indigo')
+const currentTheme = ref(localStorage.getItem('mvg_theme') || 'secondary')
 
 function changeTheme(theme) {
   currentTheme.value = theme
