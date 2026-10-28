@@ -455,14 +455,14 @@ async function importExcelOrCSV(event) {
       
       json.forEach((row, rowIndex) => {
         // Normalisation des clés sans accents ni espaces pour la comparaison
-        const normalizeKey = k => k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim()
+        const normalizeKey = k => k.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\([^)]*\)/g, '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim()
 
-        const pKey = Object.keys(row).find(k => ['prenom', 'first name', 'firstname', 'givenname'].includes(normalizeKey(k)))
+        const pKey = Object.keys(row).find(k => ['prenom', 'prenoms', 'first name', 'firstname', 'givenname'].includes(normalizeKey(k)))
         const nKey = Object.keys(row).find(k => ['nom', 'last name', 'lastname', 'familyname', 'surname'].includes(normalizeKey(k)))
-        const eKey = Object.keys(row).find(k => ['email', 'e-mail', 'mail', 'courriel', 'adresse email'].includes(normalizeKey(k)))
+        const eKey = Object.keys(row).find(k => ['email', 'e mail', 'mail', 'courriel', 'adresse email', 'adresse e mail'].includes(normalizeKey(k)))
         const tKey = Object.keys(row).find(k => ['telephone', 'tel', 'phone', 'mobile', 'cellulaire', 'contact tel'].includes(normalizeKey(k)))
-        const oKey = Object.keys(row).find(k => ['organisation', 'organization', 'societe', 'entreprise', 'company', 'institution'].includes(normalizeKey(k)))
-        const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'titre', 'position', 'role', 'title', 'job'].includes(normalizeKey(k)))
+        const oKey = Object.keys(row).find(k => ['organisation', 'organization', 'societe', 'entreprise', 'company', 'institution', 'entite', 'entity'].includes(normalizeKey(k)))
+        const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'position', 'role', 'job'].includes(normalizeKey(k))) || Object.keys(row).find(k => ['titre', 'title'].includes(normalizeKey(k)))
         const notesKey = Object.keys(row).find(k => ['notes', 'note', 'observation', 'observations', 'commentaire', 'commentaires'].includes(normalizeKey(k)))
         const categoryKey = Object.keys(row).find(k => ['categorie', 'category'].includes(normalizeKey(k)))
         
