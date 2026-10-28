@@ -73,7 +73,7 @@
         </div>
         <h3>Invitation déclinée</h3>
         <p>Vous avez décliné cette invitation. Nous espérons vous accueillir lors d'un prochain événement.</p>
-        <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:contact@mvg.org">contact@mvg.org</a></p>
+        <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:musee@expertisefrance.fr">musee@expertisefrance.fr</a></p>
       </div>
 
       <!-- ─── Statut : Liste d'attente ─── -->
@@ -86,7 +86,7 @@
         </div>
         <h3>Inscription sur liste d'attente</h3>
         <p>Cet événement est actuellement complet. Vous êtes sur liste d'attente et serez notifié(e) par email si une place se libère.</p>
-        <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:contact@mvg.org">contact@mvg.org</a></p>
+        <p class="rsvp-contact">Pour toute question, contactez-nous : <a href="mailto:musee@expertisefrance.fr">musee@expertisefrance.fr</a></p>
       </div>
 
       <!-- ─── Statut : Déjà inscrit / présent ─── -->
