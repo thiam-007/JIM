@@ -56,7 +56,7 @@ router.post('/:eventId', requestLimiter, async (req, res, next) => {
 
     const { data: evenement, error: eventError } = await supabase
       .from('evenements')
-      .select('id, titre, statut, date_debut, date_fin')
+      .select('id, titre, statut, date_debut, date_fin, invitation_card_url')
       .eq('id', eventId)
       .eq('statut', 'publie')
       .maybeSingle()

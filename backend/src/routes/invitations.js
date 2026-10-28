@@ -171,7 +171,7 @@ router.post('/send', async (req, res, next) => {
         relances_count,
         invite_id,
         invites ( id, prenom, nom, email ),
-        evenements ( id, titre, description, date_debut, date_fin, lieu )
+        evenements ( id, titre, description, date_debut, date_fin, lieu, invitation_card_url )
       `)
       .in('id', invitation_ids)
 

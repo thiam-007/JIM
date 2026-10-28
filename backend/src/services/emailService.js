@@ -388,6 +388,20 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
       </font></h3>
     </td></tr></table>
 
+    ${!isReminder && evenement.invitation_card_url ? `
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;font-family:Arial,Helvetica,sans-serif;">
+      <tr><td align="center" style="text-align:center;">
+        <p style="margin:0 0 12px;color:${palette.heading};font-size:14px;font-weight:bold;">Votre carte d’invitation</p>
+        <a href="${escapeText(evenement.invitation_card_url)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <img src="${escapeText(evenement.invitation_card_url)}" alt="Carte d’invitation — ${escapeText(evenement.titre)}" style="display:block;width:100%;max-width:560px;height:auto;margin:0 auto;border:0;" />
+        </a>
+        <p style="margin:12px 0 0;font-size:13px;">
+          <a href="${escapeText(evenement.invitation_card_url)}" target="_blank" rel="noopener noreferrer" style="color:${palette.ochre};">Ouvrir ou télécharger la carte d’invitation</a>
+        </p>
+      </td></tr>
+    </table>
+    ` : ''}
+
     ${eventBlock(evenement, true)}
 
     <!-- Organisation mention -->
