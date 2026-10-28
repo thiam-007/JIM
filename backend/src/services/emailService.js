@@ -388,12 +388,6 @@ export async function sendInvitation({ invite, evenement, rsvpUrl, isReminder = 
       </font></h3>
     </td></tr></table>
 
-    ${evenement.description ? `
-    <p style="margin:0 0 20px;color:${palette.text};font-size:15px;line-height:1.7;font-family:Arial,Helvetica,sans-serif;">
-      ${evenement.description}
-    </p>
-    ` : ''}
-
     ${eventBlock(evenement, true)}
 
     <!-- Organisation mention -->
