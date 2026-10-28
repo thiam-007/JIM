@@ -318,7 +318,7 @@
                     <button type="button" class="btn-cancel" style="margin-top: 8px;" @click="removeInvitationCard">Retirer la carte</button>
                   </div>
                 </div>
-                <small style="display: block; margin-top: 6px; color: #6a5040;">Cette image sera jointe au mail de confirmation, en plus du QR code. Taille maximale : 7 Mo.</small>
+                <small style="display: block; margin-top: 6px; color: #6a5040;">La carte reste associée à l’événement et n’est pas incluse dans le mail de confirmation. Taille maximale : 7 Mo.</small>
               </div>
 
               <div v-if="formError" class="ev-form-error">
@@ -414,7 +414,7 @@
               <div v-if="detailEvt?.intervenants?.length || detailEvt?.partenaires?.length || detailEvt?.sponsors?.length" class="ev-programme-large mt-4">
                 <h4>Intervenants et partenaires</h4>
                 <div v-if="detailEvt.intervenants?.length" class="event-network-row"><strong>Intervenants</strong><span>{{ detailEvt.intervenants.join(' · ') }}</span></div>
-                <div v-if="detailEvt.partenaires?.length" class="event-network-row"><strong>Partenaires</strong><span>{{ detailEvt.partenaires.join(' · ') }}</span></div>
+                <div v-if="detailEvt.partenaires?.length" class="event-network-row"><strong>Partenaires :</strong><span>{{ detailEvt.partenaires.join(' · ') }}</span></div>
                 <div v-if="detailEvt.sponsors?.length" class="event-network-row"><strong>Sponsors</strong><span>{{ detailEvt.sponsors.join(' · ') }}</span></div>
               </div>
 
@@ -1332,15 +1332,20 @@ function formatLabel(format) {
 }
 .ev-detail-img-wrap {
   width: 100%;
-  height: 220px;
+  height: auto;
   border-radius: 16px;
   overflow: hidden;
   border: 1.5px solid rgba(132, 89, 54, 0.15);
 }
 .ev-detail-img {
+  display: block;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+}
+.event-network-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .mb-3 {
   margin-bottom: 16px;

@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer'
-import { validateRemoteUrl } from '../utils/remoteUrl.js'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -116,60 +115,6 @@ const INVITATION_COLORS = {
   headerText: '#fffaf0',
   footer: '#59623a',
   footerText: '#fffaf0'
-}
-
-async function getInvitationCardAttachment(cardUrl) {
-  if (!cardUrl) return null
-
-  try {
-    const safeUrl = await validateRemoteUrl(cardUrl)
-    const response = await fetch(safeUrl, {
-      redirect: 'manual',
-      signal: AbortSignal.timeout(10000)
-    })
-    if (!response.ok || [301, 302, 303, 307, 308].includes(response.status)) {
-      throw new Error(`Téléchargement de la carte refusé (${response.status})`)
-    }
-
-    const contentType = (response.headers.get('content-type') || '').split(';')[0].trim().toLowerCase()
-    if (!['image/jpeg', 'image/png'].includes(contentType)) {
-      throw new Error('La carte doit être un fichier JPEG ou PNG')
-    }
-
-    const maxSize = 8 * 1024 * 1024
-    const declaredSize = Number(response.headers.get('content-length'))
-    if (declaredSize > maxSize) throw new Error('La carte dépasse 8 Mo')
-
-    const reader = response.body?.getReader()
-    if (!reader) throw new Error('Fichier de carte vide')
-    const chunks = []
-    let totalSize = 0
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      totalSize += value.byteLength
-      if (totalSize > maxSize) {
-        await reader.cancel()
-        throw new Error('La carte dépasse 8 Mo')
-      }
-      chunks.push(Buffer.from(value))
-    }
-
-    const image = Buffer.concat(chunks)
-    const isPng = contentType === 'image/png' && image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-    const isJpeg = contentType === 'image/jpeg' && image[0] === 255 && image[1] === 216 && image[2] === 255
-    if (!image.length || (!isPng && !isJpeg)) throw new Error('Le contenu de la carte n’est pas un JPEG ou PNG valide')
-
-    const extension = isPng ? 'png' : 'jpg'
-    return {
-      filename: `carte-invitation.${extension}`,
-      content: image.toString('base64'),
-      encoding: 'base64'
-    }
-  } catch (error) {
-    console.warn('Carte d’invitation non jointe à la confirmation:', error.message)
-    return null
-  }
 }
 
 /**
@@ -758,15 +703,11 @@ export async function sendConfirmation({ invite, evenement, qrCodeDataUrl, token
     throw new Error('Les variables EMAIL_USER/EMAIL_PASS ou BREVO_API_KEY ne sont pas configurées.')
   }
 
-  const cardAttachment = await getInvitationCardAttachment(evenement.invitation_card_url)
-  const attachments = [
-    ...(cardAttachment ? [cardAttachment] : []),
-    ...(qrCodeDataUrl ? [{
+  const attachments = qrCodeDataUrl ? [{
       filename: 'qr-code-mvg.png',
       content: qrCodeDataUrl.includes(',') ? qrCodeDataUrl.split(',')[1] : qrCodeDataUrl,
       encoding: 'base64'
-    }] : [])
-  ]
+  }] : []
 
   try {
     const info = await transporter.sendMail({
