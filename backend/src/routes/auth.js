@@ -27,6 +27,14 @@ const loginLimiter = rateLimit({
   legacyHeaders: false
 })
 
+const twoFactorLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { error: 'Trop de tentatives de vérification 2FA, veuillez réessayer dans 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+})
+
 /**
  * POST /api/auth/login
  * Body: { email, password }
@@ -97,7 +105,7 @@ router.post('/login', loginLimiter, async (req, res, next) => {
   }
 })
 
-router.post('/2fa/verify', async (req, res, next) => {
+router.post('/2fa/verify', twoFactorLimiter, async (req, res, next) => {
   try {
     const { challengeToken, code } = req.body
     const challenge = jwt.verify(challengeToken, process.env.JWT_SECRET)

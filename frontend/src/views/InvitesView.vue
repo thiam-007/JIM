@@ -251,7 +251,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import * as XLSX from 'xlsx'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
 
@@ -419,6 +418,7 @@ async function importExcelOrCSV(event) {
   const reader = new FileReader()
   reader.onload = async (e) => {
     try {
+      const XLSX = await import('xlsx')
       const data = new Uint8Array(e.target.result)
       const workbook = XLSX.read(data, { type: 'array' })
       const firstSheetName = workbook.SheetNames[0]

@@ -7,7 +7,7 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['images/favicon.png', 'mvg-logo-minima.png'],
+      includeAssets: ['images/favicon.png', 'mvg-logo-minima.png', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
         name: "MVG Community — Musée Virtuel de Guinée",
         short_name: "MVG Community",
@@ -23,7 +23,8 @@ export default defineConfig({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,jpeg,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+        globIgnores: ['**/xlsx-*.js', '**/exceljs.min-*.js'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.airtable\.com\/.*/i,
