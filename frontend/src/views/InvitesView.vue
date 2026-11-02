@@ -27,6 +27,10 @@
             <AppIcon name="upload" :size="16" /> Importer Excel / CSV
             <input type="file" accept=".xlsx, .xls, .csv" @change="importExcelOrCSV" style="display:none" ref="fileInput" />
           </label>
+          <button class="btn-import" type="button" @click="exportExcel" :disabled="exportingExcel || api.invites.length === 0" title="Télécharger les contacts affichés au format Excel">
+            <AppIcon :name="exportingExcel ? 'loader' : 'download'" :size="16" :class="{ spin: exportingExcel }" />
+            {{ exportingExcel ? 'Exportation…' : 'Exporter Excel' }}
+          </button>
           <button class="btn-import" @click="importFromNewsletter" :disabled="importingFromNewsletter" title="Importer les abonnés de la newsletter comme contacts/invités">
             <AppIcon :name="importingFromNewsletter ? 'loader' : 'mail'" :size="16" :class="{ spin: importingFromNewsletter }" />
             {{ importingFromNewsletter ? 'Importation…' : 'Importer Abonnés' }}
@@ -275,6 +279,7 @@ const importMsg = ref(null)
 const importReport = ref(null)
 const fileInput = ref(null)
 const importingFromNewsletter = ref(false)
+const exportingExcel = ref(false)
 
 const form = ref({
   prenom: '', nom: '', email: '', telephone: '',
@@ -406,6 +411,41 @@ async function doDelete() {
     deletingInv.value = null
   } finally {
     deleting.value = false
+  }
+}
+
+async function exportExcel() {
+  if (!api.invites.length || exportingExcel.value) return
+
+  exportingExcel.value = true
+  try {
+    const XLSX = await import('xlsx')
+    const rows = sortedInvites.value.map(invite => ({
+      'Prénoms': invite.prenom || '',
+      'Nom': invite.nom || '',
+      'e-mail': invite.email || '',
+      'Téléphone': invite.telephone || '',
+      'Entité': invite.organisation || '',
+      'Fonction': invite.titre_poste || '',
+      'Catégorie': invite.categorie || 'Participant',
+      'Nombre d’invitations': Number(invite.invitations_count || 0),
+      'Notes': invite.notes || ''
+    }))
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    worksheet['!cols'] = [
+      { wch: 20 }, { wch: 24 }, { wch: 34 }, { wch: 20 }, { wch: 28 },
+      { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 40 }
+    ]
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invités')
+    const date = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(workbook, `mvg-invites-${date}.xlsx`)
+    importMsg.value = { type: 'success', text: `${rows.length} contact(s) exporté(s) au format Excel.` }
+  } catch (error) {
+    console.error(error)
+    importMsg.value = { type: 'error', text: 'Impossible de générer le fichier Excel.' }
+  } finally {
+    exportingExcel.value = false
   }
 }
 
