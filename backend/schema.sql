@@ -342,3 +342,25 @@ CREATE TRIGGER trg_livre_dor_updated
   BEFORE UPDATE ON livre_dor
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- Keep application tables accessible through the trusted backend only.
+ALTER TABLE evenements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitation_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE checkins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE actualites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE article_ratings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE newsletter_campaigns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE revue_presse ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
+ALTER TABLE livre_dor ENABLE ROW LEVEL SECURITY;
+
+REVOKE ALL PRIVILEGES ON TABLE evenements, invites, invitations,
+  invitation_requests, checkins, audit_logs, actualites, article_ratings,
+  users, contact_messages, newsletter_subscribers, newsletter_campaigns,
+  revue_presse, hero_slides, livre_dor
+FROM anon, authenticated;

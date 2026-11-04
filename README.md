@@ -144,7 +144,9 @@ npm install
 ```
 
 ### 2. Initialiser la Base de Données
-Copiez et exécutez le contenu du script [backend/schema.sql](file:///c:/Users/PC/Desktop/JIM/backend/schema.sql) directement dans l'éditeur SQL de votre Dashboard Supabase pour créer l'ensemble des tables, déclencheurs et index requis.
+Pour une nouvelle installation, copiez et exécutez le contenu de [backend/schema.sql](./backend/schema.sql) dans l'éditeur SQL de votre Dashboard Supabase. Le script crée les tables, déclencheurs et index, et réserve l'accès aux données au backend.
+
+Si la base existe déjà, exécutez également [backend/migrations/20261104_harden_public_table_access.sql](./backend/migrations/20261104_harden_public_table_access.sql) dans l'éditeur SQL Supabase pour activer la sécurité au niveau des lignes (RLS) et retirer les droits directs des rôles `anon` et `authenticated` sur les tables applicatives. Le backend continue d'y accéder avec sa clé `service_role`, qui doit rester secrète et ne jamais être exposée dans le frontend.
 
 
 ### 3. Lancer les serveurs de dev
