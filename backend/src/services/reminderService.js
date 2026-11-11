@@ -16,13 +16,14 @@ export async function sendAutomaticReminders() {
     .select(`
       id, token, statut, date_envoi, date_reponse, derniere_relance_at, relances_count,
       invites ( id, prenom, nom, email, organisation, titre_poste ),
-      evenements ( id, titre, description, date_debut, date_fin, lieu, email_sujet, email_intro, email_signature )
+      evenements!inner ( id, titre, description, date_debut, date_fin, lieu, email_sujet, email_intro, email_signature )
     `)
     .eq('statut', 'envoye')
     .is('date_reponse', null)
     .not('date_envoi', 'is', null)
     .lte('date_envoi', firstReminderBefore)
     .or(`derniere_relance_at.is.null,derniere_relance_at.lte.${repeatReminderBefore}`)
+    .gt('evenements.date_debut', new Date(now).toISOString())
     .limit(100)
 
   if (error) throw error
@@ -33,6 +34,12 @@ export async function sendAutomaticReminders() {
   for (const invitation of invitations || []) {
     if (!invitation.invites?.email || !invitation.evenements) {
       results.push({ id: invitation.id, status: 'skipped', reason: 'Email ou événement manquant' })
+      continue
+    }
+
+    const eventStart = Date.parse(invitation.evenements.date_debut)
+    if (!Number.isFinite(eventStart) || eventStart <= Date.now()) {
+      results.push({ id: invitation.id, status: 'skipped', reason: 'Événement commencé ou date de début invalide' })
       continue
     }
 

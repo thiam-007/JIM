@@ -68,7 +68,7 @@
             <div class="ev-card-title">{{ evt.titre }}</div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
               <span class="ev-badge" :class="formatBadgeClass(evt.format)">{{ formatLabel(evt.format) }}</span>
-              <span class="ev-badge" :class="badgeClass(evt.statut)">{{ statutLabel(evt.statut) }}</span>
+              <span class="ev-badge" :class="eventPhase(evt).className">{{ eventPhase(evt).label }}</span>
             </div>
           </div>
   
@@ -438,7 +438,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useApiStore } from '../store/api.js'
 import AppIcon from '../components/AppIcon.vue'
@@ -450,6 +450,7 @@ const route = useRoute()
 const api = useApiStore()
 
 const search = ref('')
+const currentTime = ref(Date.now())
 const showModal = ref(false)
 const showDeleteModal = ref(false)
 const editingEvt = ref(null)
@@ -615,7 +616,13 @@ function removeInvitationCard() {
   if (input) input.value = ''
 }
 
+let eventStatusInterval
+
 onMounted(async () => {
+  eventStatusInterval = window.setInterval(() => {
+    currentTime.value = Date.now()
+  }, 1000)
+
   await api.fetchEvenements()
   if (route.query.create === 'true') {
     openCreate()
@@ -629,6 +636,8 @@ onMounted(async () => {
     }
   }
 })
+
+onUnmounted(() => window.clearInterval(eventStatusInterval))
 
 const filteredEvents = computed(() => {
   if (!search.value.trim()) return api.evenements
@@ -700,6 +709,19 @@ function statutLabel(statut) {
   if (statut === 'termine') return 'Terminé'
   if (statut === 'a_venir') return 'À venir'
   return 'Brouillon'
+}
+
+function eventPhase(evt) {
+  if (evt.statut === 'brouillon') return { label: 'Brouillon', className: 'badge-gray' }
+
+  const start = Date.parse(evt.date_debut)
+  const end = Date.parse(evt.date_fin)
+  if (!Number.isFinite(start) || !Number.isFinite(end)) {
+    return { label: statutLabel(evt.statut), className: badgeClass(evt.statut) }
+  }
+  if (currentTime.value < start) return { label: 'À venir', className: 'badge-purple' }
+  if (currentTime.value < end) return { label: 'En cours', className: 'badge-green' }
+  return { label: 'Terminé', className: 'badge-blue' }
 }
 
 function openCreate() {
