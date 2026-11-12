@@ -6,6 +6,7 @@ import { generateQrPng } from '../services/qrService.js'
 import { normalizeEmail } from '../utils/emailValidator.js'
 import { authMiddleware, requireAdmin } from '../middleware/auth.js'
 import { recordAudit } from '../utils/audit.js'
+import { isBeforeEventDay } from '../utils/eventReminderEligibility.js'
 
 const router = Router()
 
@@ -192,6 +193,11 @@ router.post('/send', async (req, res, next) => {
       // Vérifier que l'email est normalisé (lowercase, trimé)
       if (invite.email !== invite.email.toLowerCase().trim()) {
         results.push({ id: invitation.id, status: 'skipped', reason: 'Email non normalisé — mettez à jour le contact' })
+        continue
+      }
+
+      if (reminder && !isBeforeEventDay(evenement?.date_debut)) {
+        results.push({ id: invitation.id, status: 'skipped', reason: 'Relances arrêtées à partir du jour de l’événement' })
         continue
       }
 

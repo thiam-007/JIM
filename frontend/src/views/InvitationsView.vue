@@ -623,8 +623,20 @@ const pendingCount = computed(() =>
   api.invitations.filter(i => i.statut === 'pas_de_reaction').length
 )
 
+const canSendReminders = computed(() => {
+  const eventStart = new Date(evenement.value?.date_debut)
+  if (!evenement.value?.date_debut || Number.isNaN(eventStart.getTime())) return false
+
+  const now = new Date()
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  const eventDay = Date.UTC(eventStart.getUTCFullYear(), eventStart.getUTCMonth(), eventStart.getUTCDate())
+  return today < eventDay
+})
+
 const reminderCount = computed(() =>
-  api.invitations.filter(i => i.statut === 'envoye' && !i.date_reponse).length
+  canSendReminders.value
+    ? api.invitations.filter(i => i.statut === 'envoye' && !i.date_reponse).length
+    : 0
 )
 
 const filteredInvitations = computed(() => {
@@ -785,7 +797,7 @@ async function sendInvitationBatch(pendingInvites, label, reminder = false) {
     const failedReasons = res.results ? res.results.filter(r => r.status === 'failed').map(r => '- ' + (r.error || 'Erreur inconnue')).join('\n') : ''
     showNotification({
       title: label,
-      message: `Succès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés (pas d'email): ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`,
+      message: `Succès: ${res.sent}\nÉchecs: ${res.failed}\nIgnorés: ${res.skipped}${failedReasons ? '\n\nCauses des échecs :\n' + failedReasons : ''}`,
       type: res.failed > 0 ? 'info' : 'success'
     })
     await api.fetchInvitations(eventId)

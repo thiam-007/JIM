@@ -1,5 +1,6 @@
 import supabase from '../config/supabase.js'
 import { sendInvitation } from './emailService.js'
+import { isBeforeEventDay } from '../utils/eventReminderEligibility.js'
 
 const DEFAULT_AFTER_DAYS = 3
 const DEFAULT_REPEAT_DAYS = 7
@@ -10,6 +11,9 @@ export async function sendAutomaticReminders() {
   const now = Date.now()
   const firstReminderBefore = new Date(now - afterDays * 24 * 60 * 60 * 1000).toISOString()
   const repeatReminderBefore = new Date(now - repeatDays * 24 * 60 * 60 * 1000).toISOString()
+  const firstAllowedEventStart = new Date(now)
+  firstAllowedEventStart.setUTCHours(0, 0, 0, 0)
+  firstAllowedEventStart.setUTCDate(firstAllowedEventStart.getUTCDate() + 1)
 
   const { data: invitations, error } = await supabase
     .from('invitations')
@@ -23,7 +27,7 @@ export async function sendAutomaticReminders() {
     .not('date_envoi', 'is', null)
     .lte('date_envoi', firstReminderBefore)
     .or(`derniere_relance_at.is.null,derniere_relance_at.lte.${repeatReminderBefore}`)
-    .gt('evenements.date_debut', new Date(now).toISOString())
+    .gte('evenements.date_debut', firstAllowedEventStart.toISOString())
     .limit(100)
 
   if (error) throw error
@@ -37,9 +41,8 @@ export async function sendAutomaticReminders() {
       continue
     }
 
-    const eventStart = Date.parse(invitation.evenements.date_debut)
-    if (!Number.isFinite(eventStart) || eventStart <= Date.now()) {
-      results.push({ id: invitation.id, status: 'skipped', reason: 'Événement commencé ou date de début invalide' })
+    if (!isBeforeEventDay(invitation.evenements.date_debut, new Date(now))) {
+      results.push({ id: invitation.id, status: 'skipped', reason: 'Relances arrêtées à partir du jour de l’événement' })
       continue
     }
 
