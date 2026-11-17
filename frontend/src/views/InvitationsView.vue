@@ -289,6 +289,12 @@
               <span class="selection-count" style="margin-left: auto;">{{ selectedIds.size }} sélectionné(s)</span>
             </div>
 
+            <div v-if="pendingImportRecords" style="margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(249,178,51,0.12); color: var(--brun); font-size: 0.85rem;">
+              Liste temporaire : {{ pendingImportRecords.length }} destinataire(s) du fichier.
+              Ils ne seront ajoutés aux contacts qu’au moment de l’envoi.
+              <button type="button" class="btn-select-all" style="margin-left: 8px;" @click="clearPendingImport">Annuler l’import</button>
+            </div>
+
             <div class="contacts-list" v-if="filteredContacts.length">
               <label
                 v-for="contact in filteredContacts"
@@ -319,8 +325,8 @@
             <div class="modal-actions">
               <button class="btn-cancel" @click="showAddModal = false">Annuler</button>
               <button class="bsub bsub-a modal-submit" @click="addInvitations" :disabled="adding || selectedIds.size === 0">
-                <AppIcon :name="adding ? 'loader' : 'plus'" :size="16" />
-                {{ adding ? 'Ajout en cours…' : `Inviter ${selectedIds.size > 0 ? selectedIds.size : ''} contact(s)` }}
+                <AppIcon :name="adding ? 'loader' : (pendingImportRecords ? 'send' : 'plus')" :size="16" />
+                {{ adding ? (pendingImportRecords ? 'Envoi en cours…' : 'Ajout en cours…') : (pendingImportRecords ? `Envoyer ${selectedIds.size} invitation(s)` : `Inviter ${selectedIds.size > 0 ? selectedIds.size : ''} contact(s)`) }}
               </button>
             </div>
           </div>
@@ -489,6 +495,7 @@ const adding = ref(false)
 const addError = ref('')
 const modalSearch = ref('')
 const selectedIds = ref(new Set())
+const pendingImportRecords = ref(null)
 const confirmModal = ref({
   open: false,
   title: '',
@@ -661,7 +668,7 @@ const alreadyInvited = computed(() => {
 })
 
 const filteredContacts = computed(() => {
-  let list = api.invites
+  let list = pendingImportRecords.value || api.invites
   if (modalSearch.value.trim()) {
     const q = modalSearch.value.toLowerCase()
     list = list.filter(c =>
@@ -834,6 +841,7 @@ function eventName() {
 async function openAddInvites() {
   modalSearch.value = ''
   selectedIds.value = new Set()
+  pendingImportRecords.value = null
   addError.value = ''
   if (!api.invites.length) await api.fetchInvites()
   showAddModal.value = true
@@ -844,6 +852,81 @@ async function addInvitations() {
   adding.value = true
   addError.value = ''
   try {
+    if (pendingImportRecords.value) {
+      const selectedRecords = pendingImportRecords.value.filter(record => selectedIds.value.has(record.id))
+      const newRecords = selectedRecords
+        .filter(record => !record.existingId)
+        .map(({ id, existingId, ...record }) => record)
+
+      if (newRecords.length) {
+        await api.post('/api/invites/bulk', { invites: newRecords })
+      }
+      await api.fetchInvites()
+
+      const inviteByEmail = new Map(
+        api.invites
+          .filter(invite => invite.email)
+          .map(invite => [normalizeEmail(invite.email), invite.id])
+      )
+      const inviteIds = [...new Set(selectedRecords
+        .map(record => record.existingId || inviteByEmail.get(record.email))
+        .filter(Boolean))]
+        .filter(id => !alreadyInvited.value.has(id))
+
+      if (!inviteIds.length) {
+        addError.value = 'Aucun nouveau destinataire à inviter pour cet événement.'
+        return
+      }
+
+      const created = await api.post('/api/invitations', { evenement_id: eventId, invite_ids: inviteIds })
+      const invitationIds = (created.invitations || []).map(invitation => invitation.id)
+      if (!invitationIds.length) {
+        throw new Error('Les invitations n’ont pas pu être créées.')
+      }
+
+      pendingImportRecords.value = null
+      selectedIds.value = new Set()
+      showAddModal.value = false
+
+      let result
+      try {
+        result = await api.post('/api/invitations/send', { invitation_ids: invitationIds })
+      } catch (sendError) {
+        let refreshMessage = ''
+        try {
+          await api.fetchInvitations(eventId)
+        } catch (refreshError) {
+          console.error(refreshError)
+          refreshMessage = ' La liste des invitations n’a pas pu être actualisée.'
+        }
+        showNotification({
+          title: 'Invitations créées, envoi non confirmé',
+          message: `${sendError.message || 'Erreur lors de l’envoi.'} Les invitations restent disponibles dans la liste de cet événement.${refreshMessage}`,
+          type: 'error'
+        })
+        return
+      }
+
+      try {
+        await api.fetchInvitations(eventId)
+      } catch (refreshError) {
+        console.error(refreshError)
+        showNotification({
+          title: 'Envoi effectué, actualisation impossible',
+          message: 'Les invitations ont été envoyées, mais la liste n’a pas pu être actualisée.',
+          type: 'error'
+        })
+        return
+      }
+
+      showNotification({
+        title: result.failed || result.skipped ? 'Envoi partiel' : 'Envoi terminé',
+        message: `${result.sent || 0} invitation(s) envoyée(s), ${result.failed || 0} échec(s), ${result.skipped || 0} ignorée(s).`,
+        type: result.failed || result.skipped ? 'error' : 'success'
+      })
+      return
+    }
+
     const ids = [...selectedIds.value]
     await api.post('/api/invitations', { evenement_id: eventId, invite_ids: ids })
     await api.fetchInvitations(eventId)
@@ -853,6 +936,13 @@ async function addInvitations() {
   } finally {
     adding.value = false
   }
+}
+
+function clearPendingImport() {
+  pendingImportRecords.value = null
+  selectedIds.value = new Set()
+  modalSearch.value = ''
+  addError.value = ''
 }
 
 function openDetail(inv) {
@@ -1009,6 +1099,7 @@ async function importExcelOrCSV(event) {
           })
         
         const records = []
+        let rejectedCount = 0
         
         json.forEach(row => {
           // Normalisation des clés sans accents ni espaces pour la comparaison
@@ -1021,6 +1112,7 @@ async function importExcelOrCSV(event) {
           const oKey = Object.keys(row).find(k => ['organisation', 'organization', 'societe', 'entreprise', 'company', 'institution', 'entite', 'entity'].includes(normalizeKey(k)))
           const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'position', 'role', 'job'].includes(normalizeKey(k))) || Object.keys(row).find(k => ['titre', 'title'].includes(normalizeKey(k)))
           const notesKey = Object.keys(row).find(k => ['notes', 'note', 'observation', 'observations', 'commentaire', 'commentaires'].includes(normalizeKey(k)))
+          const categoryKey = Object.keys(row).find(k => ['categorie', 'category'].includes(normalizeKey(k)))
           
           let prenom = pKey ? String(row[pKey]).trim() : ''
           let nom = nKey ? String(row[nKey]).trim() : ''
@@ -1029,17 +1121,14 @@ async function importExcelOrCSV(event) {
           const organisation = oKey ? String(row[oKey]).trim() : ''
           const titre_poste = posKey ? String(row[posKey]).trim() : ''
           const notes = notesKey ? String(row[notesKey]).trim() : ''
+          const categorie = categoryKey ? String(row[categoryKey]).trim() : 'Participant'
 
-          // Normaliser l'email
-          if (email) {
-            const normalizedEmail = normalizeEmail(email)
-            if (!normalizedEmail) {
-              console.warn(`Email invalide ignoré: "${email}"`)
-              email = '' // Ignorer l'email invalide
-            } else {
-              email = normalizedEmail
-            }
+          const normalizedEmail = normalizeEmail(email)
+          if (!normalizedEmail) {
+            rejectedCount++
+            return
           }
+          email = normalizedEmail
 
           if (!prenom && !nom) {
             const fullnameKey = Object.keys(row).find(k => {
@@ -1067,28 +1156,59 @@ async function importExcelOrCSV(event) {
             nom = prenom
           }
 
-          if (prenom || nom) {
-            records.push({ prenom, nom, email, telephone, organisation, titre_poste, notes })
+          if (prenom && nom) {
+            records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, notes })
+          } else {
+            rejectedCount++
           }
         })
 
         if (records.length === 0) {
-          showNotification({ title: 'Fichier vide', message: 'Aucun contact valide trouvé dans le fichier.', type: 'info' })
+          showNotification({ title: 'Fichier sans destinataire valide', message: 'Aucune ligne avec un prénom, un nom et une adresse email valide n’a été trouvée.', type: 'info' })
           return
         }
 
-        const result = await api.post('/api/invites/bulk', { invites: records })
+        await api.fetchInvites()
+        const existingByEmail = new Map(
+          api.invites
+            .filter(invite => invite.email)
+            .map(invite => [normalizeEmail(invite.email), invite])
+        )
+        const seenEmails = new Set()
+        const stagedRecords = records
+          .filter(record => {
+            if (seenEmails.has(record.email)) return false
+            seenEmails.add(record.email)
+            return true
+          })
+          .map(record => {
+            const existing = existingByEmail.get(record.email)
+            return {
+              ...record,
+              id: existing?.id || `import:${record.email}`,
+              existingId: existing?.id || null
+            }
+          })
+
+        pendingImportRecords.value = stagedRecords
+        modalSearch.value = ''
+        selectedIds.value = new Set(
+          stagedRecords
+            .filter(record => !record.existingId || !alreadyInvited.value.has(record.existingId))
+            .map(record => record.id)
+        )
+        addError.value = ''
+
         showNotification({
-          title: 'Import réussi',
-          message: `${result.created || records.length} contact(s) importé(s) avec succès.`,
+          title: 'Liste prête à envoyer',
+          message: `${selectedIds.value.size} destinataire(s) du fichier ont été sélectionnés. Les contacts ne seront ajoutés qu’au moment de l’envoi.${rejectedCount ? ` ${rejectedCount} ligne(s) ignorée(s) pour email invalide ou identité manquante.` : ''}`,
           type: 'success'
         })
-        await api.fetchInvites()
       } catch (err) {
         console.error(err)
         showNotification({
           title: 'Erreur',
-          message: 'Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.',
+          message: err.message || 'Erreur lors de la lecture du fichier. Assurez-vous qu\'il s\'agit d\'un fichier Excel ou CSV valide.',
           type: 'error'
         })
       }
