@@ -46,7 +46,7 @@
         </div>
         <div class="inv-stat red">
           <span class="inv-stat-num">{{ responseStats.noShows }}</span>
-          <span class="inv-stat-label">No-shows</span>
+          <span class="inv-stat-label">Absents après l’événement</span>
         </div>
         <div class="inv-stat">
           <span class="inv-stat-num">{{ responseStats.averageDays }} j</span>
@@ -293,6 +293,16 @@
               Liste temporaire : {{ pendingImportRecords.length }} destinataire(s) du fichier.
               Ils ne seront ajoutés aux contacts qu’au moment de l’envoi.
               <button type="button" class="btn-select-all" style="margin-left: 8px;" @click="clearPendingImport">Annuler l’import</button>
+              <button
+                v-if="existingNameChanges.length"
+                type="button"
+                class="btn-select-all"
+                style="margin-left: 8px;"
+                :disabled="updatingNames"
+                @click="updateImportedNames"
+              >
+                {{ updatingNames ? 'Correction des noms…' : `Corriger les noms de ${existingNameChanges.length} contact(s) existant(s), sans renvoyer` }}
+              </button>
             </div>
 
             <div class="contacts-list" v-if="filteredContacts.length">
@@ -492,6 +502,7 @@ const deleting = ref(false)
 const deleteError = ref('')
 const sending = ref(false)
 const adding = ref(false)
+const updatingNames = ref(false)
 const addError = ref('')
 const modalSearch = ref('')
 const selectedIds = ref(new Set())
@@ -580,6 +591,8 @@ const responseStats = computed(() => {
   const list = api.invitations || []
   const answered = list.filter(invitation => invitation.date_reponse)
   const responseRate = list.length ? Math.round((answered.length / list.length) * 100) : 0
+  const eventEnd = evenement.value?.date_fin ? new Date(evenement.value.date_fin) : null
+  const eventHasEnded = eventEnd && !Number.isNaN(eventEnd.getTime()) && eventEnd.getTime() <= Date.now()
   const totalResponseTime = answered.reduce((total, invitation) => {
     if (!invitation.date_envoi) return total
     const delay = new Date(invitation.date_reponse) - new Date(invitation.date_envoi)
@@ -588,7 +601,7 @@ const responseStats = computed(() => {
   const measuredResponses = answered.filter(invitation => invitation.date_envoi && new Date(invitation.date_reponse) >= new Date(invitation.date_envoi)).length
   return {
     responseRate,
-    noShows: list.filter(invitation => invitation.statut === 'inscrit').length,
+    noShows: eventHasEnded ? list.filter(invitation => invitation.statut === 'inscrit').length : 0,
     averageDays: measuredResponses ? Math.round((totalResponseTime / measuredResponses / 86400000) * 10) / 10 : 0
   }
 })
@@ -665,6 +678,16 @@ const alreadyInvited = computed(() => {
   const ids = new Set()
   api.invitations.forEach(i => { if (i.invites?.id) ids.add(i.invites.id) })
   return ids
+})
+
+const existingNameChanges = computed(() => {
+  if (!pendingImportRecords.value) return []
+  const existingById = new Map(api.invites.map(invite => [String(invite.id), invite]))
+  return pendingImportRecords.value.filter(record => {
+    if (!record.existingId) return false
+    const existing = existingById.get(String(record.existingId))
+    return existing && (existing.prenom !== record.prenom || existing.nom !== record.nom)
+  })
 })
 
 const filteredContacts = computed(() => {
@@ -823,7 +846,7 @@ function printEventReport() {
     ['Confirmations', stats.value.inscrits],
     ['Refus', stats.value.declines],
     ['Présents', stats.value.presents],
-    ['No-shows', responseStats.value.noShows],
+    ['Absents après l’événement', responseStats.value.noShows],
     ['Taux de réponse', `${responseStats.value.responseRate}%`],
     ['Délai moyen de réponse', `${responseStats.value.averageDays} jour(s)`]
   ]
@@ -943,6 +966,57 @@ function clearPendingImport() {
   selectedIds.value = new Set()
   modalSearch.value = ''
   addError.value = ''
+}
+
+async function updateImportedNames() {
+  const records = [...existingNameChanges.value]
+  if (!records.length || updatingNames.value) return
+
+  updatingNames.value = true
+  let updatedCount = 0
+  const failures = []
+
+  try {
+    for (let i = 0; i < records.length; i += 10) {
+      const batch = records.slice(i, i + 10)
+      const results = await Promise.all(batch.map(async record => {
+        try {
+          const updated = await api.put(`/api/invites/${record.existingId}`, {
+            prenom: record.prenom,
+            nom: record.nom
+          })
+          const index = api.invites.findIndex(invite => String(invite.id) === String(updated.id))
+          if (index !== -1) api.invites[index] = updated
+          return { success: true }
+        } catch (error) {
+          return { success: false, email: record.email, error: error.message || 'Erreur de mise à jour' }
+        }
+      }))
+
+      updatedCount += results.filter(result => result.success).length
+      failures.push(...results.filter(result => !result.success))
+    }
+
+    let refreshWarning = ''
+    try {
+      await api.fetchInvites()
+      await api.fetchInvitations(eventId)
+    } catch (error) {
+      console.error(error)
+      refreshWarning = ' La liste n’a pas pu être actualisée automatiquement.'
+    }
+
+    const failureMessage = failures.length
+      ? ` ${failures.length} échec(s) de mise à jour; réessayez ou modifiez les fiches concernées manuellement.`
+      : ''
+    showNotification({
+      title: failures.length ? 'Correction partielle' : 'Noms corrigés',
+      message: `${updatedCount} contact(s) corrigé(s). Aucune invitation n’a été renvoyée.${failureMessage}${refreshWarning}`,
+      type: failures.length || refreshWarning ? 'error' : 'success'
+    })
+  } finally {
+    updatingNames.value = false
+  }
 }
 
 function openDetail(inv) {
