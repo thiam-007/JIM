@@ -452,6 +452,7 @@ async function exportExcel() {
 async function importExcelOrCSV(event) {
   const file = event.target.files[0]
   if (!file) return
+  const isCsv = /\.csv$/i.test(file.name)
   importMsg.value = null
   importReport.value = null
 
@@ -459,8 +460,8 @@ async function importExcelOrCSV(event) {
   reader.onload = async (e) => {
     try {
       const XLSX = await import('xlsx')
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array' })
+      const data = isCsv ? e.target.result : new Uint8Array(e.target.result)
+      const workbook = XLSX.read(data, { type: isCsv ? 'string' : 'array' })
       const firstSheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[firstSheetName]
       // Conversion en matrice pour trouver la vraie ligne d'en-têtes (ex: CONTACT, EMAIL, etc.)
@@ -567,7 +568,8 @@ async function importExcelOrCSV(event) {
     }
   }
   
-  reader.readAsArrayBuffer(file)
+  if (isCsv) reader.readAsText(file, 'UTF-8')
+  else reader.readAsArrayBuffer(file)
   if (fileInput.value) fileInput.value.value = ''
   setTimeout(() => { importMsg.value = null }, 5000)
 }

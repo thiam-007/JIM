@@ -1064,13 +1064,14 @@ const fileInput = ref(null)
 async function importExcelOrCSV(event) {
   const file = event.target.files[0]
   if (!file) return
+  const isCsv = /\.csv$/i.test(file.name)
   try {
     const reader = new FileReader()
     reader.onload = async (e) => {
       try {
         const XLSX = await import('xlsx')
-        const data = new Uint8Array(e.target.result)
-        const workbook = XLSX.read(data, { type: 'array' })
+        const data = isCsv ? e.target.result : new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: isCsv ? 'string' : 'array' })
         const firstSheetName = workbook.SheetNames[0]
         const worksheet = workbook.Sheets[firstSheetName]
         const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" })
@@ -1213,7 +1214,8 @@ async function importExcelOrCSV(event) {
         })
       }
     }
-    reader.readAsArrayBuffer(file)
+    if (isCsv) reader.readAsText(file, 'UTF-8')
+    else reader.readAsArrayBuffer(file)
   } catch (err) {
     console.error(err)
   } finally {
