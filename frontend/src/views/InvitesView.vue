@@ -95,6 +95,7 @@
               <th>Organisation</th>
               <th>Poste</th>
               <th>Catégorie</th>
+              <th>Groupes</th>
               <th class="col-center">Invitations</th>
               <th class="col-actions">Actions</th>
             </tr>
@@ -115,6 +116,12 @@
               <td>{{ inv.organisation || '—' }}</td>
               <td>{{ inv.titre_poste || '—' }}</td>
               <td><span class="inv-category" :class="(inv.categorie || 'Participant').toLowerCase()">{{ inv.categorie || 'Participant' }}</span></td>
+              <td>
+                <span v-if="inv.groupes?.length" class="inv-contact-groups">
+                  <span v-for="group in inv.groupes" :key="group" class="inv-contact-group">{{ group }}</span>
+                </span>
+                <span v-else class="inv-empty-cell">—</span>
+              </td>
               <td class="col-center">
                 <span class="inv-count-badge" v-if="inv.invitations_count">{{ inv.invitations_count }}</span>
                 <span v-else class="inv-empty-cell">0</span>
@@ -204,6 +211,11 @@
                 </select>
               </div>
               <div class="fg">
+                <label>Groupes / étiquettes</label>
+                <input type="text" v-model="form.groupes" placeholder="Ex : Presse, partenaires culturels" />
+                <small class="form-hint">Séparez plusieurs groupes par des virgules.</small>
+              </div>
+              <div class="fg">
                 <label>Notes</label>
                 <textarea v-model="form.notes" placeholder="Notes internes…" rows="3"></textarea>
               </div>
@@ -238,6 +250,9 @@
               Êtes-vous sûr de vouloir supprimer <strong>{{ deletingInv?.prenom }} {{ deletingInv?.nom }}</strong> ?
               Toutes ses invitations seront également supprimées.
             </p>
+            <div v-if="deleteError" class="form-error-msg">
+              <AppIcon name="alert-triangle" :size="15" /> {{ deleteError }}
+            </div>
             <div class="modal-actions">
               <button class="btn-cancel" @click="showDeleteModal = false">Annuler</button>
               <button class="bsub bsub-s modal-submit" @click="doDelete" :disabled="deleting">
@@ -275,6 +290,7 @@ const deletingInv = ref(null)
 const saving = ref(false)
 const deleting = ref(false)
 const formError = ref('')
+const deleteError = ref('')
 const importMsg = ref(null)
 const importReport = ref(null)
 const fileInput = ref(null)
@@ -283,8 +299,19 @@ const exportingExcel = ref(false)
 
 const form = ref({
   prenom: '', nom: '', email: '', telephone: '',
-  organisation: '', titre_poste: '', categorie: 'Participant', notes: ''
+  organisation: '', titre_poste: '', categorie: 'Participant', groupes: '', notes: ''
 })
+
+function parseInviteGroups(value) {
+  const values = Array.isArray(value) ? value : String(value || '').split(/[;,]/)
+  const uniqueGroups = new Map()
+  values.forEach(item => {
+    const group = String(item || '').trim().replace(/\s+/g, ' ')
+    const key = group.toLowerCase()
+    if (group && !uniqueGroups.has(key)) uniqueGroups.set(key, group)
+  })
+  return [...uniqueGroups.values()]
+}
 
 onMounted(async () => {
   loading.value = true
@@ -348,7 +375,7 @@ function initials(inv) {
 
 function openCreate() {
   editingInv.value = null
-  form.value = { prenom: '', nom: '', email: '', telephone: '', organisation: '', titre_poste: '', categorie: 'Participant', notes: '' }
+  form.value = { prenom: '', nom: '', email: '', telephone: '', organisation: '', titre_poste: '', categorie: 'Participant', groupes: '', notes: '' }
   formError.value = ''
   showModal.value = true
 }
@@ -363,6 +390,7 @@ function openEdit(inv) {
     organisation: inv.organisation || '',
     titre_poste: inv.titre_poste || '',
     categorie: inv.categorie || 'Participant',
+    groupes: Array.isArray(inv.groupes) ? inv.groupes.join(', ') : '',
     notes: inv.notes || ''
   }
   formError.value = ''
@@ -380,12 +408,13 @@ async function saveInv() {
   if (!form.value.nom.trim()) { formError.value = 'Le nom est obligatoire.'; return }
   saving.value = true
   try {
+    const payload = { ...form.value, groupes: parseInviteGroups(form.value.groupes) }
     if (editingInv.value) {
-      const updated = await api.put(`/api/invites/${editingInv.value.id}`, form.value)
+      const updated = await api.put(`/api/invites/${editingInv.value.id}`, payload)
       const idx = api.invites.findIndex(i => i.id === editingInv.value.id)
       if (idx !== -1) api.invites[idx] = updated
     } else {
-      const created = await api.post('/api/invites', form.value)
+      const created = await api.post('/api/invites', payload)
       api.invites.unshift(created)
     }
     closeModal()
@@ -398,17 +427,21 @@ async function saveInv() {
 
 function confirmDelete(inv) {
   deletingInv.value = inv
+  deleteError.value = ''
   showDeleteModal.value = true
 }
 
 async function doDelete() {
   if (!deletingInv.value) return
   deleting.value = true
+  deleteError.value = ''
   try {
     await api.del(`/api/invites/${deletingInv.value.id}`)
     api.invites = api.invites.filter(i => i.id !== deletingInv.value.id)
     showDeleteModal.value = false
     deletingInv.value = null
+  } catch (err) {
+    deleteError.value = err.message || 'Erreur lors de la suppression du contact.'
   } finally {
     deleting.value = false
   }
@@ -428,13 +461,14 @@ async function exportExcel() {
       'Entité': invite.organisation || '',
       'Fonction': invite.titre_poste || '',
       'Catégorie': invite.categorie || 'Participant',
+      'Groupes': Array.isArray(invite.groupes) ? invite.groupes.join(', ') : '',
       'Nombre d’invitations': Number(invite.invitations_count || 0),
       'Notes': invite.notes || ''
     }))
     const worksheet = XLSX.utils.json_to_sheet(rows)
     worksheet['!cols'] = [
       { wch: 20 }, { wch: 24 }, { wch: 34 }, { wch: 20 }, { wch: 28 },
-      { wch: 24 }, { wch: 18 }, { wch: 22 }, { wch: 40 }
+      { wch: 24 }, { wch: 18 }, { wch: 28 }, { wch: 22 }, { wch: 40 }
     ]
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Invités')
@@ -506,6 +540,7 @@ async function importExcelOrCSV(event) {
         const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'position', 'role', 'job'].includes(normalizeKey(k))) || Object.keys(row).find(k => ['titre', 'title'].includes(normalizeKey(k)))
         const notesKey = Object.keys(row).find(k => ['notes', 'note', 'observation', 'observations', 'commentaire', 'commentaires'].includes(normalizeKey(k)))
         const categoryKey = Object.keys(row).find(k => ['categorie', 'category'].includes(normalizeKey(k)))
+        const groupsKey = Object.keys(row).find(k => ['groupe', 'groupes', 'group', 'groups', 'tag', 'tags', 'etiquette', 'etiquettes', 'label', 'labels', 'groupe etiquette', 'groupes etiquettes', 'groupe / etiquette', 'groupes / etiquettes'].includes(normalizeKey(k)))
         
         let prenom = pKey ? String(row[pKey]).trim() : ''
         let nom = nKey ? String(row[nKey]).trim() : ''
@@ -514,6 +549,7 @@ async function importExcelOrCSV(event) {
         const organisation = oKey ? String(row[oKey]).trim() : ''
         const titre_poste = posKey ? String(row[posKey]).trim() : ''
         const categorie = categoryKey ? String(row[categoryKey]).trim() : 'Participant'
+        const groupes = groupsKey ? parseInviteGroups(row[groupsKey]) : []
         const notes = notesKey ? String(row[notesKey]).trim() : ''
 
         // Gestion du cas où le nom complet figure dans une seule colonne (ex: CONTACT, NOM COMPLET, NOM ET PRENOM, NAME)
@@ -544,7 +580,7 @@ async function importExcelOrCSV(event) {
         }
 
         if (prenom && nom) {
-          records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, notes })
+          records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, groupes, notes })
         } else {
           rejected.push({ row: rowIndex + 2, reason: 'Prénom ou nom manquant (colonne CONTACT vide ou non reconnue)' })
         }
@@ -757,6 +793,13 @@ async function importFromNewsletter() {
 .import-rejected-item strong { min-width: 62px; }
 .inv-email:hover { color: var(--rouge); text-decoration: underline; }
 .inv-empty-cell { color: rgba(132,89,54,.35); }
+.inv-contact-groups { display: flex; flex-wrap: wrap; gap: 4px; }
+.inv-contact-group {
+  display: inline-flex; padding: 3px 8px; border-radius: 999px;
+  background: rgba(132,89,54,.08); color: var(--brun);
+  font-size: .72rem; font-weight: 700; white-space: nowrap;
+}
+.form-hint { display: block; margin-top: 5px; color: rgba(36,27,22,.58); font-size: .76rem; }
 .inv-count-badge {
   display: inline-flex; align-items: center; justify-content: center;
   width: 28px; height: 28px; border-radius: 50%;

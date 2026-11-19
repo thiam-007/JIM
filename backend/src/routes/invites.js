@@ -19,6 +19,23 @@ function handleInviteError(error, res, next) {
   return next(error)
 }
 
+function normalizeGroups(groups) {
+  const values = Array.isArray(groups)
+    ? groups
+    : typeof groups === 'string'
+      ? groups.split(',')
+      : []
+  const uniqueGroups = new Map()
+
+  values.forEach(value => {
+    const group = String(value || '').trim().replace(/\s+/g, ' ')
+    const key = group.toLowerCase()
+    if (group && !uniqueGroups.has(key)) uniqueGroups.set(key, group)
+  })
+
+  return [...uniqueGroups.values()]
+}
+
 // ─── List all invites (with optional search) ───────────────────────────────────
 router.get('/', async (req, res, next) => {
   try {
@@ -49,7 +66,7 @@ router.get('/', async (req, res, next) => {
 // ─── Create single invite ──────────────────────────────────────────────────────
 router.post('/', async (req, res, next) => {
   try {
-    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, notes } = req.body
+    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, groupes, notes } = req.body
 
     if (!prenom) return res.status(400).json({ error: 'Le prénom est requis' })
     if (!nom) return res.status(400).json({ error: 'Le nom est requis' })
@@ -65,7 +82,7 @@ router.post('/', async (req, res, next) => {
 
     const { data, error } = await supabase
       .from('invites')
-      .insert({ prenom, nom, email: normalizedEmail, telephone, organisation, titre_poste, categorie: categorie || 'Participant', notes })
+      .insert({ prenom, nom, email: normalizedEmail, telephone, organisation, titre_poste, categorie: categorie || 'Participant', groupes: normalizeGroups(groupes), notes })
       .select()
       .single()
 
@@ -119,6 +136,7 @@ router.post('/bulk', async (req, res, next) => {
         organisation: inv.organisation?.trim() || null,
         titre_poste: inv.titre_poste?.trim() || null,
         categorie: inv.categorie?.trim() || 'Participant',
+        groupes: normalizeGroups(inv.groupes),
         notes: inv.notes?.trim() || null
       })
     }
@@ -243,7 +261,7 @@ router.get('/:id', async (req, res, next) => {
 // ─── Update invite ─────────────────────────────────────────────────────────────
 router.put('/:id', async (req, res, next) => {
   try {
-    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, notes } = req.body
+    const { prenom, nom, email, telephone, organisation, titre_poste, categorie, groupes, notes } = req.body
 
     const updates = {}
     if (prenom !== undefined) updates.prenom = prenom.trim()
@@ -263,6 +281,7 @@ router.put('/:id', async (req, res, next) => {
     if (organisation !== undefined) updates.organisation = organisation?.trim() || null
     if (titre_poste !== undefined) updates.titre_poste = titre_poste?.trim() || null
     if (categorie !== undefined) updates.categorie = categorie?.trim() || 'Participant'
+    if (groupes !== undefined) updates.groupes = normalizeGroups(groupes)
     if (notes !== undefined) updates.notes = notes?.trim() || null
 
     const { data, error } = await supabase
@@ -284,6 +303,23 @@ router.put('/:id', async (req, res, next) => {
 // ─── Delete invite ─────────────────────────────────────────────────────────────
 router.delete('/:id', async (req, res, next) => {
   try {
+    const { data: invitations, error: invitationsError } = await supabase
+      .from('invitations')
+      .select('id')
+      .eq('invite_id', req.params.id)
+
+    if (invitationsError) throw invitationsError
+
+    const invitationIds = (invitations || []).map(invitation => invitation.id)
+    if (invitationIds.length) {
+      const { error: checkinsError } = await supabase
+        .from('checkins')
+        .delete()
+        .in('invitation_id', invitationIds)
+
+      if (checkinsError) throw checkinsError
+    }
+
     const { error } = await supabase
       .from('invites')
       .delete()

@@ -36,7 +36,7 @@ JIM/
 
 ### 🛡️ Back-office Admin & Tableau de Bord
 - **Gestion des Événements** : Création, modification et suivi de la capacité/inscriptions des ateliers.
-- **Gestion des Invités & Invitations** : Import/ajout d'invités, envoi d'invitations personnalisées avec code QR unique.
+- **Gestion des Invités & Invitations** : Import/ajout d'invités, groupes réutilisables, sélection des destinataires par événement et envoi d'invitations personnalisées avec code QR unique.
 - **Check-in par QR Code** : Scanner de codes QR à l'accueil pour valider les arrivées d'invités en temps réel (via mobile/webcam).
 - **Statistiques & KPIs** : Inscriptions, taux de réponse RSVP, présences, et activités de la newsletter.
 - **Campagnes Newsletter** : Rédaction et envoi de newsletters de masse (manuelles ou basées sur des articles de presse/actualités) via Brevo. Un **flux RSS public** (`/api/rss`) est également fourni pour connecter et automatiser des campagnes de newsletter.

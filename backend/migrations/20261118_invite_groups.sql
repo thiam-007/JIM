@@ -1,0 +1,2 @@
+ALTER TABLE invites
+  ADD COLUMN IF NOT EXISTS groupes TEXT[] NOT NULL DEFAULT '{}'::text[];

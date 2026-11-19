@@ -44,12 +44,14 @@ CREATE TABLE IF NOT EXISTS invites (
   organisation VARCHAR,
   titre_poste VARCHAR,
   categorie VARCHAR DEFAULT 'Participant',
+  groupes TEXT[] NOT NULL DEFAULT '{}'::text[],
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE invites ADD COLUMN IF NOT EXISTS categorie VARCHAR DEFAULT 'Participant';
+ALTER TABLE invites ADD COLUMN IF NOT EXISTS groupes TEXT[] NOT NULL DEFAULT '{}'::text[];
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_invites_email_normalized_unique
   ON invites (lower(btrim(email)))

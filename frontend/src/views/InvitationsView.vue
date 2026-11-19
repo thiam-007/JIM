@@ -276,8 +276,12 @@
             </div>
 
             <div class="modal-select-actions" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%;">
-              <button class="btn-select-all" @click="selectAll">Tout sélectionner</button>
+              <button class="btn-select-all" @click="selectAll">Tout sélectionner ({{ selectableContacts.length }})</button>
               <button class="btn-select-all" @click="selectedIds.clear()">Tout désélectionner</button>
+              <select v-model="selectedGroup" class="inv-filter-select" aria-label="Filtrer par groupe">
+                <option value="">Tous les contacts</option>
+                <option v-for="group in availableContactGroups" :key="group" :value="group">{{ group }}</option>
+              </select>
               <label class="btn-select-all" title="Importer un fichier Excel ou CSV" style="background: rgba(132,89,54,0.08); color: var(--brun); display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; cursor: pointer; font-size: 12px; padding: 6px 14px; font-weight: 700;">
                 <AppIcon name="upload" :size="12" /> Importer Excel / CSV
                 <input type="file" accept=".xlsx, .xls, .csv" @change="importExcelOrCSV" style="display:none" ref="fileInput" />
@@ -288,6 +292,7 @@
               </button>
               <span class="selection-count" style="margin-left: auto;">{{ selectedIds.size }} sélectionné(s)</span>
             </div>
+            <p class="group-filter-hint">Choisissez un groupe pour limiter la liste, ou importez un fichier pour utiliser une liste ponctuelle.</p>
 
             <div v-if="pendingImportRecords" style="margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(249,178,51,0.12); color: var(--brun); font-size: 0.85rem;">
               Liste temporaire : {{ pendingImportRecords.length }} destinataire(s) du fichier.
@@ -505,6 +510,7 @@ const adding = ref(false)
 const updatingNames = ref(false)
 const addError = ref('')
 const modalSearch = ref('')
+const selectedGroup = ref('')
 const selectedIds = ref(new Set())
 const pendingImportRecords = ref(null)
 const confirmModal = ref({
@@ -690,8 +696,17 @@ const existingNameChanges = computed(() => {
   })
 })
 
+const availableContactGroups = computed(() => {
+  const contacts = pendingImportRecords.value || api.invites
+  const groups = new Set(contacts.flatMap(contact => Array.isArray(contact.groupes) ? contact.groupes : []).filter(Boolean))
+  return [...groups].sort((a, b) => a.localeCompare(b, 'fr'))
+})
+
 const filteredContacts = computed(() => {
   let list = pendingImportRecords.value || api.invites
+  if (selectedGroup.value) {
+    list = list.filter(contact => Array.isArray(contact.groupes) && contact.groupes.includes(selectedGroup.value))
+  }
   if (modalSearch.value.trim()) {
     const q = modalSearch.value.toLowerCase()
     list = list.filter(c =>
@@ -704,10 +719,12 @@ const filteredContacts = computed(() => {
   return list
 })
 
+const selectableContacts = computed(() =>
+  filteredContacts.value.filter(contact => !alreadyInvited.value.has(contact.id))
+)
+
 function selectAll() {
-  filteredContacts.value
-    .filter(c => !alreadyInvited.value.has(c.id))
-    .forEach(c => selectedIds.value.add(c.id))
+  selectableContacts.value.forEach(contact => selectedIds.value.add(contact.id))
 }
 
 function toggleContact(id) {
@@ -863,6 +880,7 @@ function eventName() {
 
 async function openAddInvites() {
   modalSearch.value = ''
+  selectedGroup.value = ''
   selectedIds.value = new Set()
   pendingImportRecords.value = null
   addError.value = ''
@@ -1188,6 +1206,7 @@ async function importExcelOrCSV(event) {
           const posKey = Object.keys(row).find(k => ['poste', 'fonction', 'position', 'role', 'job'].includes(normalizeKey(k))) || Object.keys(row).find(k => ['titre', 'title'].includes(normalizeKey(k)))
           const notesKey = Object.keys(row).find(k => ['notes', 'note', 'observation', 'observations', 'commentaire', 'commentaires'].includes(normalizeKey(k)))
           const categoryKey = Object.keys(row).find(k => ['categorie', 'category'].includes(normalizeKey(k)))
+          const groupsKey = Object.keys(row).find(k => ['groupe', 'groupes', 'group', 'groups', 'tag', 'tags', 'etiquette', 'etiquettes', 'label', 'labels', 'groupe etiquette', 'groupes etiquettes', 'groupe / etiquette', 'groupes / etiquettes'].includes(normalizeKey(k)))
           
           let prenom = pKey ? String(row[pKey]).trim() : ''
           let nom = nKey ? String(row[nKey]).trim() : ''
@@ -1197,6 +1216,9 @@ async function importExcelOrCSV(event) {
           const titre_poste = posKey ? String(row[posKey]).trim() : ''
           const notes = notesKey ? String(row[notesKey]).trim() : ''
           const categorie = categoryKey ? String(row[categoryKey]).trim() : 'Participant'
+          const groupes = groupsKey
+            ? String(row[groupsKey]).split(/[;,]/).map(group => group.trim()).filter(Boolean)
+            : []
 
           const normalizedEmail = normalizeEmail(email)
           if (!normalizedEmail) {
@@ -1232,7 +1254,7 @@ async function importExcelOrCSV(event) {
           }
 
           if (prenom && nom) {
-            records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, notes })
+            records.push({ prenom, nom, email, telephone, organisation, titre_poste, categorie, groupes, notes })
           } else {
             rejectedCount++
           }
@@ -1267,6 +1289,7 @@ async function importExcelOrCSV(event) {
 
         pendingImportRecords.value = stagedRecords
         modalSearch.value = ''
+        selectedGroup.value = ''
         selectedIds.value = new Set(
           stagedRecords
             .filter(record => !record.existingId || !alreadyInvited.value.has(record.existingId))
@@ -1338,6 +1361,7 @@ async function importExcelOrCSV(event) {
   outline: none; transition: all .25s; min-width: 160px;
 }
 .inv-filter-select:focus { border-color: var(--or); }
+.group-filter-hint { margin: 8px 0 0; color: rgba(36,27,22,.58); font-size: .8rem; }
 .inv-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; }
 
 .btn-send {
