@@ -137,6 +137,10 @@
             <AppIcon :name="sending ? 'loader' : 'refresh-cw'" :size="15" />
             Relancer ({{ reminderCount }})
           </button>
+          <button class="inv-icon-action inv-report-action" type="button" @click="exportInvitationsExcel" :disabled="exportingExcel || api.invitations.length === 0" title="Télécharger toutes les personnes invitées, tous statuts confondus" aria-label="Exporter la liste complète des invités">
+            <AppIcon :name="exportingExcel ? 'loader' : 'download'" :size="16" :class="{ spin: exportingExcel }" />
+            <span class="compact-action-label">{{ exportingExcel ? 'Exportation…' : 'Exporter Excel' }}</span>
+          </button>
           <button class="inv-icon-action inv-report-action" type="button" @click="printEventReport" title="Exporter le rapport PDF de l’événement" aria-label="Exporter le rapport PDF de l’événement">
             <AppIcon name="file-text" :size="16" />
             <span class="compact-action-label">Rapport PDF</span>
@@ -508,6 +512,7 @@ const deleteError = ref('')
 const sending = ref(false)
 const adding = ref(false)
 const updatingNames = ref(false)
+const exportingExcel = ref(false)
 const addError = ref('')
 const modalSearch = ref('')
 const selectedGroup = ref('')
@@ -876,6 +881,70 @@ function printEventReport() {
 
 function eventName() {
   return String(evenement.value?.titre || 'Événement').replace(/[<>&"']/g, '')
+}
+
+async function exportInvitationsExcel() {
+  if (!api.invitations.length || exportingExcel.value) return
+
+  exportingExcel.value = true
+  try {
+    const XLSX = await import('xlsx')
+    const rows = [...api.invitations]
+      .sort((a, b) => {
+        const nameA = `${a.invites?.nom || ''} ${a.invites?.prenom || ''}`.trim()
+        const nameB = `${b.invites?.nom || ''} ${b.invites?.prenom || ''}`.trim()
+        return nameA.localeCompare(nameB, 'fr', { sensitivity: 'base' })
+      })
+      .map(invitation => {
+        const invite = invitation.invites || {}
+        return {
+          'Prénom': invite.prenom || '',
+          'Nom': invite.nom || '',
+          'Email': invite.email || '',
+          'Téléphone': invite.telephone || '',
+          'Organisation': invite.organisation || '',
+          'Fonction': invite.titre_poste || '',
+          'Catégorie': invite.categorie || '',
+          'Statut': statutLabel(invitation.statut),
+          'Date d’envoi': invitation.date_envoi ? formatDate(invitation.date_envoi) : '',
+          'Date de réponse': invitation.date_reponse ? formatDate(invitation.date_reponse) : '',
+          'Heure d’arrivée': invitation.heure_arrivee ? formatDate(invitation.heure_arrivee) : '',
+          'Notes RSVP': invitation.notes_rsvp || ''
+        }
+      })
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    worksheet['!cols'] = [
+      { wch: 20 }, { wch: 24 }, { wch: 34 }, { wch: 18 }, { wch: 28 },
+      { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 24 }, { wch: 24 },
+      { wch: 24 }, { wch: 40 }
+    ]
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Invités')
+
+    const safeEventName = eventName()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'evenement'
+    const date = new Date().toISOString().slice(0, 10)
+    XLSX.writeFile(workbook, `invitations-${safeEventName}-${date}.xlsx`)
+    showNotification({
+      title: 'Liste exportée',
+      message: `${rows.length} invité(s) exporté(s), tous statuts confondus.`,
+      type: 'success'
+    })
+  } catch (error) {
+    console.error(error)
+    showNotification({
+      title: 'Erreur',
+      message: 'Impossible de générer le fichier Excel.',
+      type: 'error'
+    })
+  } finally {
+    exportingExcel.value = false
+  }
 }
 
 async function openAddInvites() {

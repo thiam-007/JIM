@@ -31,7 +31,7 @@ router.get('/', async (req, res, next) => {
         notes_rsvp,
         created_at,
         invite_id,
-        invites ( id, prenom, nom, email, organisation, titre_poste, categorie ),
+        invites ( id, prenom, nom, email, telephone, organisation, titre_poste, categorie ),
         evenements ( titre, date_debut )
       `)
       .order('created_at', { ascending: false })
